@@ -20,7 +20,20 @@ Tool provider.
 
 * Ability to leverage tosca policy to scale, upgrade CNF or VNF.
 
-Usage.
+## Build
+
+```
+make
+ls -l 
+tcactl			
+tcactl-darwin-amd64	
+tcactl-linux-386	
+tcactl-linux-amd64	
+tcactl-windows-386	
+tcactl-windows-amd64
+```
+
+## Usage.
 
 Main interface provides regular main root menu. 
 
@@ -29,7 +42,7 @@ Main interface provides regular main root menu.
 * Describe
 * Get Details
 
-Each command has context specific sub-command
+Each command has context specific sub-command.
 
 ```shell
 tcactl ctl tool for VMware Telco Cloud Automation
@@ -49,6 +62,49 @@ Available Commands:
   update      Updates cnf, cnf catalog etc
 ```
 
+## Tcactl configuration.
+
+Tools store default configuration in $HOME/.tcactl/config.yaml
+
+For initial configuration run
+
+```shell
+tcactl init
+```
+The init command generate boilerplate default config.
+After that we can either edit file or use tcactl to set all value.
+
+```shell
+./tcactl set -h
+Command sets config variables (Username, Password etc) for tcactl.
+
+Usage:
+  tcactl set [flags]
+  tcactl set [command]
+
+Available Commands:
+  api         Command sets tca end-point and saves config.
+  cluster     Command sets cluster and saves config.
+  nodepool    Command sets default node pool end-point and saves config.
+  password    Command sets cluster username and saves config.
+  username    Command sets TCA username and saves config.
+```
+
+For minimum configuration you need set api endpoint,
+username and password.
+
+```yaml
+defaultcloud: default
+defaultcluster: edge
+defaultnodepool: default
+license: apache
+output: default
+stderrthreshold: INFO
+tca-endpoint: https://tca.vmware.com
+tca-password: VMware1!
+tca-username: administrator@vsphere.local
+useviper: true
+```
 ## Context sub command.
 
 Get provides capability retrieve object from a system.
