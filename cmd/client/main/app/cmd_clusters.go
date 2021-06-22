@@ -18,12 +18,40 @@
 package app
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/golang/glog"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/client/respons"
+	"github.com/spyroot/hestia/cmd/client/request"
+	"github.com/spyroot/hestia/cmd/client/response"
 	"github.com/spyroot/hestia/pkg/io"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
+	"strings"
 )
+
+// CmdGetClusters - Sub-command to get cluster information.
+func (ctl *TcaCtl) CmdGetClusters() *cobra.Command {
+
+	var _cmdClusters = &cobra.Command{
+		Use:     "clusters",
+		Short:   "Return cluster information",
+		Long:    `Return a list of CNFs or VNFs catalog entities or single element if -i id provide.`,
+		Example: "- tcactl get clusters info\n- tcactl get clusters pool edge",
+		Args:    cobra.MinimumNArgs(1),
+		Aliases: []string{"cluster", "cl"},
+		Run: func(cmd *cobra.Command, args []string) {
+			return
+		},
+	}
+
+	_cmdClusters.AddCommand(ctl.CmdGetClustersList())
+	_cmdClusters.AddCommand(ctl.CmdGetClustersK8SConfig())
+	_cmdClusters.AddCommand(ctl.CmdGetClustersPool())
+	_cmdClusters.AddCommand(ctl.CmdGetClustersPoolNodes())
+
+	return _cmdClusters
+}
 
 // CmdGetPoolNodes - command to get CNF Catalog entity
 func (ctl *TcaCtl) CmdGetPoolNodes() *cobra.Command {
@@ -91,31 +119,26 @@ func (ctl *TcaCtl) CmdGetClustersPool() *cobra.Command {
 		Short:   "Command returns kubernetes node pool for a given cluster",
 		Long:    `Command returns a list kubernetes node pool for a given cluster name.`,
 		Example: "- tcactl get clusters pool 794a675c-777a-47f4-8edb-36a686ef4065\n -tcactl get cluster mycluster",
-		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
-			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			var (
+				pool *response.NodePool
+				err  error
+			)
 
-			// set wide or not
-			_isWide, err := cmd.Flags().GetBool("wide")
+			// global output type, and terminal wide or not
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_isWide, err = cmd.Flags().GetBool(FlagCliWide)
 			CheckErrLogError(err)
 			_defaultStyler.SetWide(_isWide)
 
-			clusters, err := ctl.TcaClient.GetClusters()
-			if err != nil || clusters == nil {
-				glog.Errorf("Failed retrieve cluster list %v", err)
-				return
+			// for exact match for cluster
+			if len(args) > 0 {
+				pool, err = ctl.tca.GetNodePool(args[0])
 			}
-
-			clusterId, err := clusters.GetClusterId(args[0])
+			pool, err = ctl.tca.GetAllNodePool()
 			CheckErrLogError(err)
 
-			pool, err := ctl.TcaClient.GetClusterNodePools(clusterId)
-			if err != nil {
-				glog.Errorf("Failed retrieve node pools %v", err)
-				return
-			}
 			if _printer, ok := ctl.NodePoolPrinter[_defaultPrinter]; ok {
 				_printer(pool, _defaultStyler)
 			}
@@ -127,11 +150,6 @@ func (ctl *TcaCtl) CmdGetClustersPool() *cobra.Command {
 		"wide", "w", true, "Wide output")
 
 	return _cmd
-}
-
-func IsValidUUID(u string) bool {
-	_, err := uuid.Parse(u)
-	return err == nil
 }
 
 // CmdGetCluster - command to get CNF Catalog entity
@@ -258,7 +276,7 @@ func (ctl *TcaCtl) CmdDescClusterNodePool() *cobra.Command {
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
 			// set wide or not
-			_isWide, err := cmd.Flags().GetBool(CliWide)
+			_isWide, err := cmd.Flags().GetBool(FlagCliWide)
 			CheckErrLogError(err)
 			_defaultStyler.SetWide(_isWide)
 
@@ -289,67 +307,13 @@ func (ctl *TcaCtl) CmdDescClusterNodePool() *cobra.Command {
 	return _cmd
 }
 
-// CmdDescClusterNodePools - describe node pool
-func (ctl *TcaCtl) CmdDescClusterNodePools() *cobra.Command {
-
-	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_isWide         = false
-	)
-
-	var _cmd = &cobra.Command{
-		Use:     "pools [name or id]",
-		Short:   "Command describes all node pool",
-		Long:    `Command describes all node pool.`,
-		Example: "tcactl describe pools",
-		//Args:    cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-
-			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
-
-			// set wide or not
-			_isWide, err := cmd.Flags().GetBool(CliWide)
-			CheckErrLogError(err)
-			_defaultStyler.SetWide(_isWide)
-
-			clusters, err := ctl.TcaClient.GetClusters()
-			CheckErrLogError(err)
-
-			var allSpecs []respons.NodesSpecs
-			for _, c := range clusters.Clusters {
-				pools, err := ctl.TcaClient.GetClusterNodePools(c.Id)
-				CheckErrLogInfoMsg(err)
-				for _, p := range pools.Pools {
-					pool, err := ctl.TcaClient.GetClusterNodePool(c.Id, p.Id)
-					CheckErrLogInfoMsg(err)
-					allSpecs = append(allSpecs, *pool)
-				}
-			}
-
-			if _printer, ok := ctl.NodePoolPrinter[_defaultPrinter]; ok {
-				_printer(&respons.NodePool{
-					Pools: allSpecs,
-				}, _defaultStyler)
-			}
-		},
-	}
-
-	// wide output
-	_cmd.Flags().BoolVarP(&_isWide,
-		"wide", "w", true, "Wide output")
-
-	return _cmd
-}
-
 // CmdDescClusterNodes  - describe node pool
+// for all cluster
 func (ctl *TcaCtl) CmdDescClusterNodes() *cobra.Command {
 
 	var (
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
-		_isWide         = false
 	)
 
 	var _cmd = &cobra.Command{
@@ -360,18 +324,14 @@ func (ctl *TcaCtl) CmdDescClusterNodes() *cobra.Command {
 		//Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
-			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			// set wide or not
-			_isWide, err := cmd.Flags().GetBool(CliWide)
-			CheckErrLogError(err)
-			_defaultStyler.SetWide(_isWide)
-
-			clusters, err := ctl.TcaClient.GetClusters()
+			clusters, err := ctl.tca.GetClusters()
 			CheckErrLogError(err)
 
-			var allSpecs []respons.NodesSpecs
+			var allSpecs []response.NodesSpecs
 			for _, c := range clusters.Clusters {
 				pools, err := ctl.TcaClient.GetClusterNodePools(c.Id)
 				CheckErrLogError(err)
@@ -383,16 +343,12 @@ func (ctl *TcaCtl) CmdDescClusterNodes() *cobra.Command {
 			}
 
 			if _printer, ok := ctl.NodesPrinter[_defaultPrinter]; ok {
-				_printer(&respons.NodePool{
+				_printer(&response.NodePool{
 					Pools: allSpecs,
 				}, _defaultStyler)
 			}
 		},
 	}
-
-	// wide output
-	_cmd.Flags().BoolVarP(&_isWide,
-		"wide", "w", true, "Wide output")
 
 	return _cmd
 }
@@ -408,21 +364,18 @@ func (ctl *TcaCtl) CmdGetClustersList() *cobra.Command {
 
 	var _cmd = &cobra.Command{
 		Use:   "info [optional cluster name]",
-		Short: "Command returns kubernetes cluster or cluster information",
+		Short: "Command returns kubernetes cluster or cluster information.",
 		Long:  `Command returns kubernetes cluster or cluster information.`,
-		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
-			// set wide or not
-			_isWide, err := cmd.Flags().GetBool("wide")
-			io.CheckErr(err)
-			_defaultStyler.SetWide(_isWide)
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusters, err := ctl.TcaClient.GetClusters()
+			clusters, err := ctl.tca.GetClusters()
 			CheckErrLogError(err)
-
+			// either get all or lookup by name
 			if len(args) > 0 {
 				cluster, err := clusters.GetClusterSpec(args[0])
 				CheckErrLogError(err)
@@ -440,5 +393,176 @@ func (ctl *TcaCtl) CmdGetClustersList() *cobra.Command {
 	//
 	_cmd.Flags().BoolVarP(&_isWide,
 		"wide", "w", true, "Wide output")
+	return _cmd
+}
+
+// CmdGetClustersK8SConfig - command return k8s kube config
+// and output to screen.
+func (ctl *TcaCtl) CmdGetClustersK8SConfig() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+		FileName        string
+	)
+
+	var _cmd = &cobra.Command{
+		Use:   "kubeconfig [cluster name]",
+		Short: "Command returns cluster kubeconfig",
+		Long:  `Command returns cluster kubeconfig.`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			clusters, err := ctl.tca.GetClusters()
+			CheckErrLogError(err)
+			for _, c := range clusters.Clusters {
+				if strings.Contains(c.ClusterName, args[0]) {
+					fmt.Println(c.KubeConfig)
+				}
+			}
+		},
+	}
+
+	_cmd.Flags().StringVarP(&FileName,
+		"file_name", "f", "", "file to save.")
+
+	return _cmd
+}
+
+// CmdCreateCluster -  command for cluster creation
+// Read cluster spec , validate each spec param and create cluster
+// if specs are valid, in Dry run resolve all name, parse spec
+// and output final yaml if no error.
+func (ctl *TcaCtl) CmdCreateCluster() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+		isDry           = false
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "clusters [path to file]",
+		Short:   "Command create cluster",
+		Long:    `Command create cluster.`,
+		Example: "- ./tcactl create cluster examples/edge_mgmt_cluster.yaml --stderrthreshold INFO",
+		Args:    cobra.MinimumNArgs(1),
+		Aliases: []string{"cluster", "cl"},
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			// spec read from file
+			var spec request.Cluster
+			if io.FileExists(args[0]) {
+				buffer, err := ioutil.ReadFile(args[0])
+				CheckErrLogError(err)
+				// first we try yaml if failed try json
+				err = yaml.Unmarshal(buffer, &spec)
+				if err != nil {
+					// try json
+					err = json.Unmarshal(buffer, &spec)
+					CheckErrLogError(err)
+				}
+			} else {
+				CheckErrLogError(fmt.Errorf("%v not found", args[0]))
+			}
+
+			// otherwise create
+			ok, err := ctl.tca.CreateClusters(&spec, isDry)
+			CheckErrLogError(err)
+			if ok {
+				fmt.Println("Cluster created.")
+			}
+
+			// dry run will output template to screen after parser
+			// resolved all name to id.
+			if isDry {
+				if printer, ok := ctl.ClusterRequestPrinter[_defaultPrinter]; ok {
+					printer(&spec, _defaultStyler)
+				}
+			}
+		},
+	}
+
+	_cmd.Flags().BoolVar(&isDry,
+		"dry", false, "Parse template spec, validate, dry run outputs spec "+
+			"to terminal screen and format based based on -o.")
+
+	return _cmd
+}
+
+// CmdDescribeTask - command return cluster pools list
+func (ctl *TcaCtl) CmdDescribeTask() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "task [task_id]",
+		Short:   "Command return current running cluster task.",
+		Long:    `Command return current running cluster task.`,
+		Example: "- tcactl desc task 9411f70f-d24d-4842-ab56-b7214d",
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type, and terminal wide or not
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			task, err := ctl.tca.GetCurrentClusterTask(args[0])
+			CheckErrLogError(err)
+
+			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {
+				_printer(task, _defaultStyler)
+			}
+		},
+	}
+
+	return _cmd
+}
+
+// CmdDeleteCluster - command delete cluster
+func (ctl *TcaCtl) CmdDeleteCluster() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "cluster [name or id of cluster]",
+		Short:   "Command delete cluster.",
+		Long:    `Command Command delete cluster.`,
+		Example: "- tcactl delete cluster 794a675c-777a-47f4-8edb-36a686ef4065\n -tcactl delete cluster mycluster",
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type, and terminal wide or not
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			ok, err := ctl.tca.DeleteCluster(args[0])
+			if err != nil {
+				return
+			}
+			if ok {
+				fmt.Println("Cluster deleted.")
+			}
+		},
+	}
+
 	return _cmd
 }

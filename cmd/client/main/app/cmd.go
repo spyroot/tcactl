@@ -19,6 +19,7 @@
 package app
 
 import (
+	"fmt"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,8 +35,8 @@ func (ctl *TcaCtl) CmdInitConfig() *cobra.Command {
 
 	var _cmd = &cobra.Command{
 		Use:   "init",
-		Short: "Initializes config file.",
-		Long:  `Initializes config file.`,
+		Short: "Command initializes default config file.",
+		Long:  `Command Initializes default config file.`,
 
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -60,6 +61,9 @@ func (ctl *TcaCtl) CmdInitConfig() *cobra.Command {
 
 			err = viper.WriteConfig()
 			io.CheckErr(err)
+
+			fmt.Println("Default config file generated: ", configPath)
+			fmt.Println("Now run tcactl set and set username, password and TCA Cluster Endpoint.")
 		},
 	}
 
@@ -86,12 +90,16 @@ func (ctl *TcaCtl) CmdSaveConfig() *cobra.Command {
 	return _cmd
 }
 
-// BuildCmd build all commands and attach to root cmd
+// BuildCmd build all commands and attaches to root cmd
+// in case you need add sub-command you can, add to plugin dir.
+//(TODO) add dynamic loading pluging
 func (ctl *TcaCtl) BuildCmd() {
 
 	var describe = &cobra.Command{
-		Use:   "describe",
-		Short: "Describe TCA object details",
+		Use:     "describe [cloud or cluster or nodes or pool or template]",
+		Long:    `Command describes object TCA. CNFI is CNFI in the inventory, CNFC Catalog entities.`,
+		Short:   "Describe TCA object details",
+		Aliases: []string{"desc"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
@@ -151,36 +159,68 @@ func (ctl *TcaCtl) BuildCmd() {
 		},
 	}
 
-	// create
-	var CmdsetCreate = &cobra.Command{
+	// set
+	var cmdSet = &cobra.Command{
 		Use:   "set",
-		Short: "Create a new object in TCA.",
-		Long:  `Create a new object in TCA. For example new CNF instance.`,
+		Short: "Command sets config variables (Username, Password etc) for tcactl.",
+		Long:  `Command sets config variables (Username, Password etc) for tcactl.`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+		},
+	}
+
+	// delete root command
+	var cmdDelete = &cobra.Command{
+		Use:     "delete",
+		Short:   "Command deletes object (template,cluster,cnf etc) from tcactl.",
+		Long:    `Command deletes object (template,cluster,cnf etc) from tcactl.`,
+		Aliases: []string{"del"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
 				return
 			}
 		},
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.NoArgs,
+		//Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	// root describe
+	// Set root command
+	cmdSet.AddCommand(
+		ctl.CmdSetTca(),
+		ctl.CmdSetCluster(),
+		ctl.CmdSetNodePool(),
+		ctl.CmdSetUsername(),
+		ctl.CmdSetPassword())
+
+	// Describe sub command
+	describe.AddCommand(ctl.CmdDescribeVim())
 	describe.AddCommand(ctl.CmdGetCluster())
 	describe.AddCommand(ctl.CmdDescClusterNodePool())
 	describe.AddCommand(ctl.CmdDescClusterNodePools())
 	describe.AddCommand(ctl.CmdDescClusterNodes())
+	describe.AddCommand(ctl.CmdDescribeTemplate())
+	describe.AddCommand(ctl.CmdDescribeTask())
 
-	// update sub-commands
+	// Update sub-commands
 	cmdUpdate.AddCommand(ctl.CmdTerminateInstances())
 	cmdUpdate.AddCommand(ctl.CmdUpdateInstances())
 	cmdUpdate.AddCommand(ctl.CmdRollbackInstances())
-	ctl.RootCmd.AddCommand(describe, cmdGet, cmdUpdate, cmdCreate, CmdsetCreate,
-		ctl.CmdSaveConfig(), ctl.CmdInitConfig())
+	cmdUpdate.AddCommand(ctl.CmdUpdateClusterTemplates())
 
-	// get command
+	// root command
+	ctl.RootCmd.AddCommand(describe,
+		cmdGet,
+		cmdUpdate,
+		cmdCreate,
+		cmdDelete,
+		cmdSet,
+		ctl.CmdSaveConfig(),
+		ctl.CmdInitConfig())
+
+	// Get command
 	cmdGet.AddCommand(ctl.CmdGetPackages())
 	cmdGet.AddCommand(ctl.CmdGetInstances())
 	cmdGet.AddCommand(ctl.CmdGetRepos())
@@ -189,7 +229,19 @@ func (ctl *TcaCtl) BuildCmd() {
 	cmdGet.AddCommand(ctl.CmdGetClusters())
 	cmdGet.AddCommand(ctl.CmdGetVdu())
 	cmdGet.AddCommand(ctl.CmdGetExtensions())
+	cmdGet.AddCommand(ctl.CmdGetClusterTemplates())
+	cmdGet.AddCommand(ctl.CmdGetVim())
 
-	// add root command
-	cmdCreate.AddCommand(ctl.CmdCreateCnf())
+	// Create root command
+	cmdCreate.AddCommand(
+		ctl.CmdCreateCluster(),
+		ctl.CmdCreateCnf(),
+		ctl.CmdCreateClusterTemplates(),
+		ctl.CmdCreatePackage())
+
+	// Delete
+	cmdDelete.AddCommand(
+		ctl.CmdDeleteClusterTemplates(),
+		ctl.CmdDeleteCluster(),
+		ctl.CmdDeleteTenantCluster())
 }

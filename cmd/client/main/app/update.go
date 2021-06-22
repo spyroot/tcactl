@@ -22,7 +22,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/respons"
+	"github.com/spyroot/hestia/cmd/client/response"
 	"github.com/spyroot/hestia/pkg/io"
 	"strings"
 	"time"
@@ -33,9 +33,6 @@ const (
 	CliBlock        = "block"
 	CliPool         = "pool"
 	CliDisableGran  = "grant"
-	CliWide         = "wide"
-
-	ConfigDefaultCluster = "defaultCluster"
 )
 
 // BlockWaitStateChange blocs main thread of execution and wait specific state to change a state,
@@ -86,7 +83,7 @@ func (ctl *TcaCtl) CmdTerminateInstances() *cobra.Command {
 				glog.Error(err)
 				return
 			}
-			cnfs, ok := respond.(*respons.CnfsExtended)
+			cnfs, ok := respond.(*response.CnfsExtended)
 			if !ok {
 				glog.Error("Received wrong object type.")
 				return
@@ -177,7 +174,7 @@ func (ctl *TcaCtl) CmdRollbackInstances() *cobra.Command {
 				glog.Error(err)
 			}
 
-			cnfs, ok := respond.(respons.CnfsExtended)
+			cnfs, ok := respond.(response.CnfsExtended)
 			if !ok {
 				return
 			}
@@ -246,7 +243,7 @@ func (ctl *TcaCtl) CmdUpdateInstances() *cobra.Command {
 			// resolve pool id, if client indicated target pool
 			poolName := cmd.Flags().Lookup(CliPool)
 			if poolName.Value != nil {
-				clusterEntry := ctl.RootCmd.PersistentFlags().Lookup(ConfigDefaultCluster)
+				clusterEntry := ctl.RootCmd.PersistentFlags().Lookup(ConfigDefaultCloud)
 				if clusterEntry == nil {
 					glog.Errorf("Please indicate default cluster name or indicate --cluster")
 					return
@@ -259,7 +256,7 @@ func (ctl *TcaCtl) CmdUpdateInstances() *cobra.Command {
 			// get instance data
 			respond, err := ctl.TcaClient.GetVnflcm()
 			CheckErrLogError(err)
-			cnfs, ok := respond.(*respons.CnfsExtended)
+			cnfs, ok := respond.(*response.CnfsExtended)
 			CheckNotOkLogError(ok, "Received wrong object type.")
 
 			instance, err := cnfs.ResolveFromName(cnfName)

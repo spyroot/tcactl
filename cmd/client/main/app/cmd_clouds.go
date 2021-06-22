@@ -20,8 +20,9 @@ package app
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spyroot/hestia/cmd/client/main/app/templates"
 	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/respons"
+	"github.com/spyroot/hestia/cmd/client/response"
 	"github.com/spyroot/hestia/pkg/io"
 	"strings"
 )
@@ -33,23 +34,23 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
 		_outputFilter   string
-		_isWide         = false
 		vimType         = ""
 		hcxUuid         = ""
 	)
 
 	// cloud - tenants
 	var _cmd = &cobra.Command{
-		Use:     "clouds",
+		Use:     "clouds [name or id]",
 		Aliases: []string{"cloud"},
-		Short:   "Return list of cloud providers.",
-		Long:    `Return list of cloud providers.`,
-		Example: "tcactl get clouds edge",
+		Short:   "Command retrieves a list of cloud providers.",
+		Long: templates.LongDesc(`
+									Command retrieve a list of cloud providers currently attached to TCA.`),
+		Example: " - tcactl get clouds \n - tcactl get clouds edge",
 		Args:    cobra.RangeArgs(0, 1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
@@ -58,45 +59,39 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			// set wide or not
-			_isWide, err := cmd.Flags().GetBool(CliWide)
-			CheckErrLogError(err)
-			_defaultStyler.SetWide(_isWide)
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			tenants, err := ctl.TcaClient.GetTenants()
-			CheckErrLogError(err)
+			tenants, vimErr := ctl.tca.GetVimTenants()
+			CheckErrLogError(vimErr)
 
 			if len(args) > 0 {
-				r, err := tenants.FindCloudProvider(args[0])
+				r, err := ctl.tca.TenantsCloudProvider(args[0])
 				io.CheckErr(err)
 				if printer, ok := ctl.TenantsPrinter[_defaultPrinter]; ok {
-					printer(&respons.Tenants{
-						TenantsList: []respons.TenantsDetails{*r},
-					}, _defaultStyler)
+					printer(r, _defaultStyler)
 				}
 				return
 			}
 
 			if len(vimType) > 0 {
-				r, err := tenants.Filter(respons.FilterVimType, func(q string) bool {
+				r, err := tenants.Filter(response.FilterVimType, func(q string) bool {
 					return strings.HasPrefix(q, vimType)
 				})
 				CheckErrLogError(err)
 				if printer, ok := ctl.TenantsPrinter[_defaultPrinter]; ok {
-					printer(&respons.Tenants{TenantsList: r}, _defaultStyler)
+					printer(&response.Tenants{TenantsList: r}, _defaultStyler)
 				}
 				return
 			}
 
 			if len(hcxUuid) > 0 {
-				r, err := tenants.Filter(respons.FilterHcxUUID, func(q string) bool {
+				r, err := tenants.Filter(response.FilterHcxUUID, func(q string) bool {
 					return strings.HasPrefix(q, hcxUuid)
 				})
 				CheckErrLogError(err)
 				if printer, ok := ctl.TenantsPrinter[_defaultPrinter]; ok {
-					printer(&respons.Tenants{
-						TenantsList: r,
-					}, _defaultStyler)
+					printer(&response.Tenants{TenantsList: r}, _defaultStyler)
 				}
 				return
 			}
@@ -111,13 +106,11 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 
 	//
 	_cmd.Flags().StringVar(&vimType,
-		"vim_type", "KUBERNETES", "filter by VIM Type. KUBERNETES|VC")
+		"vim_type", "", "filter by VIM Type. KUBERNETES|VC")
 	//
 	_cmd.Flags().StringVar(&hcxUuid,
 		"hcx_uuid", "", "filter by HCX UUID.")
-	// wide output
-	_cmd.Flags().BoolVarP(&_isWide,
-		"wide", "w", true, "Wide output")
+
 	// output filter , filter specific value from data structure
 	_cmd.Flags().StringVar(&_outputFilter, "ofilter", "",
 		"Output filter.")
