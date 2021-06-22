@@ -155,6 +155,7 @@ func (c *RestClient) GetRunningVnflcm(req string) (*response.LcmInfo, error) {
 }
 
 // CnfScale action
+// TODO
 func (c *RestClient) CnfScale(scaleUri string) error {
 
 	c.GetClient()
@@ -176,16 +177,7 @@ func (c *RestClient) CnfScale(scaleUri string) error {
 		return fmt.Errorf("unknown error, status code: %d", resp.StatusCode())
 	}
 
-	fmt.Println(resp.StatusCode())
-	fmt.Println(resp.Body())
 	return nil
-
-	//var fullResponse CnfLcmResp
-	//if err := json.Unmarshal(resp.Body(), &fullResponse.CnfLcms); err != nil {
-	//	return err
-	//}
-	//
-	//return &fullResponse, nil
 }
 
 // CnfTerminate action
@@ -254,7 +246,7 @@ func (c *RestClient) CnfVnfInstantiate(req *request.CreateVnfLcm) (*response.VNF
 	c.GetClient()
 	resp, err := c.Client.R().
 		SetBody(req).
-		Post(c.BaseURL + "/telco/api/vnflcm/v2/vnf_instances")
+		Post(c.BaseURL + TcaVmwareVnflcmInstances)
 
 	if err != nil {
 		glog.Error(err)
@@ -290,7 +282,7 @@ func (c *RestClient) CnfInstantiate(instanceId string, req request.InstantiateVn
 	c.GetClient()
 	resp, err := c.Client.R().
 		SetBody(req).
-		Post(c.BaseURL + "/telco/api/vnflcm/v2/vnf_instances/" + instanceId + "/instantiate")
+		Post(c.BaseURL + TcaVmwareVnflcmInstance + instanceId + "/instantiate")
 
 	if err != nil {
 		glog.Error(err)

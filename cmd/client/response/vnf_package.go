@@ -28,51 +28,54 @@ import (
 type VnfdFilterType int32
 
 const (
+
 	// VnfProductName filter by VNF/CNF product name
 	VnfProductName VnfdFilterType = 0
+
 	// VnfdId filter by VNFD id
 	VnfdId VnfdFilterType = 1
+
 	// OperationalState filter type Operation Status in Catalog
 	OperationalState VnfdFilterType = 2
 )
 
 // VnfPackagesError - TCA Error rest API error response format
 type VnfPackagesError struct {
-	Type     string `json:"type"`
-	Title    string `json:"title"`
-	Status   int    `json:"status"`
-	Detail   string `json:"detail"`
-	Instance string `json:"instance"`
+	Type     string `json:"type" yaml:"type"`
+	Title    string `json:"title" yaml:"title"`
+	Status   int    `json:"status" yaml:"status"`
+	Detail   string `json:"detail" yaml:"detail"`
+	Instance string `json:"instance" yaml:"instance"`
 }
 
 // VnfPackage - TCA VNF Package TCA format
 type VnfPackage struct {
-	PID                string        `json:"id"`
-	VnfdID             string        `json:"vnfdId"`
-	VnfProvider        string        `json:"vnfProvider"`
-	VnfProductName     string        `json:"vnfProductName"`
-	VnfSoftwareVersion string        `json:"vnfSoftwareVersion"`
-	VnfdVersion        string        `json:"vnfdVersion"`
-	OnboardingState    string        `json:"onboardingState"`
-	OperationalState   string        `json:"operationalState"`
-	UsageState         string        `json:"usageState"`
-	VnfmInfo           []interface{} `json:"vnfmInfo"`
+	PID                string        `json:"id" yaml:"pid"`
+	VnfdID             string        `json:"vnfdId" yaml:"vnfd_id"`
+	VnfProvider        string        `json:"vnfProvider" yaml:"vnf_provider"`
+	VnfProductName     string        `json:"vnfProductName" yaml:"vnf_product_name"`
+	VnfSoftwareVersion string        `json:"vnfSoftwareVersion" yaml:"vnf_software_version"`
+	VnfdVersion        string        `json:"vnfdVersion" yaml:"vnfd_version"`
+	OnboardingState    string        `json:"onboardingState" yaml:"onboarding_state"`
+	OperationalState   string        `json:"operationalState" yaml:"operational_state"`
+	UsageState         string        `json:"usageState" yaml:"usage_state"`
+	VnfmInfo           []interface{} `json:"vnfmInfo" yaml:"vnfm_info"`
 	UserDefinedData    struct {
-		Name                   string            `json:"name"`
-		Tags                   []interface{}     `json:"tags"`
-		NfType                 string            `json:"nfType"`
-		ManagedBy              InternalManagedBy `json:"managedBy"`
-		LocalFilePath          string            `json:"localFilePath"`
-		LastUpdated            time.Time         `json:"lastUpdated"`
-		LastUpdateEnterprise   string            `json:"lastUpdateEnterprise"`
-		LastUpdateOrganization string            `json:"lastUpdateOrganization"`
-		LastUpdateUser         string            `json:"lastUpdateUser"`
-		CreationDate           time.Time         `json:"creationDate"`
-		CreationEnterprise     string            `json:"creationEnterprise"`
-		CreationOrganization   string            `json:"creationOrganization"`
-		CreationUser           string            `json:"creationUser"`
-		IsDeleted              bool              `json:"isDeleted"`
-	}
+		Name                   string            `json:"name" yaml:"name"`
+		Tags                   []interface{}     `json:"tags" yaml:"tags"`
+		NfType                 string            `json:"nfType" yaml:"nf_type"`
+		ManagedBy              InternalManagedBy `json:"managedBy" yaml:"managed_by"`
+		LocalFilePath          string            `json:"localFilePath" yaml:"local_file_path"`
+		LastUpdated            time.Time         `json:"lastUpdated" yaml:"last_updated"`
+		LastUpdateEnterprise   string            `json:"lastUpdateEnterprise" yaml:"last_update_enterprise"`
+		LastUpdateOrganization string            `json:"lastUpdateOrganization" yaml:"last_update_organization"`
+		LastUpdateUser         string            `json:"lastUpdateUser" yaml:"last_update_user"`
+		CreationDate           time.Time         `json:"creationDate" yaml:"creation_date"`
+		CreationEnterprise     string            `json:"creationEnterprise" yaml:"creation_enterprise"`
+		CreationOrganization   string            `json:"creationOrganization" yaml:"creation_organization"`
+		CreationUser           string            `json:"creationUser" yaml:"creation_user"`
+		IsDeleted              bool              `json:"isDeleted" yaml:"is_deleted"`
+	} `yaml:"user_defined_data"`
 }
 
 // VnfPackages - array of VNF Packages.
@@ -87,7 +90,9 @@ func (p *VnfPackage) GetField(field string) string {
 	return f.String()
 }
 
-// GetVnfdID - find by either VnfdID or ProductName, ID
+// GetVnfdID - find by either VnfdID or ProductName, id
+// the main objective to resolve some name to catalog
+// entity.
 func (v *VnfPackages) GetVnfdID(q string) (*VnfPackage, error) {
 
 	if v == nil {

@@ -75,6 +75,27 @@ func (m *UnsupportedCloudProvider) Error() string {
 	return m.errMsg + " cloud provider not supported"
 }
 
+const (
+	DefaultNamespace = "default"
+	DefaultFlavor    = "default"
+)
+
+func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
+	repo string, instanceName string, nodePoolName string) *InstanceRequestSpec {
+	i := &InstanceRequestSpec{cloudName: cloudName, clusterName: clusterName,
+		vimType: vimType, nfdName: nfdName, repo: repo,
+		instanceName: instanceName, nodePoolName: nodePoolName}
+
+	i.flavorName = DefaultNamespace
+	i.description = ""
+	i.namespace = DefaultFlavor
+	i.disableAutoRollback = false
+	i.disableGrant = false
+	i.disableAutoRollback = false
+
+	return i
+}
+
 // GetVimComputeClusters - return compute cluster attached to VIM
 // For example VMware VIM
 func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters, error) {
@@ -574,7 +595,7 @@ func (a *TcaApi) validateTenant(tenant *response.TenantsDetails) error {
 		return fmt.Errorf("cloud provider currently disconected")
 	}
 
-	if strings.ToLower(tenant.VimType) == response.VimTypeKubernetes {
+	if strings.ToLower(tenant.VimType) == models.VimTypeKubernetes {
 		return fmt.Errorf("cloud provider already set to kubernetes")
 	}
 	return nil
@@ -1163,4 +1184,130 @@ func (a *TcaApi) CreateNewPackage(
 
 	// TODO do GET to cross check and respond with ok if package is created.
 	return ok, nil
+}
+
+// GetCatalogAndVdu return catalog entity and vdu package.
+func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *response.VduPackage, error) {
+
+	vnfCatalog, err := a.rest.GetVnfPkgm("", "")
+	if err != nil || vnfCatalog == nil {
+		glog.Errorf("Failed acquire vnf package information. Error %v", err)
+		return nil, nil, err
+	}
+
+	catalogEntity, err := vnfCatalog.GetVnfdID(nfdName)
+	if err != nil || catalogEntity == nil {
+		glog.Errorf("Failed acquire catalog information for catalog name %v", nfdName)
+		return nil, nil, err
+	}
+
+	v, err := a.rest.GetVnfPkgmVnfd(catalogEntity.PID)
+
+	return catalogEntity, v, err
+}
+
+// CreateCnfNewInstance create a new instance of VNF or CNF.
+func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec) error {
+
+	tenants, err := a.GetVimTenants()
+	if err != nil {
+		glog.Errorf("Failed acquire cloud tenant, error %v", err)
+		return err
+	}
+
+	cloud, err := tenants.GetTenantClouds(n.cloudName, n.vimType)
+	if err != nil {
+		glog.Errorf("Failed acquire cloud provider, error %v", err)
+		return err
+	}
+
+	pkg, vnfd, err := a.GetCatalogAndVdu(n.nfdName)
+	if err != nil || vnfd == nil {
+		glog.Errorf("Failed acquire VDU information for %v", n.nfdName)
+		return err
+	}
+
+	// get linked repo, if caller provide repo that is not
+	// linked nothing to do.
+	reposUuid, err := a.rest.LinkedRepositories(cloud.TenantID, n.repo)
+	if err != nil {
+		glog.Errorf("Failed acquire linked %v "+
+			"repository to cloud provider %v. Indicate a repo "+
+			"linked to cloud provider.", n.repo, cloud.TenantID)
+		return err
+	}
+
+	ext, err := a.rest.ExtensionQuery()
+	if err != nil {
+		glog.Errorf("Failed acquire extension information for %v", err)
+		return err
+	}
+
+	linkedRepos, err := ext.FindRepo(reposUuid)
+	if err != nil || linkedRepos == nil {
+		glog.Errorf("Failed acquire extension information for %v", reposUuid)
+		return err
+	}
+
+	// resolve nodePools
+	nodePool, _, err := a.rest.GetNamedClusterNodePools(n.clusterName)
+	if err != nil || nodePool == nil {
+		glog.Errorf("Failed acquire clusters node information for cluster %v, error %v", n.clusterName, err)
+		return err
+	}
+	pool, err := nodePool.GetPool(n.nodePoolName)
+	if err != nil {
+		glog.Errorf("Failed acquire node pool information for node pool %v, error %v", n.nodePoolName, err)
+		return err
+	}
+
+	vnfLcm, err := a.rest.CnfVnfInstantiate(&request.CreateVnfLcm{
+		VnfdId:                 pkg.VnfdID,
+		VnfInstanceName:        n.instanceName,
+		VnfInstanceDescription: n.description,
+	})
+	if err != nil {
+		glog.Errorf("Failed create instance information %v", err)
+		return err
+	}
+
+	var flavorName = n.flavorName
+	if len(vnfd.Vnf.Properties.FlavourId) > 0 {
+		flavorName = vnfd.Vnf.Properties.FlavourId
+	}
+
+	for _, vdu := range vnfd.Vdus {
+		var req = request.InstantiateVnfRequest{
+			FlavourID: flavorName,
+			VimConnectionInfo: []request.VimConInfo{
+				{
+					ID:      cloud.VimID,
+					VimType: "",
+					Extra: request.PoolExtra{
+						NodePoolId: pool.Id,
+					},
+				},
+			},
+			AdditionalVduParams: request.AdditionalParams{
+				VduParams: []request.VduParam{{
+					Namespace: n.namespace,
+					RepoURL:   n.repo,
+					Username:  linkedRepos.AccessInfo.Username,
+					Password:  linkedRepos.AccessInfo.Password,
+					VduName:   vdu.VduId,
+				}},
+				DisableGrant:        n.disableGrant,
+				IgnoreGrantFailure:  n.ignoreGrantFailure,
+				DisableAutoRollback: n.disableAutoRollback,
+			},
+		}
+		glog.Infof("Instantiating %v", vnfLcm.Id)
+		err := a.rest.CnfInstantiate(vnfLcm.Id, req)
+		if err != nil {
+			glog.Errorf("Failed create cnf instance information %v", err)
+			return err
+		}
+	}
+
+	return nil
 }

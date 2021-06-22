@@ -67,6 +67,9 @@ const (
 	// ConfigNodePool default node pool name used for placement
 	ConfigNodePool = "defaultNodePool"
 
+	// ConfigRepoName default repo name
+	ConfigRepoName = "defaultRepoName"
+
 	// ConfigDefaultCloud default target cloud
 	ConfigDefaultCloud = "defaultCloud"
 
@@ -186,8 +189,11 @@ type TcaCtl struct {
 	// DefaultCloudName default cloud name tool will use
 	DefaultCloudName string
 
-	// DefaultNodeName node pool tool will use.
-	DefaultNodeName string
+	// DefaultNodePoolName node pool tool will use.
+	DefaultNodePoolName string
+
+	// DefaultRepoName default repo name
+	DefaultRepoName string
 
 	// IsColorTerm color or not term
 	IsColorTerm bool

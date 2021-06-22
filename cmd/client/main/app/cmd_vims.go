@@ -72,7 +72,10 @@ func (ctl *TcaCtl) CmdDescribeVim() *cobra.Command {
 		Aliases: []string{"vims"},
 		Short:   "Command retrieves a vim-cloud provider information.",
 		Long: templates.LongDesc(`
-									Command retrieves a list of vim templates.`),
+
+Command retrieves a list of vim templates.
+
+`),
 		Example: " - tcactl describe vim vmware_FB40D3DE2967483FBF9033B451DC7571",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

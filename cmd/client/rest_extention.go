@@ -25,7 +25,7 @@ import (
 	"net/http"
 )
 
-// ExtensionQuery
+// ExtensionQuery - query for all extension api
 func (c *RestClient) ExtensionQuery() (*response.Extensions, error) {
 
 	if c == nil {

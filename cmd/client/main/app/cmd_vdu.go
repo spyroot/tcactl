@@ -37,8 +37,10 @@ func (ctl *TcaCtl) CmdGetVdu() *cobra.Command {
 		Use:   "vdu [package name or id]",
 		Short: "Command retrieves CNF/VNF VDU information.",
 		Long: `
+
 Command retrieves CNF/VNF VDU information. 
 The default output format tabular for detail output -o json`,
+
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
 				return fmt.Errorf("Command Requires a catalog cnf/vnf name or ID. " +

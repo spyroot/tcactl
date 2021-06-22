@@ -1,5 +1,6 @@
 package response
 
+// InfraRequirements csar section
 type InfraRequirements struct {
 	NodeComponents struct {
 		Kernel struct {
@@ -11,22 +12,25 @@ type InfraRequirements struct {
 	}
 }
 
+type ToscaProperties struct {
+	DescriptorId       string             `json:"descriptor_id" yaml:"descriptor_id"`
+	Provider           string             `json:"provider" yaml:"provider"`
+	ProductName        string             `json:"product_name" yaml:"product_name"`
+	Version            string             `json:"version" yaml:"version"`
+	Id                 string             `json:"id" yaml:"id"`
+	SoftwareVersion    string             `json:"software_version" yaml:"software_version"`
+	DescriptorVersion  string             `json:"descriptor_version" yaml:"descriptor_version"`
+	FlavourId          string             `json:"flavour_id" yaml:"flavour_id"`
+	FlavourDescription string             `json:"flavour_description" yaml:"flavour_description"`
+	VnfmInfo           []string           `json:"vnfm_info" yaml:"vnfm_info"`
+	InfraRequirements  *InfraRequirements `json:"infra_requirements,omitempty" yaml:"infra_requirements,omitempty"`
+}
+
+// VduPackage - vdu package
 type VduPackage struct {
 	Description string `json:"description" yaml:"description"`
 	Vnf         struct {
-		Properties struct {
-			DescriptorId       string             `json:"descriptor_id" yaml:"descriptor_id"`
-			Provider           string             `json:"provider" yaml:"provider"`
-			ProductName        string             `json:"product_name" yaml:"product_name"`
-			Version            string             `json:"version" yaml:"version"`
-			Id                 string             `json:"id" yaml:"id"`
-			SoftwareVersion    string             `json:"software_version" yaml:"software_version"`
-			DescriptorVersion  string             `json:"descriptor_version" yaml:"descriptor_version"`
-			FlavourId          string             `json:"flavour_id" yaml:"flavour_id"`
-			FlavourDescription string             `json:"flavour_description" yaml:"flavour_description"`
-			VnfmInfo           []string           `json:"vnfm_info" yaml:"vnfm_info"`
-			InfraRequirements  *InfraRequirements `json:"infra_requirements,omitempty" yaml:"infra_requirements,omitempty"`
-		} `json:"properties" yaml:"properties"`
+		Properties   *ToscaProperties `json:"properties" yaml:"properties"`
 		Requirements struct {
 		} `json:"requirements" yaml:"requirements"`
 		Capabilities struct {

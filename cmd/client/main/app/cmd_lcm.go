@@ -20,12 +20,17 @@ package app
 import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"github.com/spyroot/hestia/cmd/api"
+	"github.com/spyroot/hestia/cmd/client/main/app/templates"
 	"github.com/spyroot/hestia/cmd/client/main/app/ui"
 	"github.com/spyroot/hestia/cmd/client/response"
+	"github.com/spyroot/hestia/cmd/models"
 	"strings"
 )
 
-// CmdGetInstances Get CNF/VNF instances
+// CmdGetInstances Get CNF/VNF active instances
+// instance might be in different state. active define
+// package that instantiate.
 func (ctl *TcaCtl) CmdGetInstances() *cobra.Command {
 
 	var (
@@ -102,4 +107,68 @@ func (ctl *TcaCtl) CmdGetInstances() *cobra.Command {
 		"filter for query example, filter by id --filter \"{eq,id,5c11bd9c-085d-4913-a453-572457ddffe2}\"")
 
 	return cmdCnfInstance
+}
+
+func (ctl *TcaCtl) CmdCreateCnf() *cobra.Command {
+
+	var (
+		//repo  			 string
+		//cloudName        string
+		//clusterName      string
+		//nodePoolName     string
+		namespace        = "default"
+		vimType          = models.VimTypeKubernetes
+		disableGrantFlag bool
+	)
+
+	var cmdCreate = &cobra.Command{
+		Use:   "cnf [catalog name or id and instance name]",
+		Short: "Create a new cnf instance.",
+		Long: templates.LongDesc(`
+
+Command creates a new cnf instance.  By default it uses
+a configuration as default parameter for cloud provider, cluster name,
+node pool.
+
+`),
+		Args: cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			glog.Infof("Using cloud provider %s %s %s %s",
+				ctl.DefaultCloudName,
+				ctl.DefaultClusterName,
+				ctl.DefaultRepoName,
+				ctl.DefaultNodePoolName)
+
+			var newInstanceReq = api.NewInstanceRequestSpec(ctl.DefaultCloudName,
+				ctl.DefaultClusterName, vimType, args[0], ctl.DefaultRepoName, args[0], ctl.DefaultNodePoolName)
+
+			err := ctl.tca.CreateCnfNewInstance(newInstanceReq)
+			if err != nil {
+				return
+			}
+
+		},
+	}
+
+	cmdCreate.Flags().BoolVar(&disableGrantFlag,
+		"disable_grant", true,
+		"disable grant validation")
+
+	//// namespace
+	//cmdCreate.Flags().StringVar(&cloudName,
+	//	"cloud_name", ctl.DefaultCloudName,
+	//	"cloud provider")
+
+	// namespace
+	cmdCreate.Flags().StringVarP(&namespace,
+		"namespace", "n", "default",
+		"cnf namespace")
+
+	//
+	//cmdCreate.Flags().StringVarP(&repo,
+	//	"repo", "r", ctl.DefaultRepoName,
+	//	"cnf repo url")
+
+	return cmdCreate
 }

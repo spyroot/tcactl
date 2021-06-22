@@ -53,7 +53,8 @@ func (c *RestClient) GetClusterTemplates() (*response.ClusterTemplates, error) {
 	return &template, nil
 }
 
-// CreateClusterTemplate - creates cluster template from specs
+// CreateClusterTemplate - creates cluster template from
+// json or yaml specs.
 func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplate) error {
 
 	c.GetClient()

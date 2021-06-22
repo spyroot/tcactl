@@ -20,7 +20,7 @@ package response
 
 import (
 	"fmt"
-	tca2 "github.com/spyroot/hestia/cmd/models"
+	"github.com/spyroot/hestia/cmd/models"
 	"reflect"
 	"strings"
 )
@@ -36,12 +36,6 @@ const (
 	VimLocationCountry TenantCloudFilter = 2
 	// FilterHcxUUID filter by Hcx UUID
 	FilterHcxUUID TenantCloudFilter = 3
-
-	//
-	VimTypeVmware = "VC"
-
-	//
-	VimTypeKubernetes = "kubernetes"
 )
 
 type AuditField struct {
@@ -70,10 +64,10 @@ type TenantsDetails struct {
 	VimURL                        string                  `json:"vimUrl" yaml:"vimUrl"`
 	HcxUUID                       string                  `json:"hcxUUID" yaml:"hcxUUID"`
 	HcxTenantID                   string                  `json:"hcxTenantId" yaml:"hcxTenantId"`
-	Location                      tca2.Location           `json:"location" yaml:"location"`
+	Location                      models.Location         `json:"location" yaml:"location"`
 	VimID                         string                  `json:"vimId" yaml:"vimId"`
 	Audit                         AuditField              `json:"audit" yaml:"audit"`
-	VimConn                       tca2.VimConnection      `json:"connection,omitempty" yaml:"connection"`
+	VimConn                       models.VimConnection    `json:"connection,omitempty" yaml:"connection"`
 	Compatible                    bool                    `json:"compatible" yaml:"compatible"`
 	ID                            string                  `json:"id" yaml:"id"`
 	Name                          string                  `json:"name" yaml:"name"`
@@ -117,7 +111,7 @@ func (t *TenantsDetails) GetField(field string) string {
 
 // IsVMware - return if cloud provider is Vmware
 func (t *TenantsDetails) IsVMware() bool {
-	return t.VimType == VimTypeVmware
+	return t.VimType == models.VimTypeVmware
 }
 
 // GetTenantClouds return list of tenant clouds

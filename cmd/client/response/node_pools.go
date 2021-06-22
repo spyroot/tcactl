@@ -108,7 +108,8 @@ func (n *NodePool) GetIds() []string {
 	return ids
 }
 
-// GetPool - search pool by name or id
+// GetPool - search for particular pool
+// by name or id
 func (n *NodePool) GetPool(q string) (*NodesSpecs, error) {
 
 	if n == nil {

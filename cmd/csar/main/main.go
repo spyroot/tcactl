@@ -136,7 +136,7 @@ func initConfig() {
 	// default Cloud in TCA,  Cluster and node pool
 	tcaCtl.DefaultCloudName = viper.GetString(app.ConfigDefaultCloud)
 	tcaCtl.DefaultClusterName = viper.GetString(app.ConfigDefaultCluster)
-	tcaCtl.DefaultNodeName = viper.GetString(app.ConfigNodePool)
+	tcaCtl.DefaultNodePoolName = viper.GetString(app.ConfigNodePool)
 
 	tcaCtl.Printer = viper.GetString("output")
 	glog.Infof("TCA Base set to %v", viper.GetString(app.ConfigTcaEndpoint))

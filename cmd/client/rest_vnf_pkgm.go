@@ -92,7 +92,9 @@ func (c *RestClient) GetPackageCatalogId(q string) (string, string, error) {
 	return pkgCnf.PID, pkgCnf.VnfdID, nil
 }
 
-// GetVnfPkgm gets VNF/CNF catalog entry
+// GetVnfPkgm gets VNF/CNF catalog entity
+// pkgId is catalog id and filter is optional argument
+// is filter query
 func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPackages, error) {
 
 	c.GetClient()

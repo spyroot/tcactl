@@ -90,9 +90,25 @@ func (ctl *TcaCtl) CmdSaveConfig() *cobra.Command {
 	return _cmd
 }
 
+func (ctl *TcaCtl) CmdCreate() *cobra.Command {
+	// cnf instances
+
+	var cmdCreate = &cobra.Command{
+		Use:   "Create",
+		Short: "Terminate CNF instance",
+		Long:  `Terminate CNF instance, caller need to provide CNF Identifier.`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+		},
+	}
+
+	cmdCreate.AddCommand(ctl.CmdCreateCnf())
+	return cmdCreate
+}
+
 // BuildCmd build all commands and attaches to root cmd
 // in case you need add sub-command you can, add to plugin dir.
-//(TODO) add dynamic loading pluging
+//(TODO) add dynamic loading plugin
 func (ctl *TcaCtl) BuildCmd() {
 
 	var describe = &cobra.Command{

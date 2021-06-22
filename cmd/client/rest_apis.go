@@ -18,18 +18,20 @@
 package client
 
 const (
-	// cluster
+	// TcaInfraCluster api endpoint clusters api.
 	TcaInfraCluster = "/hybridity/api/infra/k8s/cluster"
 
+	// TcaInfraClusters - api particular cluster
 	TcaInfraClusters = "/hybridity/api/infra/k8s/clusters"
 
+	// TcaInfraClusterTask - api cluster task
 	TcaInfraClusterTask = "/hybridity/api/infra/k8s/tasks"
 
 	TcaApiVnfLcmExtensionVnfInstance = "/telco/api/vnflcm/v2/extension/vnf_instances"
 
 	TcaApiVnfLcmVnfInstance = "/telco/api/vnflcm/v2/vnf_instances"
 
-	// extensions
+	// TcaVmwareExtensions extensions api
 	TcaVmwareExtensions = "/hybridity/api/extensions"
 
 	TcaVmwareExtensionsTypes = "/hybridity/api/extensions/types"
@@ -41,12 +43,15 @@ const (
 	// TcaVmwareRepos rest call fo
 	TcaVmwareRepos = "/hybridity/api/repositories"
 
-	//	"/telco/api/vnfpkgm/v2/vnf_packages/22495560-fdd9-4e73-b0b7-774629da2050/package_content"
-	//
-	TcaVmwarePackages = "/telco/api/vnfpkgm/v2/vnf_packages"
 	//
 	TcaVmwarePackagesActionContent = "package_content"
 
-	// TcaVmwareTelcoPackages
+	// TcaVmwareTelcoPackages api endpoint for vnf packages.
 	TcaVmwareTelcoPackages = "/telco/api/vnfpkgm/v2/vnf_packages"
+
+	// TcaVmwareVnflcmInstances api endpoint LCM instances
+	TcaVmwareVnflcmInstances = "/telco/api/vnflcm/v2/vnf_instances"
+
+	//
+	TcaVmwareVnflcmInstance = "/telco/api/vnflcm/v2/vnf_instances/"
 )

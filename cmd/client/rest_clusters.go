@@ -137,12 +137,12 @@ func (c *RestClient) GetClusterNodePools(clusterId string) (*response.NodePool, 
 	return &pools, nil
 }
 
-// GetNamedClusterNodePools method first resolves cluster name and than
-// look up node pool list.
+// GetNamedClusterNodePools method first resolves cluster name
+// and than look up node pool list attached to a given cluster.
 func (c *RestClient) GetNamedClusterNodePools(clusterName string) (*response.NodePool, string, error) {
 
+	// cluster list.
 	cluster, err := c.GetClusters()
-
 	if err != nil || cluster == nil {
 		glog.Errorf("Failed acquire cluster information for %v", clusterName)
 		return nil, "", err

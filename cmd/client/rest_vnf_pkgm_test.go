@@ -30,13 +30,13 @@ func TestRestClient_CreateVnfPkgmVnfd(t *testing.T) {
 
 			_, err := tt.client.GetAuthorization()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			respond, err := tt.client.CreateVnfPkgmVnfd(tt.arg)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -46,7 +46,7 @@ func TestRestClient_CreateVnfPkgmVnfd(t *testing.T) {
 
 			ok, err := tt.client.DeleteVnfPkgmVnfd(respond.Id)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -78,7 +78,7 @@ func TestRestClient_UploadVnfPkgmVnfd(t *testing.T) {
 
 			_, err := tt.client.GetAuthorization()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -114,7 +114,7 @@ func TestRestClient_UploadVnfPkgmVnfd(t *testing.T) {
 
 			//ok, err := tt.client.DeleteVnfPkgmVnfd(respond.Id)
 			//if (err != nil) != tt.wantErr {
-			//	t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+			//	t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 			//	return
 			//}
 			//

@@ -51,26 +51,26 @@ func TestRestClient_GetInfrNetworks(t *testing.T) {
 
 			_, err := tt.client.GetAuthorization()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			tenants, err := tt.client.GetVimTenants()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			for _, details := range tenants.TenantsList {
-				_, err = tt.client.GetInfrNetworks(details.TenantID)
+				_, err = tt.client.GetInfraNetworks(details.TenantID)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("GetInfrNetworks() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 			}
 
 			//if !reflect.DeepEqual(got, tt.want) {
-			//	t.Errorf("GetInfrNetworks() got = %v, want %v", got, tt.want)
+			//	t.Errorf("GetInfraNetworks() got = %v, want %v", got, tt.want)
 			//}
 		})
 	}

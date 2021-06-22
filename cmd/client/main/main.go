@@ -56,6 +56,7 @@ func init() {
 	viper.SetDefault(app.ConfigHarborEndpoint, "repo.vmware.com")
 	viper.SetDefault(app.ConfigHarborUsername, "admin")
 	viper.SetDefault(app.ConfigHarborPassword, "VMware1!")
+	viper.SetDefault(app.ConfigRepoName, "repo.vmware.com")
 
 	cobra.OnInitialize(initConfig)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -79,6 +80,14 @@ func init() {
 		app.ConfigDefaultCluster, "m", "",
 		"Default Tenant Cluster Name.")
 
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultCloudName,
+		app.ConfigRepoName, "z", "",
+		"Default Cloud Provider used by tcactl.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultClusterName,
+		app.ConfigNodePool, "",
+		"Default node pool to use.")
+
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.Harbor,
 		app.ConfigHarborEndpoint, "r", "",
 		"Harbor API end-point url.")
@@ -90,10 +99,6 @@ func init() {
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborPassword,
 		app.ConfigHarborPassword, "",
 		"Harbor password.")
-
-	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultClusterName,
-		app.ConfigNodePool, "",
-		"Default node pool to use.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsColorTerm,
 		app.FlagCliTerm, "t", false, "Disables color output.")
@@ -109,6 +114,7 @@ func init() {
 
 	err = viper.BindPFlag("useViper", tcaCtl.RootCmd.PersistentFlags().Lookup("viper"))
 	io.CheckErr(err)
+
 	err = viper.BindPFlag(app.FlagOutput, tcaCtl.RootCmd.PersistentFlags().Lookup(app.FlagOutput))
 	io.CheckErr(err)
 
@@ -121,13 +127,16 @@ func init() {
 	err = viper.BindPFlag(app.ConfigNodePool, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigNodePool))
 	io.CheckErr(err)
 
+	err = viper.BindPFlag(app.ConfigRepoName, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigRepoName))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigHarborEndpoint, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborEndpoint))
+	io.CheckErr(err)
+
 	err = viper.BindPFlag(app.ConfigHarborUsername, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborUsername))
 	io.CheckErr(err)
 
 	err = viper.BindPFlag(app.ConfigHarborPassword, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborPassword))
-	io.CheckErr(err)
-
-	err = viper.BindPFlag(app.ConfigHarborEndpoint, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborEndpoint))
 	io.CheckErr(err)
 
 	viper.SetDefault("author", "spyroot@gmail.com")
@@ -163,7 +172,7 @@ func initConfig() {
 	// default Cloud in TCA,  Cluster and node pool
 	tcaCtl.DefaultCloudName = viper.GetString(app.ConfigDefaultCloud)
 	tcaCtl.DefaultClusterName = viper.GetString(app.ConfigDefaultCluster)
-	tcaCtl.DefaultNodeName = viper.GetString(app.ConfigNodePool)
+	tcaCtl.DefaultNodePoolName = viper.GetString(app.ConfigNodePool)
 
 	tcaCtl.Harbor = viper.GetString(app.ConfigHarborEndpoint)
 	tcaCtl.HarborUsername = viper.GetString(app.ConfigHarborUsername)
