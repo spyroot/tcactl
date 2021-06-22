@@ -1,8 +1,8 @@
 # tcactl
 
-Tcactl  is both a tool and library for creating automation pipeline for VMware Telco CLoud Automation.
-The main objective command line provide kubectl like interface to register cloud provider,
-create and manage tenant cluster, tenant application.
+Tcactl  is both a tool and library for creating automation pipeline for VMware Telco Cloud Automation.
+The main objective command line provides kubectl like interface to register 
+cloud providers, create and manage tenant clusters, tenant applications.
 
 ## Table of content
 
@@ -10,7 +10,7 @@ Tool provider.
 * Ability to retrieve any object from Telco Cloud Automation (in short TCA)
   via regular tcactl get semantics.
   
-* Each object can described via yaml, json or tabular format.
+* Each object cloud provider, cnf, vnf etc can described via yaml, json or tabular format.
 
 * Ability on connect, delete or update existing cloud registration.
 
@@ -20,6 +20,12 @@ Tool provider.
 
 * Ability to leverage tosca policy to scale, upgrade CNF or VNF.
 
+* tcactl has build in Tosca parser, tool allow you apply transformation 
+  to existing CSAR and upload to a system.
+
+* tcactl resolve most of the name in all artifact. For example instead of using
+  ID and execute multiply command tool allow indicate just name.
+  
 ## Build
 
 ```
@@ -167,3 +173,67 @@ The same command can be executed with -o json or yaml flag to get respected form
       "clusterId": "",
       "clusterUrl": "https://10.241.7.32:6443"
 ```
+
+
+## Template Creation.
+
+* tcactl accept both JSON and Yaml specs.
+
+* All name and symbols resolved before template created.
+
+Example 
+
+Management cluster template.
+
+```
+clusterType: MANAGEMENT
+clusterConfig:
+    kubernetesVersion: v1.20.4+vmware.1
+masterNodes:
+    - cpu: 4
+      memory: 16384
+      name: master
+      networks:
+        - label: MANAGEMENT
+      storage: 50
+      replica: 1
+      labels: []
+      cloneMode: linkedClone
+name: min
+workerNodes:
+    - cpu: 4
+      memory: 131072
+      name: default-pool01
+      networks:
+        - label: MANAGEMENT
+      storage: 80
+      replica: 1
+      labels:
+        - type=pool01
+      cloneMode: linkedClone
+      config:
+        cpuManagerPolicy:
+            type: kubernetes
+            policy: default
+```
+
+After spec create we can create a template.
+
+```bash
+ tcactl create template examples/template_spec_mgmt.yaml
+```
+
+If we need get cluster existing template.
+
+```bash
+tcactl get templates
+Using config file: /Users/spyroot/.tcactl/config.yaml
+ #  ID                                    NAME        TYPE        CNI                        K8S VER.
+ 0  46e2f7c5-1908-4bee-9a58-8808ff57a2e2  management  MANAGEMENT  []                         v1.20.4+vmware.1
+--------------------------------------------------------------------------------------------------------------
+ 1  55e69a3c-d92b-40ca-be51-9c6585b89ad7  min         MANAGEMENT  []                         v1.20.4+vmware.1
+--------------------------------------------------------------------------------------------------------------
+ 2  c3e006c1-e6aa-4591-950b-6f3bedd944d3  myworkload  WORKLOAD    [{multus {}} {calico {}}]  v1.20.4+vmware.1
+```
+
+If we need update we just apply update command.
