@@ -41,7 +41,7 @@ tcactl-windows-amd64
 
 ## Usage.
 
-Main interface provides regular main root menu. 
+Main interface provides regular main root menu command interface.
 
 * Create
 * Delete
@@ -177,7 +177,7 @@ The same command can be executed with -o json or yaml flag to get respected form
 
 ## Template Creation.
 
-* tcactl accept both JSON and Yaml specs.
+* tcactl accept both JSON and Yaml specs for cluster templates and cluster specs.
 
 * All name and symbols resolved before template created.
 
@@ -237,3 +237,66 @@ Using config file: /Users/spyroot/.tcactl/config.yaml
 ```
 
 If we need update we just apply update command.
+
+## Cluster creation.
+
+To create a Kubernetes cluster in TCA, a client first need to create a management cluster.
+For example examples/edge_mgmt_cluster.yaml contains a sample.
+
+* The tcactl accept both json and yaml specs.
+* Client can use a name or UUID.
+
+* For example templateId can be a name that already present in TCA or UUID.
+
+* The id of template can be retrieved via
+
+
+```bash
+tcactl get get templates
+```
+
+```yaml
+name: edge-mgmt-test01
+clusterPassword: VMware1!
+clusterTemplateId: "55e69a3c-d92b-40ca-be51-9c6585b89ad7"
+clusterType: MANAGEMENT
+hcxCloudUrl: https://mytca.my_domain
+endpointIP: 192.168.1.1
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1000-172.16.1.0
+          nameservers:
+            - 192.168.1.1
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+```
+
+* On the top, we indicate cluster type it either Management or Workload.
+
+* hcxCloudUrl - Each TCA can have different cloud endpoint. Each endpoint linked 1:1 via control plan appliance.
+this is how we instruct actual placement of cloud provider. 
+  
