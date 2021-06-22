@@ -27,12 +27,18 @@ import (
 )
 
 const (
+	// apiTenants - list of vim tenant rest call
 	apiTenants = "/hybridity/api/vims/v1/tenants"
-	apiVim     = "/hybridity/api/vims/v1/"
-	///hybridity/api/vims/v1/vmware_FB40D3DE2967483FBF9033B451DC7571/tenants
+
+	// apiVim - attached vim list rest call
+	apiVim = "/hybridity/api/vims/v1/"
+
+	// apiTenantAction query action
+	apiTenantAction = "action=query"
 )
 
-// GetVimTenants return list of cloud provider attached to TCA
+// GetVimTenants return list of all cloud provider attached
+// to TCA
 func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 
 	c.GetClient()
@@ -42,16 +48,17 @@ func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 		return nil, err
 	}
 
+	if c.dumpRespond {
+		fmt.Println(string(resp.Body()))
+	}
+
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
-			return nil, fmt.Errorf(errRes.Message)
-		}
-		return nil, fmt.Errorf("unknown error, status code: %v ", resp.StatusCode())
+		return nil, c.checkError(resp)
 	}
 
 	var tenants response.Tenants
 	if err := json.Unmarshal(resp.Body(), &tenants); err != nil {
+		glog.Error("Failed parse server respond.")
 		return nil, err
 	}
 
@@ -63,9 +70,35 @@ func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 
 	c.GetClient()
 	// format vmware_FB40D3DE2967483FBF9033B451DC7571
-	glog.Infof("Sending request to ", c.BaseURL+apiTenants+"/"+vimId+"/tenants")
-
+	glog.Info("Sending request to ", c.BaseURL+apiTenants+"/"+vimId+"/tenants")
 	resp, err := c.Client.R().Get(c.BaseURL + apiVim + "/" + vimId + "/tenants")
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	fmt.Println(resp.StatusCode())
+
+	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		return nil, c.checkError(resp)
+	}
+
+	var tenants response.TenantSpecs
+	if err := json.Unmarshal(resp.Body(), &tenants); err != nil {
+		glog.Error("Failed parse server respond.")
+		return nil, err
+	}
+
+	return &tenants, nil
+}
+
+// GetTenantsQuery returns list of cloud provider attached to TCA.
+// tenant filter , filter result
+func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tenants, error) {
+
+	c.GetClient()
+	resp, err := c.Client.R().SetBody(f).SetQueryString(apiTenantAction).
+		Post(c.BaseURL + apiTenants)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -75,37 +108,34 @@ func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 		return nil, c.checkError(resp)
 	}
 
-	var tenants response.TenantSpecs
+	var tenants response.Tenants
 	if err := json.Unmarshal(resp.Body(), &tenants); err != nil {
+		glog.Error("Failed parse server respond.")
 		return nil, err
 	}
 
 	return &tenants, nil
 }
 
-// GetTenantsQuery returns list of cloud provider attached to TCA
-func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tenants, error) {
+// DeleteTenant delete tenant cluster
+func (c *RestClient) DeleteTenant(tenantCluster string) (bool, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().SetBody(f).SetQueryString("action=query").
-		Post(c.BaseURL + "/hybridity/api/vims/v1/tenants")
+	resp, err := c.Client.R().Delete(c.BaseURL + "/hybridity/api/vims/v1/tenants/" + tenantCluster)
 	if err != nil {
 		glog.Error(err)
-		return nil, err
+		return false, err
 	}
 
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.NewDecoder(resp.RawResponse.Body).Decode(&errRes); err == nil {
-			return nil, fmt.Errorf(errRes.Message)
-		}
-		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+		return false, c.checkErrors(resp)
 	}
 
 	var tenants response.Tenants
 	if err := json.Unmarshal(resp.Body(), &tenants); err != nil {
-		return nil, err
+		glog.Error("Failed parse server respond.")
+		return false, err
 	}
 
-	return &tenants, nil
+	return resp.StatusCode() == http.StatusOK, nil
 }

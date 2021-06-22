@@ -1,71 +1,188 @@
+// Package main
+// Copyright 2020-2021 Author.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+// Mustafa mbayramo@vmware.com
 package main
 
 import (
-"flag"
-"fmt"
-"os"
+	"flag"
+	"fmt"
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spyroot/hestia/pkg/io"
+	_ "github.com/spyroot/hestia/pkg/io"
 
-"github.com/go-resty/resty/v2"
+	//	pflag "github.com/spf13/pflag"
+	//flag "github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"github.com/spyroot/hestia/cmd/client/main/app"
+	_ "github.com/spyroot/hestia/cmd/client/request"
+	"os"
 )
 
+var (
+	tcaCtl      = app.NewTcaCtl()
+	userLicense string
+)
 
-
-
-// print console usage
-func usage() {
-	_, _ = fmt.Fprintf(os.Stderr, "usage: example -stderrthreshold=[INFO|WARNING|FATAL] -log_dir=[string]\n")
-	flag.PrintDefaults()
-	os.Exit(2)
-}
-
-//Inits logger
+// Inits logger
 func init() {
-	flag.Usage = usage
-	_ = flag.Set("logtostderr", "true")
-	_ = flag.Set("stderrthreshold", "WARNING")
-	_ = flag.Set("v", "2")
-	flag.Parse()
 
+	// builds all command tree
+	tcaCtl.BuildCmd()
+
+	// default values in case we don't have config
+	viper.SetDefault(app.ConfigTcaEndpoint, "https://localhost")
+	viper.SetDefault(app.ConfigTcaUsername, "administrator@vsphere.local")
+	viper.SetDefault(app.ConfigTcaPassword, "VMware1!")
+	viper.SetDefault(app.ConfigDefaultCluster, "default")
+	viper.SetDefault(app.ConfigDefaultCloud, "default")
+	viper.SetDefault(app.ConfigNodePool, "default")
+	viper.SetDefault(app.ConfigStderrThreshold, "INFO")
+	viper.SetDefault(app.ConfigHarborEndpoint, "repo.vmware.com")
+	viper.SetDefault(app.ConfigHarborUsername, "admin")
+	viper.SetDefault(app.ConfigHarborPassword, "VMware1!")
+
+	cobra.OnInitialize(initConfig)
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	//	pflag.Parse()
+	err := flag.CommandLine.Parse([]string{})
+	io.CheckErr(err)
+
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.Printer,
+		app.FlagOutput, "o", "default",
+		"Output format json, yaml. (default console)")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.CfgFile,
+		app.FlagConfig, "c", "",
+		"config file (default is $HOME/.tcacli/config.yaml)")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultCloudName,
+		app.ConfigDefaultCloud, "p", "",
+		"Default Cloud Provider used by tcactl.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultClusterName,
+		app.ConfigDefaultCluster, "m", "",
+		"Default Tenant Cluster Name.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.Harbor,
+		app.ConfigHarborEndpoint, "r", "",
+		"Harbor API end-point url.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborUsername,
+		app.ConfigHarborUsername, "",
+		"Harbor username.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborPassword,
+		app.ConfigHarborPassword, "",
+		"Harbor password.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultClusterName,
+		app.ConfigNodePool, "",
+		"Default node pool to use.")
+
+	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsColorTerm,
+		app.FlagCliTerm, "t", false, "Disables color output.")
+
+	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsWideTerm,
+		app.FlagCliWide, "w", false, "Wide terminal output.")
+
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&userLicense,
+		"license", "l", "", "name of license for the project")
+
+	tcaCtl.RootCmd.PersistentFlags().Bool(
+		"viper", true, "use Viper for configuration")
+
+	err = viper.BindPFlag("useViper", tcaCtl.RootCmd.PersistentFlags().Lookup("viper"))
+	io.CheckErr(err)
+	err = viper.BindPFlag(app.FlagOutput, tcaCtl.RootCmd.PersistentFlags().Lookup(app.FlagOutput))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigDefaultCloud, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigDefaultCloud))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigDefaultCluster, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigDefaultCluster))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigNodePool, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigNodePool))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigHarborUsername, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborUsername))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigHarborPassword, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborPassword))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(app.ConfigHarborEndpoint, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborEndpoint))
+	io.CheckErr(err)
+
+	viper.SetDefault("author", "spyroot@gmail.com")
+	viper.SetDefault("license", "apache")
 }
 
-func Get_app() {
+// initConfig - read tcactl configs
+func initConfig() {
 
-	// Create a resty client
-	client := resty.New()
+	// default values in case we don't have config
+	viper.AutomaticEnv()
 
-	resp, err := client.R().Get("https://tca-vip03.cnfdemo.io/admin/hybridity/api/authz/rbac/privileges")
+	if tcaCtl.CfgFile != "" {
+		viper.SetConfigFile(tcaCtl.CfgFile)
+	} else {
+		// or search in default location.
+		viper.SetConfigName(app.ConfigFile)
+		viper.SetConfigType(app.ConfigFormat)
+		viper.AddConfigPath("$HOME/.tcactl")
+		viper.AddConfigPath("/etc/tcactl/")
+		viper.AddConfigPath(".")
+	}
 
-	fmt.Printf("\nError: %v", err)
-	fmt.Printf("\nResponse Status Code: %v", resp.StatusCode())
-	fmt.Printf("\nResponse Status: %v", resp.Status())
-	fmt.Printf("\nResponse Body: %v", resp)
-	fmt.Printf("\nResponse Time: %v", resp.Time())
-	fmt.Printf("\nResponse Received At: %v", resp.ReceivedAt())
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+
+	// update default after we read
+	tcaCtl.TcaClient.BaseURL = viper.GetString(app.ConfigTcaEndpoint)
+	tcaCtl.TcaClient.Username = viper.GetString(app.ConfigTcaUsername)
+	tcaCtl.TcaClient.Password = viper.GetString(app.ConfigTcaPassword)
+
+	// default Cloud in TCA,  Cluster and node pool
+	tcaCtl.DefaultCloudName = viper.GetString(app.ConfigDefaultCloud)
+	tcaCtl.DefaultClusterName = viper.GetString(app.ConfigDefaultCluster)
+	tcaCtl.DefaultNodeName = viper.GetString(app.ConfigNodePool)
+
+	tcaCtl.Harbor = viper.GetString(app.ConfigHarborEndpoint)
+	tcaCtl.HarborUsername = viper.GetString(app.ConfigHarborUsername)
+	tcaCtl.HarborPassword = viper.GetString(app.ConfigHarborPassword)
+
+	tcaCtl.Printer = viper.GetString("output")
+	glog.Infof("TCA Base set to %v", viper.GetString(app.ConfigTcaEndpoint))
 }
 
-// @title MWC proto API
+// @title VMware TCA CTL proto API
 // @version 1.0
 // @description MWC proto API server.
 // @termsOfService http://swagger.io/terms/
 func main() {
 
-	// default file
-	var configFile = "config.yaml"
-
-	if len(os.Args) > 1 {
-		argList := os.Args[1:]
-		configFile = argList[0]
+	glog.Infof("Using config file %v", tcaCtl.CfgFile)
+	if err := tcaCtl.RootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		glog.Error(err)
+		os.Exit(1)
 	}
-
-	fmt.Println(configFile)
-	Get_app()
-
-	//if callisto, err := server.NewCallisto(configFile); err == nil {
-	//	done := make(chan bool, 1)
-	//	callisto.Run(done)
-	//}
-
-
-
-
 }

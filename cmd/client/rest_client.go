@@ -35,6 +35,14 @@ type ErrorResponse struct {
 	Path    string `json:"path"`
 }
 
+type PackageCreateError struct {
+	Type     string `json:"type"`
+	Title    string `json:"title"`
+	Status   int    `json:"status"`
+	Detail   string `json:"detail"`
+	Instance string `json:"instance"`
+}
+
 type ErrorsResponse struct {
 	ErrorResponses []ErrorResponse `json:"errors"`
 }
@@ -72,11 +80,15 @@ type RestClient struct {
 	Username string
 	// Password tca password
 	Password string
-	IsDebug  bool
+	//
+	IsDebug bool
 	// CertFile path to cert "certs/client.pem"
 	CertFile string
 	// CertKey path to cert key "certs/client.key"
 	CertKey string
+	// dump server respond ( dubug )
+	dumpRespond           bool
+	isBasicAuthentication bool
 }
 
 const (
@@ -135,10 +147,37 @@ func (c *RestClient) GetAuthorization() (bool, error) {
 
 // checkError - check error , log it
 func (c *RestClient) checkError(r *resty.Response) error {
+
+	if r.StatusCode() == http.StatusNotFound {
+		glog.Error("API resource not found")
+		return fmt.Errorf("api resource not found")
+	}
+
 	var errRes ErrorResponse
 	if err := json.Unmarshal(r.Body(), &errRes); err == nil {
 		glog.Errorf("Server return error %s path %s msg %s", errRes.Error, errRes.Path, errRes.Message)
 		return fmt.Errorf("error %s path %s msg %s", errRes.Error, errRes.Path, errRes.Message)
+	} else {
+		glog.Errorf("Failed parse server respond.")
 	}
+
+	return fmt.Errorf("unknown error, status code: %v ", r.StatusCode())
+}
+
+func (c *RestClient) checkErrors(r *resty.Response) error {
+
+	if r.StatusCode() == http.StatusNotFound {
+		glog.Errorf("API resource not found")
+		return fmt.Errorf("api resource not found")
+	}
+
+	var errRes ErrorsResponse
+	if err := json.Unmarshal(r.Body(), &errRes); err == nil {
+		glog.Errorf("Server return error %v", errRes.GetErrors())
+		return fmt.Errorf("error %v", errRes.GetErrors())
+	} else {
+		glog.Errorf("Failed parse server respond.")
+	}
+
 	return fmt.Errorf("unknown error, status code: %v ", r.StatusCode())
 }

@@ -1,4 +1,4 @@
-// Package client
+// Package printer
 // Copyright 2020-2021 Author.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,39 +15,32 @@
 //
 //
 // Mustafa mbayramo@vmware.com
-package client
+package printer
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/golang/glog"
+	"github.com/spyroot/hestia/cmd/client/main/app/ui"
 	"github.com/spyroot/hestia/cmd/client/response"
-	"net/http"
 )
 
-// ExtensionQuery
-func (c *RestClient) ExtensionQuery() (*response.Extensions, error) {
-
-	if c == nil {
-		return nil, fmt.Errorf("uninitialized rest client")
+// VnfPackageFilteredOutput output filter for VnfPackages
+func VnfPackageFilteredOutput(r *response.VnfPackages, style ui.PrinterStyle) {
+	fields := style.GetFields()
+	for _, vnfPackage := range r.Packages {
+		for _, f := range fields {
+			f = vnfPackage.GetField(f)
+			fmt.Println(f)
+		}
 	}
+}
 
-	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + TcaVmwareExtensions)
-	if err != nil {
-		glog.Error(err)
-		return nil, err
+// TenantsFilteredOutput output filter for tenants
+func TenantsFilteredOutput(r *response.Tenants, style ui.PrinterStyle) {
+	fields := style.GetFields()
+	for _, t := range r.TenantsList {
+		for _, f := range fields {
+			f = t.GetField(f)
+			fmt.Println(f)
+		}
 	}
-
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		return nil, c.checkError(resp)
-	}
-
-	var e response.Extensions
-	if err := json.Unmarshal(resp.Body(), &e); err != nil {
-		glog.Error("Failed parse server respond.")
-		return nil, err
-	}
-
-	return &e, nil
 }

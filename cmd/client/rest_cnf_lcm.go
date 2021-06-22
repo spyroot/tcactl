@@ -84,7 +84,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 	}
 	if len(req) == 2 {
 		isArray = false
-		glog.Infof("ID", req[1])
+		glog.Infof("ID %v", req[1])
 		resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + req[1])
 	}
 
@@ -98,7 +98,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
 			return nil, fmt.Errorf(errRes.Detail)
 		}
-		return nil, fmt.Errorf("unknown error, status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unknown error, status code: %d", resp.StatusCode())
 	}
 
 	// for single cnf request, pack return result in array.
@@ -138,10 +138,10 @@ func (c *RestClient) GetRunningVnflcm(req string) (*response.LcmInfo, error) {
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
 		var errRes response.CnfInstancesError
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
-			glog.Error("Server return error %v", errRes.Detail)
+			glog.Errorf("Server return error %v", errRes.Detail)
 			return nil, fmt.Errorf(errRes.Detail)
 		}
-		glog.Error("unknown error, status code: %v", resp.StatusCode(), string(resp.Body()))
+		glog.Errorf("unknown error, status code: %v %v", resp.StatusCode(), string(resp.Body()))
 		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
 	}
 
@@ -173,7 +173,7 @@ func (c *RestClient) CnfScale(scaleUri string) error {
 		if err = json.NewDecoder(resp.RawResponse.Body).Decode(&errRes); err == nil {
 			return fmt.Errorf(errRes.Message)
 		}
-		return fmt.Errorf("unknown error, status code: %d", resp.StatusCode)
+		return fmt.Errorf("unknown error, status code: %d", resp.StatusCode())
 	}
 
 	fmt.Println(resp.StatusCode())
@@ -209,7 +209,7 @@ func (c *RestClient) CnfTerminate(terminateUri string, terminateReq request.Term
 		if err = json.NewDecoder(resp.RawResponse.Body).Decode(&errRes); err == nil {
 			return fmt.Errorf(errRes.Message)
 		}
-		return fmt.Errorf("unknown error, status code: %d", resp.StatusCode)
+		return fmt.Errorf("unknown error, status code: %d", resp.StatusCode())
 	}
 
 	return nil
@@ -237,7 +237,7 @@ func (c *RestClient) CnfRollback(instanceId string) error {
 			glog.Errorf("Server return error %v", errRes.Details)
 			return fmt.Errorf(errRes.Message)
 		}
-		glog.Error("Server return unknown error %v", string(resp.Body()))
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
 		return fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
 	}
 
@@ -267,7 +267,7 @@ func (c *RestClient) CnfVnfInstantiate(req *request.CreateVnfLcm) (*response.VNF
 			glog.Errorf("Server return error %v", errRes.Details)
 			return nil, fmt.Errorf(errRes.Message)
 		}
-		glog.Error("Server return unknown error %v", string(resp.Body()))
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
 		return nil, fmt.Errorf("unknown error, status code: %d", resp.StatusCode())
 	}
 
@@ -303,7 +303,7 @@ func (c *RestClient) CnfInstantiate(instanceId string, req request.InstantiateVn
 			glog.Errorf("Server return error %v", errRes.Details)
 			return fmt.Errorf(errRes.Message)
 		}
-		glog.Error("Server return unknown error %v", string(resp.Body()))
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
 		return fmt.Errorf("unknown error, status code: %v %v", resp.StatusCode(), string(resp.Body()))
 	}
 
