@@ -248,7 +248,8 @@ For example examples/edge_mgmt_cluster.yaml contains a sample.
 
 * For example templateId can be a name that already present in TCA or UUID.
 
-* The id of template can be retrieved via
+* The id of template can be retrieved via tcactl command or you can use a name.
+
 
 
 ```bash
@@ -299,4 +300,328 @@ workerNodes:
 
 * hcxCloudUrl - Each TCA can have different cloud endpoint. Each endpoint linked 1:1 via control plan appliance.
 this is how we instruct actual placement of cloud provider. 
-  
+
+* You need make sure that port-group are correctly mapped to full path as it defined in VC.
+
+* tcactl allows you to get all this via tcactlvi
+
+For example
+
+![img.png](img.png)
+
+or you can get a yaml or json version.
+
+```bash
+tcactl get vim network edge -o yaml
+```
+
+```yaml
+type:
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-106
+      name: sriov-pg
+      dvsName: hub01-sriov
+      fullNetworkPath: /Datacenter/network/sriov-pg
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-44
+      name: mgmt-vlan80.dell.path
+      dvsName: hub-core-mgmt
+      fullNetworkPath: /Datacenter/network/mgmt-vlan80.dell.path
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-45
+      name: vsan.vlan78.dell.path
+      dvsName: hub-core-mgmt
+      fullNetworkPath: /Datacenter/network/vsan.vlan78.dell.path
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-50
+      name: vsan-local
+      dvsName: hub-site01
+      fullNetworkPath: /Datacenter/network/vsan-local
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-6010
+      name: tkg-dhcp-vlan1007-10.241.7.0
+      dvsName: hub-site01
+      fullNetworkPath: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-41
+      name: cellsite-k8s-uplink
+      dvsName: cellsite01-macvlan
+      fullNetworkPath: /Datacenter/network/cellsite-k8s-uplink
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-53
+      name: ptp
+      dvsName: cellsite01-sriov
+      fullNetworkPath: /Datacenter/network/ptp
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+    - status: ACTIVE
+      tenantId: 20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6
+      id: dvportgroup-7012
+      name: tkg-cell-dhcp-vlan1007-10.241.7.0
+      dvsName: cellsite01-macvlan
+      fullNetworkPath: /Datacenter/network/tkg-cell-dhcp-vlan1007-10.241.7.0
+      networkType: vlan
+      isShared: false
+      type: DistributedVirtualPortgroup
+```
+
+### JSON example
+
+```json
+{
+  "networks": [
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-106",
+      "name": "sriov-pg",
+      "dvsName": "hub01-sriov",
+      "fullNetworkPath": "/Datacenter/network/sriov-pg",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-44",
+      "name": "mgmt-vlan80.dell.path",
+      "dvsName": "hub-core-mgmt",
+      "fullNetworkPath": "/Datacenter/network/mgmt-vlan80.dell.path",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-45",
+      "name": "vsan.vlan78.dell.path",
+      "dvsName": "hub-core-mgmt",
+      "fullNetworkPath": "/Datacenter/network/vsan.vlan78.dell.path",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-50",
+      "name": "vsan-local",
+      "dvsName": "hub-site01",
+      "fullNetworkPath": "/Datacenter/network/vsan-local",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-6010",
+      "name": "tkg-dhcp-vlan1007-10.241.7.0",
+      "dvsName": "hub-site01",
+      "fullNetworkPath": "/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-41",
+      "name": "cellsite-k8s-uplink",
+      "dvsName": "cellsite01-macvlan",
+      "fullNetworkPath": "/Datacenter/network/cellsite-k8s-uplink",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-53",
+      "name": "ptp",
+      "dvsName": "cellsite01-sriov",
+      "fullNetworkPath": "/Datacenter/network/ptp",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    },
+    {
+      "status": "ACTIVE",
+      "tenantId": "20210602134140183-1ddd8717-de09-4143-acb5-e51fb372ebf6",
+      "id": "dvportgroup-7012",
+      "name": "tkg-cell-dhcp-vlan1007-10.241.7.0",
+      "dvsName": "cellsite01-macvlan",
+      "fullNetworkPath": "/Datacenter/network/tkg-cell-dhcp-vlan1007-10.241.7.0",
+      "networkType": "vlan",
+      "isShared": false,
+      "type": "DistributedVirtualPortgroup"
+    }
+  ]
+}
+```
+
+
+VIM command provider main interface to get all cloud provider data.
+
+```bash
+
+tcactl get vim
+Usage:
+  tcactl get vim [flags]
+  tcactl get vim [command]
+
+Aliases:
+  vim, vims
+
+Examples:
+ - tcactl describe vim compute my_cloud_provider
+
+Available Commands:
+  compute     Command retrieves a vim information.
+  datastore   Command retrieves a vim information.
+  folders     Command retrieves a VIM folder.
+  networks    Command retrieves a vim networks.
+  resources   Command retrieves a VIM's/Cloud Provider a resource pool.
+  templates   Command retrieves a template VM and path.
+```
+
+### Example if we need get resource pool, datastore
+
+```yaml
+items:
+    - entityid: domain-c8
+      name: hubsite
+      entitytype: cluster
+      numofhosts: 3
+      datastore:
+        - entityid: datastore-32
+          name: datastore28
+          summary:
+            accessible: "true"
+            capacity: 342523641856
+            freespace: 341009498112
+            maintenancemode: normal
+            multiplehostaccess: "false"
+            type: VMFS
+            url: ds:///vmfs/volumes/60254c3d-21a1cf28-7520-e4434bf994b6/
+            uncommitted: 0
+        - entityid: datastore-18
+          name: nfs4
+          summary:
+            accessible: "true"
+            capacity: 417380753408
+            freespace: 370611855360
+            maintenancemode: normal
+            multiplehostaccess: "true"
+            type: NFS41
+            url: ds:///vmfs/volumes/f437382f-13261798-0000-000000000000/
+            uncommitted: 1929089024
+        - entityid: datastore-58
+          name: vsanDatastore
+          summary:
+            accessible: "true"
+            capacity: 5761124007936
+            freespace: 5031765622129
+            maintenancemode: normal
+            multiplehostaccess: "true"
+            type: vsan
+            url: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
+            uncommitted: 1438679728128
+        - entityid: datastore-34
+          name: datastore29
+          summary:
+            accessible: "true"
+            capacity: 342523641856
+            freespace: 341009498112
+            maintenancemode: normal
+            multiplehostaccess: "false"
+            type: VMFS
+            url: ds:///vmfs/volumes/60254cec-cb11aa98-a02e-e4434bf999aa/
+            uncommitted: 0
+        - entityid: datastore-33
+          name: datastore27
+          summary:
+            accessible: "true"
+            capacity: 342523641856
+            freespace: 341009498112
+            maintenancemode: normal
+            multiplehostaccess: "false"
+            type: VMFS
+            url: ds:///vmfs/volumes/60254b1a-6776e274-62c2-e4434bf998de/
+            uncommitted: 0
+      memory: 1648069402624
+      cpu: 280044
+      k8clusterdeployed: 2
+      numk8smgmtclusterdeployed: 1
+      numk8sworkloadclusterdeployed: 1
+    - entityid: domain-c1011
+      name: cellsite02
+      entitytype: cluster
+      numofhosts: 0
+      datastore: []
+      memory: 0
+      cpu: 0
+      k8clusterdeployed: 0
+      numk8smgmtclusterdeployed: 0
+      numk8sworkloadclusterdeployed: 0
+    - entityid: domain-c10
+      name: cellsite01
+      entitytype: cluster
+      numofhosts: 1
+      datastore:
+        - entityid: datastore-17
+          name: datastore26
+          summary:
+            accessible: "true"
+            capacity: 342523641856
+            freespace: 268889489408
+            maintenancemode: normal
+            multiplehostaccess: "false"
+            type: VMFS
+            url: ds:///vmfs/volumes/6025474e-bfbd7598-0c96-e4434bf99392/
+            uncommitted: 246365816354
+        - entityid: datastore-18
+          name: nfs4
+          summary:
+            accessible: "true"
+            capacity: 417380753408
+            freespace: 370611855360
+            maintenancemode: normal
+            multiplehostaccess: "true"
+            type: NFS41
+            url: ds:///vmfs/volumes/f437382f-13261798-0000-000000000000/
+            uncommitted: 1929089024
+      memory: 549356343296
+      cpu: 93348
+      k8clusterdeployed: 0
+      numk8smgmtclusterdeployed: 0
+      numk8sworkloadclusterdeployed: 0
+```
