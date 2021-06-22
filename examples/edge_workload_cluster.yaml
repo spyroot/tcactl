@@ -1,0 +1,65 @@
+---
+name: edge-workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource

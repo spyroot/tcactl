@@ -1,0 +1,83 @@
+{
+  "name": "edge-mgmt-test01",
+  "clusterType": "MANAGEMENT",
+  "clusterTemplateId": "55e69a3c-d92b-40ca-be51-9c6585b89ad7",
+  "hcxCloudUrl": "https://tca-pod03-cp.cnfdemo.io",
+  "vmTemplate": "photon-3-kube-v1.20.4+vmware.1",
+  "endpointIP": "10.241.7.224",
+  "placementParams": [
+    {
+      "type": "Folder",
+      "name": "tkg"
+    },
+    {
+      "type": "Datastore",
+      "name": "vsanDatastore"
+    },
+    {
+      "type": "ResourcePool",
+      "name": "k8s"
+    },
+    {
+      "type": "ClusterComputeResource",
+      "name": "hubsite"
+    }
+  ],
+  "clusterPassword": "VMware1!",
+  "masterNodes": [
+    {
+      "name": "master",
+      "placementParams": [
+        {
+          "type": "ClusterComputeResource",
+          "name": "hubsite"
+        },
+        {
+          "type": "Datastore",
+          "name": "vsanDatastore"
+        },
+        {
+          "type": "ResourcePool",
+          "name": "k8s"
+        }
+      ],
+      "networks": [
+        {
+          "label": "MANAGEMENT",
+          "networkName": "/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0",
+          "nameservers": [
+            "10.246.2.9"
+          ]
+        }
+      ]
+    }
+  ],
+  "workerNodes": [
+    {
+      "name": "default-pool01",
+      "placementParams": [
+        {
+          "type": "ClusterComputeResource",
+          "name": "hubsite"
+        },
+        {
+          "type": "Datastore",
+          "name": "vsanDatastore"
+        },
+        {
+          "type": "ResourcePool",
+          "name": "k8s"
+        }
+      ],
+      "networks": [
+        {
+          "label": "MANAGEMENT",
+          "networkName": "/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0",
+          "nameservers": [
+            "10.246.2.9"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+---
+name: edge-mgmt-test01
+clusterPassword: VMware1!
+clusterTemplateId: "55e69a3c-d92b-40ca-be51-9c6585b89ad7"
+clusterType: MANAGEMENT
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+workerNodes:
+    - name: default-pool01 
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+    - name: tkg
+      type: Folder
+    - name: vsanDatastore
+      type: Datastore
+    - name: k8s
+      type: ResourcePool
+    - name: hubsite
+      type: ClusterComputeResource
