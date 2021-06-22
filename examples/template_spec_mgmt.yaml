@@ -1,0 +1,29 @@
+clusterType: MANAGEMENT
+clusterConfig:
+    kubernetesVersion: v1.20.4+vmware.1
+masterNodes:
+    - cpu: 4
+      memory: 16384
+      name: master
+      networks:
+        - label: MANAGEMENT
+      storage: 50
+      replica: 1
+      labels: []
+      cloneMode: linkedClone
+name: min 
+workerNodes:
+    - cpu: 4 
+      memory: 131072
+      name: default-pool01
+      networks:
+        - label: MANAGEMENT
+      storage: 80
+      replica: 1
+      labels:
+        - type=pool01
+      cloneMode: linkedClone
+      config:
+        cpuManagerPolicy:
+            type: kubernetes
+            policy: default

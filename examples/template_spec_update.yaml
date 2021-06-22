@@ -1,0 +1,50 @@
+clusterType: WORKLOAD
+clusterConfig:
+    cni:
+        - name: multus
+          properties: {}
+        - name: calico
+          properties: {}
+    csi:
+        - name: vsphere-csi
+          properties:
+            name: vsphere-sc
+            isDefault: true
+            timeout: "300"
+        - name: nfs_client
+          properties:
+            name: nfs-client
+            isDefault: false
+            timeout: ""
+    kubernetesVersion: v1.20.4+vmware.1
+    tools:
+        - name: helm
+          version: 2.17.0
+description: ""
+masterNodes:
+    - cpu: 8
+      memory: 16384
+      name: master
+      networks:
+        - label: MANAGEMENT
+      storage: 50
+      replica: 3
+      labels: []
+      cloneMode: linkedClone
+name: test
+id: "22a0c242-7cc2-45ac-aa24-d6ede7447123"
+workerNodes:
+    - cpu: 16
+      memory: 131072
+      name: default-pool01
+      networks:
+        - label: MANAGEMENT
+      storage: 80
+      replica: 1
+      labels:
+        - type=pool01
+      cloneMode: linkedClone
+      config:
+        cpuManagerPolicy:
+            type: kubernetes
+            policy: default
