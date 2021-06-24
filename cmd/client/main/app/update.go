@@ -24,13 +24,6 @@ import (
 	"time"
 )
 
-const (
-	CliBlock       = "block"
-	CliPool        = "pool"
-	CliDisableGran = "grant"
-	CliForce       = "force"
-)
-
 // BlockWaitStateChange blocs main thread of execution and wait specific state to change a state,
 // it busy waiting.
 func (ctl *TcaCtl) BlockWaitStateChange(instanceId string, waitFor string, maxRetry int) error {
