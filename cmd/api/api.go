@@ -137,6 +137,23 @@ func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters
 	return nil, &CloudProviderNotFound{errMsg: cloudName}
 }
 
+//
+func (a *TcaApi) GetCnfs() (*response.CnfsExtended, error) {
+
+	genericRespond, err := a.rest.GetVnflcm()
+	if err != nil {
+		return nil, err
+	}
+
+	// for extension request we route to correct printer
+	cnfs, ok := genericRespond.(*response.CnfsExtended)
+	if ok {
+		return cnfs, nil
+	}
+
+	return nil, err
+}
+
 // GetVimNetworks - return compute cluster attached to vim
 func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error) {
 
@@ -1500,22 +1517,24 @@ func (a *TcaApi) DeleteCnfInstance(instanceName string, vimName string, isForce 
 
 	if isForce && !strings.Contains(instance.Meta.LcmOperation, StateTerminate) {
 
-		fmt.Println("Terminating cnf")
+		fmt.Printf("Terminating cnf instance %s state %s status %s\n",
+			instance.CID, instance.Meta.LcmOperation, instance.Meta.LcmOperationState)
 		err := a.TerminateCnfInstance(instanceName, vimName, true, false)
 		if err != nil {
 			return err
 		}
 
-		// update state
-		instances, ok := _instances.(*response.CnfsExtended)
-		if !ok {
-			return errors.New("wrong instance type")
-		}
-		instance, err = instances.ResolveFromName(instanceName)
+		terminated, err := a.rest.GetRunningVnflcm(instance.CID)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Instance state", instance.Meta.LcmOperation)
+
+		instance.Meta.LcmOperationState = terminated.Metadata.LcmOperationState
+		instance.Meta.LcmOperation = terminated.Metadata.LcmOperation
+
+		fmt.Printf("Instance state %s and operation state, %s\n",
+			terminated.Metadata.LcmOperation,
+			terminated.Metadata.LcmOperationState)
 	}
 
 	if strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
@@ -1683,4 +1702,10 @@ func (a *TcaApi) ResolvePoolName(poolName string, clusterName string) (string, s
 	}
 
 	return pool.Id, clusterId, nil
+}
+
+// GetAuthorization retrieve API key from TCA
+// and update internal state.
+func (a *TcaApi) GetAuthorization() (bool, error) {
+	return a.rest.GetAuthorization()
 }
