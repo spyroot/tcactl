@@ -370,6 +370,7 @@ func NewTcaCtl() *TcaCtl {
 	return &ctl
 }
 
+// Authorize authenticate and obtain a session
 func (ctl *TcaCtl) Authorize() error {
 	ok, err := ctl.TcaClient.GetAuthorization()
 	if err != nil {
@@ -381,7 +382,7 @@ func (ctl *TcaCtl) Authorize() error {
 	return nil
 }
 
-func (ctl *TcaCtl) Authorize2() {
+func (ctl *TcaCtl) BasicAuthentication() {
 	ok, err := ctl.TcaClient.GetAuthorization()
 	io.CheckErr(err)
 	if ok {

@@ -25,11 +25,14 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spyroot/tcactl/pkg/io"
 	_ "github.com/spyroot/tcactl/pkg/io"
+	"net/url"
+	"strings"
 
 	//	pflag "github.com/spf13/pflag"
 	//flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/spyroot/tcactl/cmd/client/main/app"
+
 	_ "github.com/spyroot/tcactl/cmd/client/request"
 	"os"
 )
@@ -165,6 +168,27 @@ func initConfig() {
 	}
 
 	// update default after we read
+	viper.GetString(app.ConfigTcaEndpoint)
+	_, err := url.ParseRequestURI(viper.GetString(app.ConfigTcaEndpoint))
+	if err != nil {
+		io.CheckErr(err)
+	}
+
+	if !strings.HasPrefix(viper.GetString(app.ConfigTcaEndpoint), "https") {
+		io.CheckErr(fmt.Errorf("please indicate https protocol type"))
+	}
+
+	//_, err = url.ParseRequestURI(viper.GetString(app.ConfigHarborEndpoint))
+	//if err != nil {
+	//	io.CheckErr(err)
+	//}
+
+	//
+	//_, err = url.ParseRequestURI(viper.GetString(app.ConfigRepoName))
+	//if err != nil {
+	//	io.CheckErr(err)
+	//}
+
 	tcaCtl.TcaClient.BaseURL = viper.GetString(app.ConfigTcaEndpoint)
 	tcaCtl.TcaClient.Username = viper.GetString(app.ConfigTcaUsername)
 	tcaCtl.TcaClient.Password = viper.GetString(app.ConfigTcaPassword)
@@ -181,6 +205,7 @@ func initConfig() {
 
 	tcaCtl.Printer = viper.GetString("output")
 	glog.Infof("TCA Base set to %v", viper.GetString(app.ConfigTcaEndpoint))
+
 }
 
 // @title VMware TCA CTL proto API

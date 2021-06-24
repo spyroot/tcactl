@@ -98,6 +98,7 @@ const (
 )
 
 // GetAuthorization retrieve API key from TCA
+// and update internal state.
 func (c *RestClient) GetAuthorization() (bool, error) {
 
 	c.Client = resty.New()
@@ -137,12 +138,14 @@ func (c *RestClient) GetAuthorization() (bool, error) {
 	glog.Infof("Response status: %v", resp.Status())
 	glog.Infof("Response time: %v", resp.Time())
 
-	var errRes ErrorResponse
-	if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
-		glog.Errorf("Server return error %s", errRes.Message)
-		return false, fmt.Errorf("error %s", errRes.Message)
-	} else {
-		glog.Errorf("Failed parse server respond.")
+	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		var errRes ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("Server return error %s", errRes.Message)
+			return false, fmt.Errorf("error %s", errRes.Message)
+		} else {
+			glog.Errorf("Failed parse server respond.")
+		}
 	}
 
 	if resp.StatusCode() == http.StatusOK {
