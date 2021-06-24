@@ -143,6 +143,7 @@ func (ctl *TcaCtl) CmdCreateCnf() *cobra.Command {
 		disableAutoRollback bool
 		ignoreGrantFailure  bool
 		isDryRun            bool
+		doBlock             bool
 	)
 
 	var cmdCreate = &cobra.Command{
@@ -191,7 +192,7 @@ node pool.
 			newInstanceReq.SetDisableAutoRollback(disableAutoRollback)
 			newInstanceReq.SetIgnoreGrantFailure(ignoreGrantFailure)
 
-			instance, err := ctl.tca.CreateCnfNewInstance(newInstanceReq, isDryRun)
+			instance, err := ctl.tca.CreateCnfNewInstance(newInstanceReq, isDryRun, doBlock)
 			CheckErrLogError(err)
 
 			if isDryRun == false {
@@ -219,6 +220,10 @@ node pool.
 
 	cmdCreate.Flags().BoolVar(&isDryRun,
 		"dry", false, "dry run will only validate deployment.")
+
+	//
+	cmdCreate.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
+		"Blocks and Pool the operations status.")
 
 	return cmdCreate
 }
@@ -301,7 +306,7 @@ node pool.
 // CmdTerminateInstances command to update CNF state. i.e terminate
 func (ctl *TcaCtl) CmdTerminateInstances() *cobra.Command {
 
-	var doBlock = false
+	var doBlock bool
 
 	var cmdTerminate = &cobra.Command{
 		Use:   "terminate [instance name or id]",
@@ -454,7 +459,7 @@ of instance. --block provides option to block and wait when task finished.
 func (ctl *TcaCtl) CmdDeleteInstances() *cobra.Command {
 
 	var (
-		_isForce = true
+		_isForce bool
 	)
 
 	// cnf instances
@@ -474,7 +479,6 @@ Instance must in current active cluster.
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctl.checkDefaults()
-
 			err := ctl.tca.DeleteCnfInstance(args[0], ctl.DefaultClusterName, _isForce)
 			CheckErrLogError(err)
 

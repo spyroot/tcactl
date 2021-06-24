@@ -1210,7 +1210,7 @@ func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *respon
 
 // CreateCnfNewInstance create a new instance of VNF or CNF.
 // Dry run will validate request but will not create any CNF.
-func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool) (*response.LcmInfo, error) {
+func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBlocked bool) (*response.LcmInfo, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -1340,6 +1340,12 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool) (*resp
 		return nil, err
 	}
 
+	if isBlocked {
+		err := a.BlockWaitStateChange(vnfLcm.Id, StateInstantiate, DefaultMaxRetry, true)
+		if err != nil {
+			return instance, err
+		}
+	}
 	return instance, nil
 }
 
@@ -1492,15 +1498,29 @@ func (a *TcaApi) DeleteCnfInstance(instanceName string, vimName string, isForce 
 		return fmt.Errorf("instance not found in %v cluster", vimName)
 	}
 
+	if isForce && !strings.Contains(instance.Meta.LcmOperation, StateTerminate) {
+
+		fmt.Println("Terminating cnf")
+		err := a.TerminateCnfInstance(instanceName, vimName, true, false)
+		if err != nil {
+			return err
+		}
+
+		// update state
+		instances, ok := _instances.(*response.CnfsExtended)
+		if !ok {
+			return errors.New("wrong instance type")
+		}
+		instance, err = instances.ResolveFromName(instanceName)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Instance state", instance.Meta.LcmOperation)
+	}
+
 	if strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
 		strings.Contains(instance.Meta.LcmOperationState, StateCompleted) {
 		// for force case we terminate and block.
-		if isForce {
-			err := a.TerminateCnfInstance(instanceName, vimName, true, false)
-			if err != nil {
-				return err
-			}
-		}
 		return a.rest.DeleteInstance(instance.CID)
 	}
 

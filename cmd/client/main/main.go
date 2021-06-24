@@ -25,9 +25,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spyroot/tcactl/pkg/io"
 	_ "github.com/spyroot/tcactl/pkg/io"
-	"log"
 	"net/url"
-	"runtime/pprof"
 	"strings"
 
 	//	pflag "github.com/spf13/pflag"
@@ -228,17 +226,6 @@ func initConfig() {
 // @description MWC proto API server.
 // @termsOfService http://swagger.io/terms/
 func main() {
-
-	cpuprofile := "tcactl.prof"
-
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
 
 	glog.Infof("Using config file %v", tcaCtl.CfgFile)
 	if err := tcaCtl.RootCmd.Execute(); err != nil {
