@@ -7,3 +7,4 @@
 /template_spec.yaml
 /template_spec.yml
 /examples/smokeping-cnf.csar.new.csar
+/terraform/examples/.terraform/
