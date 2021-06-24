@@ -100,18 +100,17 @@ For minimum configuration you need set api endpoint,
 username and password.
 
 ```yaml
-defaultcloud: default
-defaultcluster: edge
-defaultnodepool: default
+defaultcloud: edge
 defaultcluster: edge-test01
 defaultnodepool: default-pool01
-defaultreponame: https://my_repo/chartrepo/library
-license: apache
-output: default
+defaultreponame: https://my_repo.io/chartrepo/library
 stderrthreshold: INFO
 tca-endpoint: https://tca.vmware.com
 tca-password: VMware1!
 tca-username: administrator@vsphere.local
+harbor-endpoint: https://myrepo.io
+harbor-username: admin
+harbor-password: mypass
 useviper: true
 ```
 ## Context sub command.
@@ -175,6 +174,7 @@ The same command can be executed with -o json or yaml flag to get respected form
       },
       "clusterId": "",
       "clusterUrl": "https://10.241.7.32:6443"
+
 ```
 
 
