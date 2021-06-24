@@ -126,6 +126,7 @@ func (ctl *TcaCtl) BuildCmd() {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
+				CheckErrLogError(err)
 				return
 			}
 		},
@@ -142,7 +143,7 @@ func (ctl *TcaCtl) BuildCmd() {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
-				return
+				CheckErrLogError(err)
 			}
 		},
 		Args: cobra.MinimumNArgs(1),
@@ -158,7 +159,7 @@ func (ctl *TcaCtl) BuildCmd() {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
-				return
+				CheckErrLogError(err)
 			}
 		},
 		Args: cobra.MinimumNArgs(1),
@@ -174,7 +175,7 @@ func (ctl *TcaCtl) BuildCmd() {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
-				return
+				CheckErrLogError(err)
 			}
 		},
 		Args: cobra.MinimumNArgs(1),

@@ -1492,15 +1492,15 @@ func (a *TcaApi) DeleteCnfInstance(instanceName string, vimName string, isForce 
 		return fmt.Errorf("instance not found in %v cluster", vimName)
 	}
 
-	if isForce {
-		err := a.TerminateCnfInstance(instanceName, vimName, false, false)
-		if err != nil {
-			return err
-		}
-	}
-
 	if strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
 		strings.Contains(instance.Meta.LcmOperationState, StateCompleted) {
+		// for force case we terminate and block.
+		if isForce {
+			err := a.TerminateCnfInstance(instanceName, vimName, true, false)
+			if err != nil {
+				return err
+			}
+		}
 		return a.rest.DeleteInstance(instance.CID)
 	}
 
@@ -1583,7 +1583,7 @@ func (a *TcaApi) CreateCnfInstance(instanceName string, poolName string,
 		FlavourID:           "default",
 		AdditionalVduParams: additionalVduParams,
 		VimConnectionInfo: []request.VimConInfo{
-			request.VimConInfo{
+			{
 				ID:      instance.VimConnectionInfo[0].Id,
 				VimType: "",
 				Extra:   request.PoolExtra{NodePoolId: currentNodePoolId},
@@ -1607,6 +1607,9 @@ func (a *TcaApi) CreateCnfInstance(instanceName string, poolName string,
 }
 
 // BlockWaitStateChange - simple block and pull status
+// instanceId is instance that method will pull and check
+// waitFor is target status method waits.
+// maxRetry a limit.
 func (a *TcaApi) BlockWaitStateChange(instanceId string, waitFor string, maxRetry int, verbose bool) error {
 
 	for i := 1; i < maxRetry; i++ {
@@ -1634,7 +1637,8 @@ func (a *TcaApi) BlockWaitStateChange(instanceId string, waitFor string, maxRetr
 	return nil
 }
 
-// ResolvePoolName - resolve pool name to id in given cluster
+// ResolvePoolName -  method resolves pool name to id  for a provided cluster
+// pool name is named pool and cluster is name or uuid
 func (a *TcaApi) ResolvePoolName(poolName string, clusterName string) (string, string, error) {
 
 	// empty name no ops

@@ -137,6 +137,14 @@ func (c *RestClient) GetAuthorization() (bool, error) {
 	glog.Infof("Response status: %v", resp.Status())
 	glog.Infof("Response time: %v", resp.Time())
 
+	var errRes ErrorResponse
+	if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+		glog.Errorf("Server return error %s", errRes.Message)
+		return false, fmt.Errorf("error %s", errRes.Message)
+	} else {
+		glog.Errorf("Failed parse server respond.")
+	}
+
 	if resp.StatusCode() == http.StatusOK {
 		c.ApiKey = resp.Header().Get(authorizationHeader)
 		return len(c.ApiKey) > 0, nil
@@ -145,7 +153,7 @@ func (c *RestClient) GetAuthorization() (bool, error) {
 	return false, fmt.Errorf("server return %v", resp.StatusCode())
 }
 
-// checkError - check error , log it
+// checkError - check error, log it
 func (c *RestClient) checkError(r *resty.Response) error {
 
 	if r.StatusCode() == http.StatusNotFound {
@@ -164,6 +172,7 @@ func (c *RestClient) checkError(r *resty.Response) error {
 	return fmt.Errorf("unknown error, status code: %v ", r.StatusCode())
 }
 
+// checkErrors - check list of errors.
 func (c *RestClient) checkErrors(r *resty.Response) error {
 
 	if r.StatusCode() == http.StatusNotFound {
