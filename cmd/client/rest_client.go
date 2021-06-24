@@ -92,8 +92,13 @@ type RestClient struct {
 }
 
 const (
-	defaultContentType  = "application/json"
-	uriAuthorize        = "/hybridity/api/sessions"
+	// defaultContentType
+	defaultContentType = "application/json"
+
+	// uriAuthorize
+	uriAuthorize = "/hybridity/api/sessions"
+
+	// authorizationHeader - TCA auth
 	authorizationHeader = "x-hm-authorization"
 )
 

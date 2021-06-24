@@ -25,7 +25,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spyroot/tcactl/pkg/io"
 	_ "github.com/spyroot/tcactl/pkg/io"
+	"log"
 	"net/url"
+	"runtime/pprof"
 	"strings"
 
 	//	pflag "github.com/spf13/pflag"
@@ -56,7 +58,7 @@ func init() {
 	viper.SetDefault(app.ConfigDefaultCloud, "default")
 	viper.SetDefault(app.ConfigNodePool, "default")
 	viper.SetDefault(app.ConfigStderrThreshold, "INFO")
-	viper.SetDefault(app.ConfigHarborEndpoint, "repo.vmware.com")
+	viper.SetDefault(app.ConfigHarborEndpoint, "https://repo.vmware.com")
 	viper.SetDefault(app.ConfigHarborUsername, "admin")
 	viper.SetDefault(app.ConfigHarborPassword, "VMware1!")
 	viper.SetDefault(app.ConfigRepoName, "repo.vmware.com")
@@ -115,25 +117,32 @@ func init() {
 	tcaCtl.RootCmd.PersistentFlags().Bool(
 		"viper", true, "use Viper for configuration")
 
-	err = viper.BindPFlag("useViper", tcaCtl.RootCmd.PersistentFlags().Lookup("viper"))
+	err = viper.BindPFlag("useViper",
+		tcaCtl.RootCmd.PersistentFlags().Lookup("viper"))
 	io.CheckErr(err)
 
-	err = viper.BindPFlag(app.FlagOutput, tcaCtl.RootCmd.PersistentFlags().Lookup(app.FlagOutput))
+	err = viper.BindPFlag(app.FlagOutput,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(app.FlagOutput))
 	io.CheckErr(err)
 
-	err = viper.BindPFlag(app.ConfigDefaultCloud, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigDefaultCloud))
+	err = viper.BindPFlag(app.ConfigDefaultCloud,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigDefaultCloud))
 	io.CheckErr(err)
 
-	err = viper.BindPFlag(app.ConfigDefaultCluster, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigDefaultCluster))
+	err = viper.BindPFlag(app.ConfigDefaultCluster,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigDefaultCluster))
 	io.CheckErr(err)
 
-	err = viper.BindPFlag(app.ConfigNodePool, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigNodePool))
+	err = viper.BindPFlag(app.ConfigNodePool,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigNodePool))
 	io.CheckErr(err)
 
-	err = viper.BindPFlag(app.ConfigRepoName, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigRepoName))
+	err = viper.BindPFlag(app.ConfigRepoName,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigRepoName))
 	io.CheckErr(err)
 
-	err = viper.BindPFlag(app.ConfigHarborEndpoint, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborEndpoint))
+	err = viper.BindPFlag(app.ConfigHarborEndpoint,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborEndpoint))
 	io.CheckErr(err)
 
 	err = viper.BindPFlag(app.ConfigHarborUsername, tcaCtl.RootCmd.PersistentFlags().Lookup(app.ConfigHarborUsername))
@@ -144,6 +153,11 @@ func init() {
 
 	viper.SetDefault("author", "spyroot@gmail.com")
 	viper.SetDefault("license", "apache")
+}
+
+func IsUrl(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
 // initConfig - read tcactl configs
@@ -168,26 +182,27 @@ func initConfig() {
 	}
 
 	// update default after we read
+	glog.Infof("Using tca endpoint %v", viper.GetString(app.ConfigTcaEndpoint))
 	viper.GetString(app.ConfigTcaEndpoint)
-	_, err := url.ParseRequestURI(viper.GetString(app.ConfigTcaEndpoint))
-	if err != nil {
-		io.CheckErr(err)
+	ok := IsUrl(viper.GetString(app.ConfigTcaEndpoint))
+	if !ok {
+		io.CheckErr("Invalid tca url")
 	}
 
 	if !strings.HasPrefix(viper.GetString(app.ConfigTcaEndpoint), "https") {
 		io.CheckErr(fmt.Errorf("please indicate https protocol type"))
 	}
 
-	//_, err = url.ParseRequestURI(viper.GetString(app.ConfigHarborEndpoint))
-	//if err != nil {
-	//	io.CheckErr(err)
-	//}
+	glog.Infof("Using harbor endpoint %v", viper.GetString(app.ConfigHarborEndpoint))
+	ok = IsUrl(viper.GetString(app.ConfigHarborEndpoint))
+	if !ok {
+		io.CheckErr("Invalid harbor url")
+	}
 
-	//
-	//_, err = url.ParseRequestURI(viper.GetString(app.ConfigRepoName))
-	//if err != nil {
-	//	io.CheckErr(err)
-	//}
+	ok = IsUrl(viper.GetString(app.ConfigRepoName))
+	if !ok {
+		io.CheckErr("Invalid repo name")
+	}
 
 	tcaCtl.TcaClient.BaseURL = viper.GetString(app.ConfigTcaEndpoint)
 	tcaCtl.TcaClient.Username = viper.GetString(app.ConfigTcaUsername)
@@ -213,6 +228,17 @@ func initConfig() {
 // @description MWC proto API server.
 // @termsOfService http://swagger.io/terms/
 func main() {
+
+	cpuprofile := "tcactl.prof"
+
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	glog.Infof("Using config file %v", tcaCtl.CfgFile)
 	if err := tcaCtl.RootCmd.Execute(); err != nil {
