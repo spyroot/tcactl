@@ -141,10 +141,12 @@ func (ctl *TcaCtl) BuildCmd() {
 		Short: "Gets object from TCA, cnfi, cnfc etc",
 		Long:  `Gets object from TCA. CNFI is CNFI in the inventory, CNFC Catalog entities.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
 			err := ctl.Authorize()
 			if err != nil {
 				CheckErrLogError(err)
 			}
+
 		},
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
