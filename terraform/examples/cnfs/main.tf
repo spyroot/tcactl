@@ -7,9 +7,9 @@ terraform {
   }
 }
 
-variable "cnf_name" {
+variable "vnf_instance_name" {
   type    = string
-  default = "Vagrante espresso"
+  default = "test cnf"
 }
 
 data "tca_cnfs" "all" {}
@@ -24,6 +24,6 @@ output "cnf" {
   value = {
     for cnf in data.tca_cnfs.all.cnfs:
     cnf.id => cnf
-  //  if cnf.cnf_name == var.vnfinstancename
+    if cnf.vnf_instance_name == var.vnf_instance_name
   }
 }
