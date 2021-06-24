@@ -20,7 +20,7 @@ package response
 
 import (
 	"fmt"
-	"github.com/spyroot/hestia/cmd/models"
+	"github.com/spyroot/tcactl/cmd/models"
 	"reflect"
 	"strings"
 )
@@ -94,7 +94,7 @@ type TenantCloudNotFound struct {
 
 //
 func (m *TenantCloudNotFound) Error() string {
-	return m.errMsg + " tenant cloud not found"
+	return "'" + m.errMsg + "' tenant not found"
 }
 
 // Tenants list of Tenants
@@ -122,7 +122,7 @@ func (t *Tenants) GetTenantClouds(s string, vimType string) (*TenantsDetails, er
 	}
 
 	for _, t := range t.TenantsList {
-		if strings.Contains(t.VimType, vimType) {
+		if strings.Contains(strings.ToLower(t.VimType), vimType) {
 			if strings.Contains(t.VimName, s) || strings.Contains(t.ID, s) {
 				return &t, nil
 			}

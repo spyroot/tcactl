@@ -23,7 +23,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/pkg/io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -188,8 +188,8 @@ func (ctl *TcaCtl) BuildCmd() {
 	// delete root command
 	var cmdDelete = &cobra.Command{
 		Use:     "delete",
-		Short:   "Command deletes object (template,cluster,cnf etc) from tcactl.",
-		Long:    `Command deletes object (template,cluster,cnf etc) from tcactl.`,
+		Short:   "Command deletes object (template,cluster,cnf etc).",
+		Long:    `Command deletes object (template,cluster,cnf etc).`,
 		Aliases: []string{"del"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
@@ -197,8 +197,7 @@ func (ctl *TcaCtl) BuildCmd() {
 				return
 			}
 		},
-		Args: cobra.NoArgs,
-		//Args: cobra.MinimumNArgs(1),
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 		},
 	}
@@ -221,10 +220,8 @@ func (ctl *TcaCtl) BuildCmd() {
 	describe.AddCommand(ctl.CmdDescribeTask())
 
 	// Update sub-commands
-	cmdUpdate.AddCommand(ctl.CmdTerminateInstances())
-	cmdUpdate.AddCommand(ctl.CmdUpdateInstances())
-	cmdUpdate.AddCommand(ctl.CmdRollbackInstances())
 	cmdUpdate.AddCommand(ctl.CmdUpdateClusterTemplates())
+	cmdUpdate.AddCommand(ctl.CmdUpdateInstance())
 
 	// root command
 	ctl.RootCmd.AddCommand(describe,
@@ -259,5 +256,6 @@ func (ctl *TcaCtl) BuildCmd() {
 	cmdDelete.AddCommand(
 		ctl.CmdDeleteClusterTemplates(),
 		ctl.CmdDeleteCluster(),
-		ctl.CmdDeleteTenantCluster())
+		ctl.CmdDeleteTenantCluster(),
+		ctl.CmdDeleteInstances())
 }

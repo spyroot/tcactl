@@ -31,7 +31,7 @@ run:
 
 ## Stop and remove a running container
 docker-run:
-	docker run --rm -it -v "$(GOPATH)":/go -w /go/src/github.com/spyroot/hestia golang:latest go build -o "$(BINARY_UNIX)" -v
+	docker run --rm -it -v "$(GOPATH)":/go -w /go/src/github.com/spyroot/tcactl golang:latest go build -o "$(BINARY_UNIX)" -v
 
 ## Stop and remove a running container
 stop:

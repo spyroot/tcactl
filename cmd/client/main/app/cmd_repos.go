@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
 	"strings"
 )
 

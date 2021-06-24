@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/cmd/models"
+	"github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/models"
 	"net/http"
 )
 
@@ -162,44 +162,6 @@ func (c *RestClient) GetNamedClusterNodePools(clusterName string) (*response.Nod
 	return nodePool, clusterId, nil
 }
 
-// GetClusterNodePool returns k8s node pool detail.
-func (c *RestClient) GetClusterNodePool(clusterId string, nodePoolId string) (*response.NodesSpecs, error) {
-
-	if len(clusterId) == 0 {
-		return nil, fmt.Errorf("cluster id is empty string")
-	}
-
-	if len(nodePoolId) == 0 {
-		return nil, fmt.Errorf("node pool is empty string")
-	}
-
-	c.GetClient()
-	resp, err := c.Client.R().
-		Get(c.BaseURL + TcaInfraCluster + "/" + clusterId + "/nodepool/" + nodePoolId)
-
-	if err != nil {
-		glog.Error(err)
-		return nil, err
-	}
-
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
-			glog.Errorf("server return error %v %v %v", errRes.Details, errRes.Message, string(resp.Body()))
-			return nil, fmt.Errorf("server return error %v", errRes.Message)
-		}
-		glog.Errorf("server return unknown error %v %v", resp.StatusCode(), string(resp.Body()))
-		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
-	}
-
-	var pools response.NodesSpecs
-	if err := json.Unmarshal(resp.Body(), &pools); err != nil {
-		return nil, err
-	}
-
-	return &pools, nil
-}
-
 type TaskNotFound struct {
 	errMsg string
 }
@@ -244,8 +206,6 @@ func (c *RestClient) CreateCluster(spec *request.Cluster) (bool, error) {
 		return false, err
 	}
 
-	fmt.Println(string(resp.Body()))
-
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
 		return false, c.checkErrors(resp)
 	}
@@ -263,8 +223,6 @@ func (c *RestClient) DeleteCluster(clusterId string) (bool, error) {
 		glog.Error(err)
 		return false, err
 	}
-
-	//fmt.Println(resp.Body())
 
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
 		return false, c.checkErrors(resp)

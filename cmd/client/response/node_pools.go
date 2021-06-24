@@ -10,6 +10,11 @@ import (
 // NodePoolFilterType - cnf filter types
 type NodePoolFilterType int32
 
+type NewNodePool struct {
+	Id          string `json:"id"`
+	OperationId string `json:"operationId"`
+}
+
 const (
 	//
 	FilterPoolByID NodePoolFilterType = 0

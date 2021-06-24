@@ -18,15 +18,22 @@
 package app
 
 import (
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/api/kubernetes"
+	"github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/pkg/io"
+	osutil "github.com/spyroot/tcactl/pkg/os"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -396,14 +403,16 @@ func (ctl *TcaCtl) CmdGetClustersList() *cobra.Command {
 	return _cmd
 }
 
-// CmdGetClustersK8SConfig - command return k8s kube config
-// and output to screen.
+// CmdGetClustersK8SConfig retrieve kubeconfig
+// if active flag passed, will serialize to kubeconfig file
+// if file indicated will save to a file
 func (ctl *TcaCtl) CmdGetClustersK8SConfig() *cobra.Command {
 
 	var (
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
-		FileName        string
+		fileName        string
+		activate        bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -422,14 +431,47 @@ func (ctl *TcaCtl) CmdGetClustersK8SConfig() *cobra.Command {
 			CheckErrLogError(err)
 			for _, c := range clusters.Clusters {
 				if strings.Contains(c.ClusterName, args[0]) {
-					fmt.Println(c.KubeConfig)
+					kubeconfig, err := b64.StdEncoding.DecodeString(c.KubeConfig)
+					if err != nil {
+						fmt.Println("Failed decode kubeconfig")
+					}
+
+					if activate {
+						home := osutil.HomeDir()
+						if home == "" {
+							CheckErrLogError(errors.New("can't determine user home dir"))
+						}
+
+						defaultKubeconfig := filepath.Join(home,
+							kubernetes.KUBEDIR, kubernetes.KUBEFILE)
+						f, err := os.OpenFile(defaultKubeconfig,
+							os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+						CheckErrLogError(err)
+
+						defer f.Close()
+						if _, err := f.Write(kubeconfig); err != nil {
+							log.Println(err)
+						}
+						continue
+					}
+
+					if len(fileName) == 0 {
+						fmt.Println(string(kubeconfig))
+						return
+					}
+
+					err = ioutil.WriteFile(fileName, kubeconfig, 0644)
+					CheckErrLogError(err)
 				}
 			}
 		},
 	}
 
-	_cmd.Flags().StringVarP(&FileName,
+	_cmd.Flags().StringVarP(&fileName,
 		"file_name", "f", "", "file to save.")
+
+	_cmd.Flags().BoolVarP(&activate,
+		"activate", "a", false, "set at active context.")
 
 	return _cmd
 }

@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/spyroot/hestia/cmd/csar"
-	testUtil "github.com/spyroot/hestia/pkg/testing"
+	"github.com/spyroot/tcactl/cmd/csar"
+	testUtil "github.com/spyroot/tcactl/pkg/testing"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -70,7 +70,7 @@ func TestRestClient_UploadVnfPkgmVnfd(t *testing.T) {
 			client:   rest,
 			wantErr:  false,
 			arg:      NewPackageUpload(testUtil.RandomString(8)),
-			fileName: "/Users/spyroot/go/src/hestia/tests/smokeping-cnf.csar",
+			fileName: "/Users/spyroot/go/src/tcactl/tests/smokeping-cnf.csar",
 		},
 	}
 	for _, tt := range tests {

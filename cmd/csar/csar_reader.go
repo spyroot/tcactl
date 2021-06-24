@@ -3,8 +3,8 @@ package csar
 import (
 	"archive/zip"
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/models"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/models"
+	"github.com/spyroot/tcactl/pkg/io"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"

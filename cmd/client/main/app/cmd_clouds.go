@@ -20,10 +20,10 @@ package app
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/client/main/app/templates"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/client/main/app/templates"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
 )
 

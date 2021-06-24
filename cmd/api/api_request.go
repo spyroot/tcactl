@@ -25,6 +25,9 @@ type InstanceRequestSpec struct {
 	vimType      string
 	nfdName      string
 	repo         string
+	useAttached  bool
+	repoUsername string
+	repoPassword string
 	instanceName string
 	nodePoolName string
 	namespace    string

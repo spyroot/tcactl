@@ -3,7 +3,7 @@ package response
 import (
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/request"
 	"reflect"
 	"strings"
 )

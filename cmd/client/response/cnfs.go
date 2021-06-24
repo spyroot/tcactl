@@ -38,18 +38,18 @@ const (
 )
 
 type CnfInstancesError struct {
-	Type     string `json:"type"`
-	Title    string `json:"title"`
-	Status   int    `json:"status"`
-	Detail   string `json:"detail"`
-	Instance string `json:"instance"`
+	Type     string `json:"type" yaml:"type"`
+	Title    string `json:"title" yaml:"title"`
+	Status   int    `json:"status" yaml:"status"`
+	Detail   string `json:"detail" yaml:"detail"`
+	Instance string `json:"instance" yaml:"instance"`
 }
 
 type RespondID struct {
-	Timestamp         int `json:"timestamp"`
-	MachineIdentifier int `json:"machineIdentifier"`
-	ProcessIdentifier int `json:"processIdentifier"`
-	Counter           int `json:"counter"`
+	Timestamp         int `json:"timestamp" yaml:"timestamp"`
+	MachineIdentifier int `json:"machineIdentifier" yaml:"machineIdentifier"`
+	ProcessIdentifier int `json:"processIdentifier" yaml:"processIdentifier"`
+	Counter           int `json:"counter" yaml:"counter"`
 }
 
 type InternalManagedBy struct {
@@ -59,48 +59,48 @@ type InternalManagedBy struct {
 
 //CnfMetadata Metadata information attached to respond for cnflcm req
 type CnfMetadata struct {
-	VnfPkgID          string            `json:"vnfPkgId"`
-	VnfCatalogName    string            `json:"vnfCatalogName"`
-	ManagedBy         InternalManagedBy `json:"managedBy"`
-	NfType            string            `json:"nfType"`
-	LcmOperation      string            `json:"lcmOperation"`
-	LcmOperationState string            `json:"lcmOperationState"`
-	IsUsedByNS        string            `json:"isUsedByNS"`
-	AttachedNSCount   string            `json:"attachedNSCount"`
+	VnfPkgID          string            `json:"vnfPkgId" yaml:"vnfPkgId"`
+	VnfCatalogName    string            `json:"vnfCatalogName" yaml:"vnfCatalogName"`
+	ManagedBy         InternalManagedBy `json:"managedBy" yaml:"managedBy"`
+	NfType            string            `json:"nfType" yaml:"nfType"`
+	LcmOperation      string            `json:"lcmOperation" yaml:"lcmOperation"`
+	LcmOperationState string            `json:"lcmOperationState" yaml:"lcmOperationState"`
+	IsUsedByNS        string            `json:"isUsedByNS" yaml:"isUsedByNS"`
+	AttachedNSCount   string            `json:"attachedNSCount" yaml:"attachedNSCount"`
 }
 
 // VimConnectionInfo - Contains extra information including vim id , type
 type VimConnectionInfo struct {
-	Id            string `json:"id"`
-	VimId         string `json:"vimId"`
-	VimType       string `json:"vimType"`
+	Id            string `json:"id" yaml:"id"`
+	VimId         string `json:"vimId" yaml:"vimId"`
+	VimType       string `json:"vimType" yaml:"vimType"`
 	InterfaceInfo struct {
-	} `json:"interfaceInfo"`
+	} `json:"interfaceInfo" yaml:"interfaceInfo"`
 	AccessInfo struct {
-	} `json:"accessInfo"`
+	} `json:"accessInfo" yaml:"accessInfo"`
 	Extra struct {
-		DeploymentProfileId string `json:"deploymentProfileId"`
-		NodeProfileName     string `json:"nodeProfileName"`
-		NodePoolId          string `json:"nodePoolId"`
-		NodePoolName        string `json:"nodePoolName"`
-		VimName             string `json:"vimName"`
-	} `json:"extra"`
+		DeploymentProfileId string `json:"deploymentProfileId" yaml:"deploymentProfileId"`
+		NodeProfileName     string `json:"nodeProfileName" yaml:"nodeProfileName"`
+		NodePoolId          string `json:"nodePoolId" yaml:"nodePoolId"`
+		NodePoolName        string `json:"nodePoolName" yaml:"nodePoolName"`
+		VimName             string `json:"vimName" yaml:"vimName"`
+	} `json:"extra" yaml:"extra"`
 }
 
 // CnfInstantiateEntry VNFD Charts detail
 type CnfInstantiateEntry struct {
-	DispatchType       string `json:"dispatchType"`
-	Namespace          string `json:"namespace"`
-	ChartName          string `json:"chartName"`
-	ChartVersion       string `json:"chartVersion"`
-	RepoURL            string `json:"repoUrl"`
-	Username           string `json:"username"`
-	Password           string `json:"password"`
-	HelmVersion        string `json:"helmVersion"`
-	VduID              string `json:"vduId"`
-	EntityID           string `json:"entityId"`
-	DeploymentName     string `json:"deploymentName"`
-	InstantiationState string `json:"instantiationState"`
+	DispatchType       string `json:"dispatchType" yaml:"dispatch_type"`
+	Namespace          string `json:"namespace" yaml:"namespace"`
+	ChartName          string `json:"chartName" yaml:"chartName"`
+	ChartVersion       string `json:"chartVersion" yaml:"chartVersion"`
+	RepoURL            string `json:"repoUrl" yaml:"repoUrl"`
+	Username           string `json:"username" yaml:"username"`
+	Password           string `json:"password" yaml:"password"`
+	HelmVersion        string `json:"helmVersion" yaml:"helmVersion"`
+	VduID              string `json:"vduId" yaml:"vduId"`
+	EntityID           string `json:"entityId" yaml:"entityId"`
+	DeploymentName     string `json:"deploymentName" yaml:"deploymentName"`
+	InstantiationState string `json:"instantiationState" yaml:"instantiationState"`
 }
 
 // CnfPolicyUri CNF policy URI
@@ -109,57 +109,76 @@ type CnfPolicyUri struct {
 }
 
 type PolicyLinks struct {
-	Self           CnfPolicyUri `json:"self,omitempty"`
-	Indicators     CnfPolicyUri `json:"indicators,omitempty"`
-	Instantiate    CnfPolicyUri `json:"instantiate,omitempty"`
-	Terminate      CnfPolicyUri `json:"terminate,omitempty"`
-	Scale          CnfPolicyUri `json:"scale,omitempty"`
-	ScaleToLevel   CnfPolicyUri `json:"scaleToLevel,omitempty"`
-	Heal           CnfPolicyUri `json:"heal,omitempty"`
-	Update         CnfPolicyUri `json:"update,omitempty"`
-	UpgradePackage CnfPolicyUri `json:"upgrade_package,omitempty"`
-	Upgrade        CnfPolicyUri `json:"upgrade,omitempty"`
-	Reconfigure    CnfPolicyUri `json:"reconfigure,omitempty"`
-	ChangeFlavour  CnfPolicyUri `json:"changeFlavour,omitempty"`
-	Operate        CnfPolicyUri `json:"operate,omitempty"`
-	ChangeExtConn  CnfPolicyUri `json:"changeExtConn,omitempty"`
+	Self           CnfPolicyUri `json:"self,omitempty" yaml:"self"`
+	Indicators     CnfPolicyUri `json:"indicators,omitempty" yaml:"indicators"`
+	Instantiate    CnfPolicyUri `json:"instantiate,omitempty" yaml:"instantiate"`
+	Terminate      CnfPolicyUri `json:"terminate,omitempty" yaml:"terminate"`
+	Scale          CnfPolicyUri `json:"scale,omitempty" yaml:"scale"`
+	ScaleToLevel   CnfPolicyUri `json:"scaleToLevel,omitempty" yaml:"scaleToLevel"`
+	Heal           CnfPolicyUri `json:"heal,omitempty" yaml:"heal"`
+	Update         CnfPolicyUri `json:"update,omitempty" yaml:"update"`
+	UpgradePackage CnfPolicyUri `json:"upgrade_package,omitempty" yaml:"upgrade_package"`
+	Upgrade        CnfPolicyUri `json:"upgrade,omitempty" yaml:"upgrade"`
+	Reconfigure    CnfPolicyUri `json:"reconfigure,omitempty" yaml:"reconfigure"`
+	ChangeFlavour  CnfPolicyUri `json:"changeFlavour,omitempty" yaml:"changeFlavour"`
+	Operate        CnfPolicyUri `json:"operate,omitempty" yaml:"operate"`
+	ChangeExtConn  CnfPolicyUri `json:"changeExtConn,omitempty" yaml:"changeExtConn"`
 }
 
 type CnfLcmExtended struct {
-	RespId                 RespondID                      `json:"_id"`
-	CID                    string                         `json:"id"`
-	VnfInstanceName        string                         `json:"vnfInstanceName"`
-	VnfInstanceDescription string                         `json:"vnfInstanceDescription"`
-	VnfdID                 string                         `json:"vnfdId"`
-	VnfPkgID               string                         `json:"vnfPkgId"`
-	VnfCatalogName         string                         `json:"vnfCatalogName"`
-	VnfProvider            string                         `json:"vnfProvider"`
-	VnfProductName         string                         `json:"vnfProductName"`
-	VnfSoftwareVersion     string                         `json:"vnfSoftwareVersion"`
-	VnfdVersion            string                         `json:"vnfdVersion"`
-	OnboardedVnfPkgInfoID  string                         `json:"onboardedVnfPkgInfoId"`
-	InstantiationState     string                         `json:"instantiationState"`
-	ManagedBy              InternalManagedBy              `json:"managedBy"`
-	NfType                 string                         `json:"nfType"`
-	Links                  PolicyLinks                    `json:"_links"`
-	LastUpdated            time.Time                      `json:"lastUpdated"`
-	LastUpdateEnterprise   string                         `json:"lastUpdateEnterprise"`
-	LastUpdateOrganization string                         `json:"lastUpdateOrganization"`
-	LastUpdateUser         string                         `json:"lastUpdateUser"`
-	CreationDate           time.Time                      `json:"creationDate"`
-	CreationEnterprise     string                         `json:"creationEnterprise"`
-	CreationOrganization   string                         `json:"creationOrganization"`
-	CreationUser           string                         `json:"creationUser"`
-	IsDeleted              bool                           `json:"isDeleted"`
-	VimConnectionInfo      []VimConnectionInfo            `json:"vimConnectionInfo"`
-	LcmOperation           string                         `json:"lcmOperation"`
-	LcmOperationState      string                         `json:"lcmOperationState"`
-	RowType                string                         `json:"rowType"`
-	InstantiatedNfInfo     map[string]CnfInstantiateEntry `json:"instantiatedNfInfo,omitempty"`
-	InstantiatedVnfInfo    map[string]CnfInstantiateEntry `json:"instantiatedVnfInfo,omitempty"`
-	IsUsedByNS             bool                           `json:"isUsedByNS"`
-	AttachedNSCount        int                            `json:"attachedNSCount"`
-	Meta                   CnfMetadata                    `json:"metadata,omitempty"`
+	RespId                 RespondID                      `json:"_id" yaml:"resp_id"`
+	CID                    string                         `json:"id" yaml:"cid"`
+	VnfInstanceName        string                         `json:"vnfInstanceName" yaml:"vnfInstanceName"`
+	VnfInstanceDescription string                         `json:"vnfInstanceDescription" yaml:"vnfInstanceDescription"`
+	VnfdID                 string                         `json:"vnfdId" yaml:"vnfdId"`
+	VnfPkgID               string                         `json:"vnfPkgId" yaml:"vnfPkgId"`
+	VnfCatalogName         string                         `json:"vnfCatalogName" yaml:"vnfCatalogName"`
+	VnfProvider            string                         `json:"vnfProvider" yaml:"vnfProvider"`
+	VnfProductName         string                         `json:"vnfProductName" yaml:"vnfProductName"`
+	VnfSoftwareVersion     string                         `json:"vnfSoftwareVersion" yaml:"vnfSoftwareVersion"`
+	VnfdVersion            string                         `json:"vnfdVersion" yaml:"vnfdVersion"`
+	OnboardedVnfPkgInfoID  string                         `json:"onboardedVnfPkgInfoId" yaml:"onboardedVnfPkgInfoId"`
+	InstantiationState     string                         `json:"instantiationState" yaml:"instantiationState"`
+	ManagedBy              InternalManagedBy              `json:"managedBy" yaml:"managed_by"`
+	NfType                 string                         `json:"nfType" yaml:"nf_type"`
+	Links                  PolicyLinks                    `json:"_links" yaml:"links"`
+	LastUpdated            time.Time                      `json:"lastUpdated" yaml:"lastUpdated"`
+	LastUpdateEnterprise   string                         `json:"lastUpdateEnterprise" yaml:"lastUpdateEnterprise"`
+	LastUpdateOrganization string                         `json:"lastUpdateOrganization" yaml:"lastUpdateOrganization"`
+	LastUpdateUser         string                         `json:"lastUpdateUser" yaml:"lastUpdateUser"`
+	CreationDate           time.Time                      `json:"creationDate" yaml:"creationDate"`
+	CreationEnterprise     string                         `json:"creationEnterprise" yaml:"creationEnterprise"`
+	CreationOrganization   string                         `json:"creationOrganization" yaml:"creationOrganization"`
+	CreationUser           string                         `json:"creationUser" yaml:"creationUser"`
+	IsDeleted              bool                           `json:"isDeleted" yaml:"isDeleted"`
+	VimConnectionInfo      []VimConnectionInfo            `json:"vimConnectionInfo" yaml:"vimConnectionInfo"`
+	LcmOperation           string                         `json:"lcmOperation" yaml:"lcmOperation"`
+	LcmOperationState      string                         `json:"lcmOperationState" yaml:"lcmOperationState"`
+	RowType                string                         `json:"rowType" yaml:"rowType"`
+	InstantiatedNfInfo     map[string]CnfInstantiateEntry `json:"instantiatedNfInfo,omitempty" yaml:"instantiated_nf_info"`
+	InstantiatedVnfInfo    map[string]CnfInstantiateEntry `json:"instantiatedVnfInfo,omitempty" yaml:"instantiated_vnf_info"`
+	IsUsedByNS             bool                           `json:"isUsedByNS" yaml:"isUsedByNS"`
+	AttachedNSCount        int                            `json:"attachedNSCount" yaml:"attachedNSCount"`
+	Meta                   CnfMetadata                    `json:"metadata,omitempty" yaml:"meta"`
+}
+
+func (e *CnfLcmExtended) IsInCluster(vimName string) bool {
+
+	if e == nil {
+		return false
+	}
+
+	if e.VimConnectionInfo == nil {
+		return false
+	}
+
+	for _, info := range e.VimConnectionInfo {
+		if strings.ToLower(info.Extra.VimName) == strings.ToLower(vimName) {
+			return true
+		}
+		fmt.Println(info.Extra.VimName, vimName)
+	}
+	return false
 }
 
 // CnfsExtended - list of CNF LCM respond
@@ -193,6 +212,16 @@ func (c *CnfsExtended) Filter(q CnfFilterType, f func(string) bool) ([]CnfLcmExt
 	return filtered, nil
 }
 
+// CnfNotFound error raised if cnf not found
+type CnfNotFound struct {
+	errMsg string
+}
+
+//
+func (m *CnfNotFound) Error() string {
+	return "cnf '" + m.errMsg + "' not found"
+}
+
 // FindByName - tries to find CNF by product name, id.
 func (c *CnfsExtended) FindByName(s string) (*CnfLcmExtended, error) {
 
@@ -208,10 +237,10 @@ func (c *CnfsExtended) FindByName(s string) (*CnfLcmExtended, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("CNF not found")
+	return nil, &CnfNotFound{s}
 }
 
-// ResolveFromName - tries to find CNF by product name, id.
+// ResolveFromName - tries to find CNF by product name or id.
 func (c *CnfsExtended) ResolveFromName(s string) (*CnfLcmExtended, error) {
 
 	if c == nil {
@@ -225,5 +254,5 @@ func (c *CnfsExtended) ResolveFromName(s string) (*CnfLcmExtended, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("CNF not found")
+	return nil, &CnfNotFound{s}
 }

@@ -2,7 +2,7 @@ package request
 
 import (
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/models"
+	"github.com/spyroot/tcactl/cmd/models"
 )
 
 type ClusterType string

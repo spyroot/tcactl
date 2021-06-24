@@ -19,8 +19,8 @@ package printer
 
 import (
 	"fmt"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/response"
 )
 
 // VnfPackageFilteredOutput output filter for VnfPackages

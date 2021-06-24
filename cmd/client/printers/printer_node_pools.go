@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/pkg/io"
 	"github.com/tidwall/pretty"
 	"os"
 )

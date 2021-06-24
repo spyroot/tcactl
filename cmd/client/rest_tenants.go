@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/response"
 	"net/http"
 )
 

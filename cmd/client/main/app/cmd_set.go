@@ -20,8 +20,8 @@ package app
 import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/spyroot/hestia/cmd/client/main/app/templates"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/client/main/app/templates"
+	"github.com/spyroot/tcactl/pkg/io"
 )
 
 // CmdSetTca - return list of cloud provider attached to TCA

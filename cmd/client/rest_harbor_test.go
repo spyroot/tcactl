@@ -18,7 +18,7 @@
 package client
 
 import (
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/pkg/io"
 	"testing"
 )
 

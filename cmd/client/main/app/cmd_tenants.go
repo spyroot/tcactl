@@ -20,14 +20,14 @@ package app
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/client/main/app/templates"
+	"github.com/spyroot/tcactl/cmd/client/main/app/templates"
 )
 
 // CmdDeleteTenantCluster - Deletes cluster template.
 func (ctl *TcaCtl) CmdDeleteTenantCluster() *cobra.Command {
 
 	var _cmd = &cobra.Command{
-		Use:     "tenant [id or name of tenant cluster]",
+		Use:     "template [id or name of tenant cluster]",
 		Aliases: []string{"templates"},
 		Short:   "Command deletes a tenant cluster.",
 		Long: templates.LongDesc(`

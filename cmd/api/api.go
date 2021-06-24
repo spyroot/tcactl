@@ -23,15 +23,17 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
-	"github.com/spyroot/hestia/cmd/client"
-	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/cmd/csar"
-	"github.com/spyroot/hestia/cmd/models"
+	"github.com/pkg/errors"
+	"github.com/spyroot/tcactl/cmd/client"
+	"github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/csar"
+	"github.com/spyroot/tcactl/cmd/models"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type VmTemplateFilterType string
@@ -152,7 +154,7 @@ func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error)
 		return nil, err
 	}
 
-	glog.Infof("Retrieving network list for cloud provider %v", tenant.HcxUUID, tenant.VimURL)
+	glog.Infof("Retrieving network list for cloud provider uuid %s,  %s", tenant.HcxUUID, tenant.VimURL)
 
 	if !tenant.IsVMware() {
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
@@ -365,7 +367,7 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 		return nil, err
 	}
 
-	glog.Infof("Retrieving network list for cloud provider %v", tenant.HcxUUID, tenant.VimURL)
+	glog.Infof("Retrieving network list for cloud provider uuid %s url %s", tenant.HcxUUID, tenant.VimURL)
 	if len(tenant.HcxUUID) == 0 {
 		return nil, fmt.Errorf("cloud provider is empty")
 	}
@@ -858,7 +860,7 @@ func (a *TcaApi) GetVdu(nfdName string) (*response.VduPackage, error) {
 
 	vnfd, err := a.rest.GetVnfPkgmVnfd(pkgCnf.PID)
 	if err != nil || vnfd == nil {
-		glog.Error("Failed acquire VDU information for %v.", pkgCnf.PID)
+		glog.Errorf("Failed acquire VDU information for %v.", pkgCnf.PID)
 		return nil, err
 	}
 
@@ -1171,7 +1173,7 @@ func (a *TcaApi) CreateNewPackage(
 	}
 
 	if len(respond.Id) == 0 {
-		glog.Errorf("Something is wrong, server must contain package id in respond", err)
+		glog.Error("Something is wrong, server must contain package id in respond")
 		return false, fmt.Errorf("respond doesn't contain package id")
 
 	}
@@ -1207,24 +1209,31 @@ func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *respon
 }
 
 // CreateCnfNewInstance create a new instance of VNF or CNF.
-func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec) error {
+// Dry run will validate request but will not create any CNF.
+func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool) (*response.LcmInfo, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
 
 	tenants, err := a.GetVimTenants()
 	if err != nil {
-		glog.Errorf("Failed acquire cloud tenant, error %v", err)
-		return err
+		glog.Errorf("Failed acquire cloud tenant, error: %v", err)
+		return nil, err
 	}
 
+	glog.Infof("Acquiring cloud provider %s details, type %s", n.cloudName, n.vimType)
 	cloud, err := tenants.GetTenantClouds(n.cloudName, n.vimType)
 	if err != nil {
-		glog.Errorf("Failed acquire cloud provider, error %v", err)
-		return err
+		glog.Errorf("Failed acquire cloud provider details, error: %v", err)
+		return nil, err
 	}
 
+	glog.Infof("Acquiring catalog information for entity %s", n.nfdName)
 	pkg, vnfd, err := a.GetCatalogAndVdu(n.nfdName)
 	if err != nil || vnfd == nil {
 		glog.Errorf("Failed acquire VDU information for %v", n.nfdName)
-		return err
+		return nil, err
 	}
 
 	// get linked repo, if caller provide repo that is not
@@ -1234,41 +1243,53 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec) error {
 		glog.Errorf("Failed acquire linked %v "+
 			"repository to cloud provider %v. Indicate a repo "+
 			"linked to cloud provider.", n.repo, cloud.TenantID)
-		return err
+		return nil, err
 	}
 
 	ext, err := a.rest.ExtensionQuery()
 	if err != nil {
 		glog.Errorf("Failed acquire extension information for %v", err)
-		return err
+		return nil, err
 	}
 
 	linkedRepos, err := ext.FindRepo(reposUuid)
 	if err != nil || linkedRepos == nil {
 		glog.Errorf("Failed acquire extension information for %v", reposUuid)
-		return err
+		return nil, err
 	}
+
+	if linkedRepos.IsEnabled() == false {
+		glog.Errorf("Repository %v is disabled", linkedRepos.Name)
+		return nil, fmt.Errorf("repository %v is disabled", linkedRepos.Name)
+	}
+
+	glog.Infof("Found attached repo %v and status %v", n.repo, linkedRepos.State)
 
 	// resolve nodePools
 	nodePool, _, err := a.rest.GetNamedClusterNodePools(n.clusterName)
 	if err != nil || nodePool == nil {
 		glog.Errorf("Failed acquire clusters node information for cluster %v, error %v", n.clusterName, err)
-		return err
+		return nil, err
 	}
 	pool, err := nodePool.GetPool(n.nodePoolName)
 	if err != nil {
 		glog.Errorf("Failed acquire node pool information for node pool %v, error %v", n.nodePoolName, err)
-		return err
+		return nil, err
 	}
 
-	vnfLcm, err := a.rest.CnfVnfInstantiate(&request.CreateVnfLcm{
+	if isDry == true {
+		return nil, nil
+	}
+
+	vnfLcm, err := a.rest.CnfVnfCreate(&request.CreateVnfLcm{
 		VnfdId:                 pkg.VnfdID,
 		VnfInstanceName:        n.instanceName,
 		VnfInstanceDescription: n.description,
 	})
+
 	if err != nil {
 		glog.Errorf("Failed create instance information %v", err)
-		return err
+		return nil, err
 	}
 
 	var flavorName = n.flavorName
@@ -1277,6 +1298,7 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec) error {
 	}
 
 	for _, vdu := range vnfd.Vdus {
+		glog.Infof("Instantiating vdu %s %s", vdu.VduId, linkedRepos.Name)
 		var req = request.InstantiateVnfRequest{
 			FlavourID: flavorName,
 			VimConnectionInfo: []request.VimConInfo{
@@ -1301,13 +1323,340 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec) error {
 				DisableAutoRollback: n.disableAutoRollback,
 			},
 		}
+
 		glog.Infof("Instantiating %v", vnfLcm.Id)
+
 		err := a.rest.CnfInstantiate(vnfLcm.Id, req)
 		if err != nil {
 			glog.Errorf("Failed create cnf instance information %v", err)
+			return nil, err
+		}
+
+	}
+
+	instance, err := a.rest.GetRunningVnflcm(vnfLcm.Id)
+	if err != nil {
+		glog.Errorf("Failed create cnf instance information %v", err)
+		return nil, err
+	}
+
+	return instance, nil
+}
+
+// CreateNewNodePool create a new instance of VNF or CNF.
+// Dry run will validate request but will not create any CNF.
+func (a *TcaApi) CreateNewNodePool(n *request.NewNodePool, clusterId string, isDry bool) (*response.NewNodePool, error) {
+	return a.rest.CreateNewNodePool(n, clusterId)
+
+}
+
+// CnfReconfigure - reconfigure existing instance
+func (a *TcaApi) CnfReconfigure(instanceName string, valueFile string, vduName string, isDry bool) error {
+
+	if a.rest == nil {
+		return fmt.Errorf("rest interface is nil")
+	}
+
+	_instances, err := a.rest.GetVnflcm()
+	if err != nil {
+		return err
+	}
+
+	// for extension request we route to correct printer
+	instances, ok := _instances.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("wrong instance type")
+	}
+
+	instance, err := instances.ResolveFromName(instanceName)
+	if err != nil {
+		return err
+	}
+
+	vduId := instance.CID
+	chartName := ""
+	for _, vdu := range instance.InstantiatedVnfInfo {
+		if vdu.ChartName == vduName {
+			chartName = vdu.ChartName
+		}
+	}
+
+	if len(chartName) == 0 {
+		return fmt.Errorf("chart name %s not found", vduName)
+	}
+
+	b, err := ioutil.ReadFile(valueFile)
+	if err != nil {
+		glog.Errorf("Failed to read value file.")
+		return err
+	}
+
+	override := b64.StdEncoding.EncodeToString(b)
+	p := request.VduParams{
+		Overrides: override,
+		ChartName: chartName,
+	}
+
+	var newVduParams []request.VduParams
+	newVduParams = append(newVduParams, p)
+
+	req := request.CnfReconfigure{}
+	req.AdditionalParams.VduParams = newVduParams
+	req.AspectId = request.AspectId
+	req.NumberOfSteps = 2
+	req.Type = request.LcmTypeScaleOut
+
+	if isDry {
+		return nil
+	}
+
+	return a.rest.CnfReconfigure(&req, vduId)
+}
+
+// TerminateCnfInstance method terminate cnf instance
+// caller need provider either name or uuid and vimName
+// doBlock block and wait task to finish
+// verbose output status on screen after each pool timer.
+func (a *TcaApi) TerminateCnfInstance(instanceName string, vimName string, doBlock bool, verbose bool) error {
+
+	respond, err := a.rest.GetVnflcm()
+	if err != nil {
+		return err
+	}
+
+	cnfs, ok := respond.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("Received wrong object type")
+	}
+
+	instance, err := cnfs.ResolveFromName(instanceName)
+	if err != nil {
+		return err
+	}
+
+	if instance.IsInCluster(vimName) == false {
+		return fmt.Errorf("instance not found in %v cluster", vimName)
+	}
+
+	glog.Infof("terminating cnfName %v instance ID %v.", instanceName, instance.CID)
+	if strings.Contains(instance.Meta.LcmOperationState, "STARTING") {
+		return fmt.Errorf("'%v' instance ID %v "+
+			"need finish current action", instanceName, instance.CID)
+	}
+
+	if strings.Contains(instance.Meta.LcmOperation, "TERMINATE") &&
+		strings.Contains(instance.Meta.LcmOperationState, "COMPLETED") {
+		return fmt.Errorf("'%v' instance ID %v "+
+			"already terminated", instanceName, instance.CID)
+	}
+
+	if err = a.rest.CnfTerminate(
+		instance.Links.Terminate.Href,
+		request.TerminateVnfRequest{
+			TerminationType:            "GRACEFUL",
+			GracefulTerminationTimeout: 120,
+		}); err != nil {
+		return err
+	}
+
+	if doBlock {
+		err := a.BlockWaitStateChange(instance.CID, "NOT_INSTANTIATED", DefaultMaxRetry, verbose)
+		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// DeleteCnfInstance - deletes instance
+func (a *TcaApi) DeleteCnfInstance(instanceName string, vimName string, isForce bool) error {
+
+	_instances, err := a.rest.GetVnflcm()
+	if err != nil {
+		return err
+	}
+
+	// for extension request we route to correct printer
+	instances, ok := _instances.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("wrong instance type")
+	}
+
+	instance, err := instances.ResolveFromName(instanceName)
+	if err != nil {
+		return err
+	}
+
+	if instance.IsInCluster(vimName) == false {
+		return fmt.Errorf("instance not found in %v cluster", vimName)
+	}
+
+	if isForce {
+		err := a.TerminateCnfInstance(instanceName, vimName, false, false)
+		if err != nil {
+			return err
+		}
+	}
+
+	if strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
+		strings.Contains(instance.Meta.LcmOperationState, StateCompleted) {
+		return a.rest.DeleteInstance(instance.CID)
+	}
+
+	return errors.New("Instance must be terminated before delete")
+}
+
+// CreateCnfInstance - create cnf instance that already
+// in running or termination state.
+// instanceName is instance that state must change
+// poolName is target pool
+// clusterName a cluster that will be used to query and search instance.
+func (a *TcaApi) CreateCnfInstance(instanceName string, poolName string,
+	clusterName string, vimName string, doBlock bool, _disableGrant bool, verbose bool) error {
+
+	// resolve pool id, if client indicated target pool
+	_targetPool := ""
+	var err error
+
+	if len(poolName) > 0 {
+		_targetPool, _, err = a.ResolvePoolName(poolName, clusterName)
+		if err != nil {
+			return err
+		}
+	}
+
+	// get list all all cnfs
+	respond, err := a.rest.GetVnflcm()
+	if err != nil {
+		return err
+	}
+
+	cnfs, ok := respond.(*response.CnfsExtended)
+	if ok != false {
+		return errors.New("Server return wrong type")
+	}
+
+	instance, err := cnfs.ResolveFromName(instanceName)
+	if err != nil {
+		return err
+	}
+
+	if instance.IsInCluster(vimName) == false {
+		return fmt.Errorf("instance not found in %v cluster", vimName)
+	}
+
+	// Check the state
+	glog.Infof("Name %v Instance ID %v State %v", instanceName, instance.CID, instance.LcmOperation)
+	if IsInState(instance.Meta.LcmOperationState, StateStarting) {
+		return fmt.Errorf("instance '%v', uuid '%v' need finish task", instanceName, instance.CID)
+	}
+
+	if IsInState(instance.Meta.LcmOperation, StateInstantiate) &&
+		IsInState(instance.Meta.LcmOperationState, StateCompleted) {
+		return fmt.Errorf("instance '%v', uuid '%v' already instantiated", instanceName, instance.CID)
+	}
+
+	var additionalVduParams = request.AdditionalParams{
+		DisableGrant:        _disableGrant,
+		IgnoreGrantFailure:  false,
+		DisableAutoRollback: false,
+	}
+
+	for _, entry := range instance.InstantiatedNfInfo {
+		additionalVduParams.VduParams = append(additionalVduParams.VduParams, request.VduParam{
+			Namespace: entry.Namespace,
+			RepoURL:   entry.RepoURL,
+			Username:  entry.Username,
+			Password:  entry.Password,
+			VduName:   entry.VduID,
+		})
+	}
+
+	currentNodePoolId := instance.VimConnectionInfo[0].Extra.NodePoolId
+	if len(_targetPool) > 0 {
+		glog.Infof("Updating target kubernetes node pool.")
+		currentNodePoolId = _targetPool
+	}
+
+	var req = request.InstantiateVnfRequest{
+		FlavourID:           "default",
+		AdditionalVduParams: additionalVduParams,
+		VimConnectionInfo: []request.VimConInfo{
+			request.VimConInfo{
+				ID:      instance.VimConnectionInfo[0].Id,
+				VimType: "",
+				Extra:   request.PoolExtra{NodePoolId: currentNodePoolId},
+			},
+		},
+	}
+
+	err = a.rest.CnfInstantiate(instance.CID, req)
+	if err != nil {
+		return err
+	}
+
+	if doBlock {
+		err := a.BlockWaitStateChange(instance.CID, StateInstantiate, DefaultMaxRetry, verbose)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+//
+func (a *TcaApi) BlockWaitStateChange(instanceId string, waitFor string, maxRetry int, verbose bool) error {
+
+	for i := 1; i < maxRetry; i++ {
+		instance, err := a.rest.GetRunningVnflcm(instanceId)
+		if err != nil {
+			return err
+		}
+
+		if verbose {
+			fmt.Printf("Current state %s waiting for %s\n",
+				instance.InstantiationState, waitFor)
+
+			fmt.Printf("Current LCM Operation status %s target state %s\n\n",
+				instance.Metadata.LcmOperationState,
+				instance.Metadata.LcmOperation)
+		}
+
+		if strings.HasPrefix(instance.InstantiationState, waitFor) {
+			break
+		}
+
+		time.Sleep(30 * time.Second)
+	}
+
+	return nil
+}
+
+// ResolvePoolName - resolve pool name to id in given cluster
+func (a *TcaApi) ResolvePoolName(poolName string, clusterName string) (string, string, error) {
+
+	// empty name no ops
+	if len(poolName) == 0 {
+		return poolName, "", nil
+	}
+
+	if len(clusterName) == 0 {
+		return "", "", fmt.Errorf("provide cluster name to resolve pool name")
+	}
+
+	nodePool, clusterId, err := a.rest.GetNamedClusterNodePools(clusterName)
+	if err != nil || nodePool == nil {
+		glog.Errorf("Failed acquire clusters node information %v", err)
+		return poolName, "", err
+	}
+
+	pool, err := nodePool.GetPool(poolName)
+	if err != nil {
+		glog.Errorf("Failed acquire node pool information %v", err)
+		return poolName, "", err
+	}
+
+	return pool.Id, clusterId, nil
 }

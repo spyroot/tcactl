@@ -23,14 +23,14 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spyroot/hestia/pkg/io"
-	_ "github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/pkg/io"
+	_ "github.com/spyroot/tcactl/pkg/io"
 
 	//	pflag "github.com/spf13/pflag"
 	//flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/spyroot/hestia/cmd/client/main/app"
-	_ "github.com/spyroot/hestia/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/main/app"
+	_ "github.com/spyroot/tcactl/cmd/client/request"
 	"os"
 )
 
@@ -80,11 +80,11 @@ func init() {
 		app.ConfigDefaultCluster, "m", "",
 		"Default Tenant Cluster Name.")
 
-	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultCloudName,
+	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultRepoName,
 		app.ConfigRepoName, "z", "",
 		"Default Cloud Provider used by tcactl.")
 
-	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultClusterName,
+	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultNodePoolName,
 		app.ConfigNodePool, "",
 		"Default node pool to use.")
 
@@ -173,6 +173,7 @@ func initConfig() {
 	tcaCtl.DefaultCloudName = viper.GetString(app.ConfigDefaultCloud)
 	tcaCtl.DefaultClusterName = viper.GetString(app.ConfigDefaultCluster)
 	tcaCtl.DefaultNodePoolName = viper.GetString(app.ConfigNodePool)
+	tcaCtl.DefaultRepoName = viper.GetString(app.ConfigRepoName)
 
 	tcaCtl.Harbor = viper.GetString(app.ConfigHarborEndpoint)
 	tcaCtl.HarborUsername = viper.GetString(app.ConfigHarborUsername)

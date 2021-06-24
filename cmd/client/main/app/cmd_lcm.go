@@ -18,15 +18,43 @@
 package app
 
 import (
+	"fmt"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/api"
-	"github.com/spyroot/hestia/cmd/client/main/app/templates"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/cmd/models"
+	"github.com/spyroot/tcactl/cmd/api"
+	"github.com/spyroot/tcactl/cmd/client/main/app/templates"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/models"
 	"strings"
 )
+
+// CmdUpdateInstance root command
+func (ctl *TcaCtl) CmdUpdateInstance() *cobra.Command {
+
+	var cmdUpdateCnf = &cobra.Command{
+		Use:   "cnf",
+		Short: "Update , reconfigure scale, existing cnf instance state.",
+		Long: templates.LongDesc(`
+
+Command creates a new cnf instance.  By default it uses
+a configuration as default parameter for cloud provider, cluster name,
+node pool.
+
+`),
+		Args: cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+
+		},
+	}
+
+	cmdUpdateCnf.AddCommand(ctl.CmdTerminateInstances())
+	cmdUpdateCnf.AddCommand(ctl.CmdUpdateInstances())
+	cmdUpdateCnf.AddCommand(ctl.CmdRollbackInstances())
+	cmdUpdateCnf.AddCommand(ctl.CmdReconfigure())
+
+	return cmdUpdateCnf
+}
 
 // CmdGetInstances Get CNF/VNF active instances
 // instance might be in different state. active define
@@ -73,10 +101,7 @@ func (ctl *TcaCtl) CmdGetInstances() *cobra.Command {
 			} else {
 				genericRespond, err = ctl.TcaClient.GetVnflcm(_defaultFilter)
 			}
-			if err != nil {
-				glog.Error(err)
-				return
-			}
+			CheckErrLogError(err)
 
 			// for extension request we route to correct printer
 			cnfsExt, ok := genericRespond.(*response.CnfsExtended)
@@ -112,17 +137,16 @@ func (ctl *TcaCtl) CmdGetInstances() *cobra.Command {
 func (ctl *TcaCtl) CmdCreateCnf() *cobra.Command {
 
 	var (
-		//repo  			 string
-		//cloudName        string
-		//clusterName      string
-		//nodePoolName     string
-		namespace        = "default"
-		vimType          = models.VimTypeKubernetes
-		disableGrantFlag bool
+		vimType             = models.VimTypeKubernetes
+		namespace           string
+		disableGrantFlag    bool
+		disableAutoRollback bool
+		ignoreGrantFailure  bool
+		isDryRun            bool
 	)
 
 	var cmdCreate = &cobra.Command{
-		Use:   "cnf [catalog name or id and instance name]",
+		Use:   "cnf [catalog name or catalog id, and instance name]",
 		Short: "Create a new cnf instance.",
 		Long: templates.LongDesc(`
 
@@ -131,44 +155,349 @@ a configuration as default parameter for cloud provider, cluster name,
 node pool.
 
 `),
+		Example: "\tcreate cnf myapp myapp-instance1\n" +
+			"\tcreate cnf myapp myapp-instance2 --disable_grant\n " +
+			"\tcreate cnf myapp myapp-instance3 --disable_grant --dry",
 		Args: cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 
-			glog.Infof("Using cloud provider %s %s %s %s",
+			glog.Infof("Using cloud provider name='%s' cluster name='%s' repo name='%s' node pool name='%s'",
 				ctl.DefaultCloudName,
 				ctl.DefaultClusterName,
 				ctl.DefaultRepoName,
 				ctl.DefaultNodePoolName)
 
-			var newInstanceReq = api.NewInstanceRequestSpec(ctl.DefaultCloudName,
-				ctl.DefaultClusterName, vimType, args[0], ctl.DefaultRepoName, args[0], ctl.DefaultNodePoolName)
-
-			err := ctl.tca.CreateCnfNewInstance(newInstanceReq)
-			if err != nil {
+			if len(ctl.DefaultClusterName) == 0 {
+				fmt.Println("Please indicate cloud provider, default is empty.")
+				return
+			}
+			if len(ctl.DefaultClusterName) == 0 {
+				fmt.Println("Please indicate cluster name, default is empty.")
+				return
+			}
+			if len(ctl.DefaultRepoName) == 0 {
+				fmt.Println("Please indicate repository, default is empty.")
+				return
+			}
+			if len(ctl.DefaultNodePoolName) == 0 {
+				fmt.Println("Please indicate node pool, default is empty.")
 				return
 			}
 
+			var newInstanceReq = api.NewInstanceRequestSpec(ctl.DefaultCloudName,
+				ctl.DefaultClusterName, vimType, args[0], ctl.DefaultRepoName, args[1], ctl.DefaultNodePoolName)
+
+			newInstanceReq.SetDisableGrant(disableGrantFlag)
+			newInstanceReq.SetDisableAutoRollback(disableAutoRollback)
+			newInstanceReq.SetIgnoreGrantFailure(ignoreGrantFailure)
+
+			instance, err := ctl.tca.CreateCnfNewInstance(newInstanceReq, isDryRun)
+			CheckErrLogError(err)
+
+			if isDryRun == false {
+				fmt.Printf("Instance %s created.", instance.Id)
+			}
 		},
 	}
 
 	cmdCreate.Flags().BoolVar(&disableGrantFlag,
-		"disable_grant", true,
-		"disable grant validation")
+		"disable_grant", false,
+		"disables grant validation.")
 
-	//// namespace
-	//cmdCreate.Flags().StringVar(&cloudName,
-	//	"cloud_name", ctl.DefaultCloudName,
-	//	"cloud provider")
+	cmdCreate.Flags().BoolVar(&disableAutoRollback,
+		"rollback", false,
+		"disables auto Rollback.")
+
+	cmdCreate.Flags().BoolVar(&ignoreGrantFailure,
+		"ignore_failure", false,
+		"disable grant failure.")
 
 	// namespace
 	cmdCreate.Flags().StringVarP(&namespace,
 		"namespace", "n", "default",
 		"cnf namespace")
 
-	//
-	//cmdCreate.Flags().StringVarP(&repo,
-	//	"repo", "r", ctl.DefaultRepoName,
-	//	"cnf repo url")
+	cmdCreate.Flags().BoolVar(&isDryRun,
+		"dry", false, "dry run will only validate deployment.")
 
 	return cmdCreate
+}
+
+//
+func (ctl *TcaCtl) CmdReconfigure() *cobra.Command {
+
+	var (
+		namespace           string
+		disableGrantFlag    bool
+		disableAutoRollback bool
+		ignoreGrantFailure  bool
+		isDryRun            bool
+	)
+
+	var cmdCreate = &cobra.Command{
+		Use:   "reconfigure [instance name, vdu name, values.yaml]",
+		Short: "Reconfigure cnf instance.",
+		Long: templates.LongDesc(`
+
+Command creates a new cnf instance.  By default it uses
+a configuration as default parameter for cloud provider, cluster name,
+node pool.
+
+`),
+		Args: cobra.MinimumNArgs(3),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			glog.Infof("Using cloud provider name='%s' cluster name='%s' repo name='%s' node pool name='%s'",
+				ctl.DefaultCloudName,
+				ctl.DefaultClusterName,
+				ctl.DefaultRepoName,
+				ctl.DefaultNodePoolName)
+
+			if len(ctl.DefaultClusterName) == 0 {
+				fmt.Println("Please indicate cloud provider, default is empty.")
+				return
+			}
+			if len(ctl.DefaultClusterName) == 0 {
+				fmt.Println("Please indicate cluster name, default is empty.")
+				return
+			}
+			if len(ctl.DefaultRepoName) == 0 {
+				fmt.Println("Please indicate repository, default is empty.")
+				return
+			}
+			if len(ctl.DefaultNodePoolName) == 0 {
+				fmt.Println("Please indicate node pool, default is empty.")
+				return
+			}
+
+			err := ctl.tca.CnfReconfigure(args[0], args[1], args[2], isDryRun)
+			CheckErrLogError(err)
+		},
+	}
+
+	cmdCreate.Flags().BoolVar(&disableGrantFlag,
+		"disable_grant", false,
+		"disable grant validation.")
+
+	cmdCreate.Flags().BoolVar(&disableAutoRollback,
+		"rollback", false,
+		"disables auto Rollback.")
+
+	cmdCreate.Flags().BoolVar(&ignoreGrantFailure,
+		"ignore_failure", false,
+		"disable grant failure.")
+
+	// namespace
+	cmdCreate.Flags().StringVarP(&namespace,
+		"namespace", "n", "default",
+		"cnf namespace.")
+
+	cmdCreate.Flags().BoolVar(&isDryRun,
+		"dry", false, "dry run will only validate deployment.")
+
+	return cmdCreate
+}
+
+// CmdTerminateInstances command to update CNF state. i.e terminate
+func (ctl *TcaCtl) CmdTerminateInstances() *cobra.Command {
+
+	var doBlock = false
+
+	var cmdTerminate = &cobra.Command{
+		Use:   "terminate [instance name or id]",
+		Short: "Terminates CNF or VNF instance",
+		Long: templates.LongDesc(`
+
+Terminate CNF or VNF instance, client must instance identifier or name.
+
+`),
+		Aliases: []string{"down"},
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			doBlock, err := cmd.Flags().GetBool(CliBlock)
+			CheckErrLogError(err)
+
+			ctl.checkDefaults()
+			err = ctl.tca.TerminateCnfInstance(args[0], ctl.DefaultClusterName, doBlock, true)
+			CheckErrLogError(err)
+
+			fmt.Println("Successfully updated state.")
+		},
+	}
+
+	//
+	cmdTerminate.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
+		"Blocks and Pool the operations status.")
+
+	return cmdTerminate
+}
+
+// CmdRollbackInstances command to update CNF state. i.e terminate
+func (ctl *TcaCtl) CmdRollbackInstances() *cobra.Command {
+	// cnf instances
+
+	var CnfId string
+	var CnfName string
+
+	var cmdTerminate = &cobra.Command{
+		Use:   "rollback [instance name or id]",
+		Short: "Rollback CNF instance",
+		Long:  `Terminate CNF instance, caller need to provide CNF Identifier.`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			ctl.checkDefaults()
+
+			respond, err := ctl.TcaClient.GetVnflcm()
+			CheckErrLogError(err)
+			cnfs, ok := respond.(response.CnfsExtended)
+			if !ok {
+				return
+			}
+
+			if len(args) == 0 {
+				return
+			}
+
+			var cnfName = args[0]
+			for _, instance := range cnfs.CnfLcms {
+				if strings.Contains(instance.VnfInstanceName, cnfName) {
+					glog.Infof("Rolling back cnfName %v instance ID %v.", cnfName, instance.CID)
+					if strings.Contains(instance.Meta.LcmOperationState, "FAILED_TEMP") {
+						err = ctl.TcaClient.CnfRollback(instance.CID)
+						if err == nil {
+							glog.Infof("Instance roll backed.")
+						} else {
+							glog.Error("Failed rollback %v", err)
+						}
+					}
+				}
+			}
+
+			fmt.Println("Successfully updated state.")
+		},
+	}
+
+	cmdTerminate.Flags().StringVarP(&CnfId, "cnf_id", "i", "",
+		"cnf running instance id")
+	cmdTerminate.Flags().StringVarP(&CnfName, "cnf_name", "n", "",
+		"cnf running instance name")
+	return cmdTerminate
+}
+
+// CmdUpdateInstances Update state of instance
+// if instance terminated , instantiate in same environment or update environment
+// for example change VIM or Node Pool.
+func (ctl *TcaCtl) CmdUpdateInstances() *cobra.Command {
+
+	var (
+		_disableGrant = true
+		_doBlock      = false
+		_targetPool   = ""
+	)
+
+	// cnf instances
+	var updateInstance = &cobra.Command{
+		Use:   "instantiate [instance name or id]",
+		Short: "Updates CNF or VNF instance state.",
+		Long: templates.LongDesc(`
+
+Updates CNF or VNF instance state, need to provide ID or Name
+of instance. --block provides option to block and wait when task finished.
+
+`),
+		Example: "tcactl update cnf up testapp --stderrthreshold INFO --block",
+		Aliases: []string{"up"},
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			ctl.checkDefaults()
+
+			// block or not call
+			_doBlock, err := cmd.Flags().GetBool(CliBlock)
+			CheckErrLogError(err)
+			// disable grant validation or not
+			_disableGrant, err := cmd.Flags().GetBool(CliDisableGran)
+			CheckErrLogError(err)
+			// resolve pool id, if client indicated target pool
+			poolName := cmd.Flags().Lookup(CliPool)
+
+			err = ctl.tca.CreateCnfInstance(args[0], poolName.Value.String(),
+				ctl.DefaultClusterName, ctl.DefaultClusterName, _doBlock, _disableGrant, true)
+
+			CheckErrLogError(err)
+
+			fmt.Println("Successfully updated state.")
+		},
+	}
+
+	// blocking flag
+	updateInstance.Flags().BoolVarP(&_doBlock, CliBlock, "b", false,
+		"Blocks and Pool the operations status.")
+
+	// node pool flag
+	updateInstance.Flags().StringVar(&_targetPool, CliPool, "",
+		"Updates kubernetes node pool, note it will use same kubernetes cluster, "+
+			"in case you need swap cloud, you need indicate explicitly,")
+
+	// grand disable flag
+	updateInstance.Flags().BoolVar(&_disableGrant, CliDisableGran, false,
+		"Disable Helm Grant validation")
+
+	return updateInstance
+}
+
+// CmdDeleteInstances delete instance
+func (ctl *TcaCtl) CmdDeleteInstances() *cobra.Command {
+
+	var (
+		_isForce = true
+	)
+
+	// cnf instances
+	var updateInstance = &cobra.Command{
+		Use:   "cnf [instance name or id]",
+		Short: "Deletes CNF or VNF instance state.",
+		Long: templates.LongDesc(`
+
+Deletes CNF or VNF instance, client must provide ID or Name of the instance.
+Instance must in current active cluster.
+
+`),
+		Example: "\ttcactl delete cnf testapp\t" +
+			"\ttcactl delete cnf testapp --force",
+		Aliases: []string{"del"},
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			ctl.checkDefaults()
+
+			err := ctl.tca.DeleteCnfInstance(args[0], ctl.DefaultClusterName, _isForce)
+			CheckErrLogError(err)
+
+			fmt.Printf("Instance '%s' delete\n", args[0])
+		},
+	}
+
+	// grand disable flag
+	updateInstance.Flags().BoolVar(&_isForce, CliForce, false,
+		"Terminate and Deletes instance.")
+
+	return updateInstance
+}
+
+func (ctl *TcaCtl) checkDefaults() {
+	if len(ctl.DefaultClusterName) == 0 {
+		panic("Please indicate cloud provider, default is empty.")
+	}
+	if len(ctl.DefaultClusterName) == 0 {
+		panic("Please indicate cluster name, default is empty.")
+	}
+	if len(ctl.DefaultRepoName) == 0 {
+		panic("Please indicate repository, default is empty.")
+	}
+	if len(ctl.DefaultNodePoolName) == 0 {
+		panic("Please indicate node pool, default is empty.")
+	}
 }

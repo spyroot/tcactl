@@ -83,6 +83,16 @@ type VnfPackages struct {
 	Packages []VnfPackage
 }
 
+// CatalogNotFound error raised if tenant cloud not found
+type CatalogNotFound struct {
+	errMsg string
+}
+
+//
+func (m *CatalogNotFound) Error() string {
+	return "Catalog entity '" + m.errMsg + "' not found"
+}
+
 // GetField - return field from VNfPackage struct
 func (p *VnfPackage) GetField(field string) string {
 	r := reflect.ValueOf(p)
@@ -105,7 +115,7 @@ func (v *VnfPackages) GetVnfdID(q string) (*VnfPackage, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("package not found")
+	return nil, &CatalogNotFound{q}
 }
 
 // Filter filters respond based on filter type and pass to callback

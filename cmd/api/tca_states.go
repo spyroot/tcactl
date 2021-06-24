@@ -15,15 +15,21 @@
 //
 //
 // Mustafa mbayramo@vmware.com
-package app
+package api
 
 import (
 	"strings"
 )
 
 const (
-	StateInstantiate = "INSTANTIATE"
-	StateCompleted   = "COMPLETED"
+	StateInstantiate  = "INSTANTIATE"
+	StateCompleted    = "COMPLETED"
+	StateStarting     = "STARTING"
+	StateInstantiated = "INSTANTIATED"
+	StateTerminated   = "TERMINATED"
+	StateTerminate    = "TERMINATE"
+
+	DefaultMaxRetry = 32
 )
 
 type TcaTaskStateType int

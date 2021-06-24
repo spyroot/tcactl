@@ -22,14 +22,14 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/api"
-	"github.com/spyroot/hestia/cmd/client"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/printers"
-	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/cmd/models"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/api"
+	"github.com/spyroot/tcactl/cmd/client"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/printers"
+	"github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/models"
+	"github.com/spyroot/tcactl/pkg/io"
 	"os"
 )
 
@@ -390,11 +390,11 @@ func (ctl *TcaCtl) Authorize2() {
 }
 
 // ResolvePoolName - resolve pool name to id in given cluster
-func (ctl *TcaCtl) ResolvePoolName(s string, clusterName string) (string, string, error) {
+func (ctl *TcaCtl) ResolvePoolName(poolName string, clusterName string) (string, string, error) {
 
 	// empty name no ops
-	if len(s) == 0 {
-		return s, "", nil
+	if len(poolName) == 0 {
+		return poolName, "", nil
 	}
 
 	if len(clusterName) == 0 {
@@ -404,14 +404,15 @@ func (ctl *TcaCtl) ResolvePoolName(s string, clusterName string) (string, string
 	nodePool, clusterId, err := ctl.TcaClient.GetNamedClusterNodePools(clusterName)
 	if err != nil || nodePool == nil {
 		glog.Errorf("Failed acquire clusters node information %v", err)
-		return s, "", err
+		return poolName, "", err
 	}
 
-	pool, err := nodePool.GetPool(s)
+	pool, err := nodePool.GetPool(poolName)
 	if err != nil {
 		glog.Errorf("Failed acquire node pool information %v", err)
-		return s, "", err
+		return poolName, "", err
 	}
+
 	return pool.Id, clusterId, nil
 }
 

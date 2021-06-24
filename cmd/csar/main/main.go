@@ -24,11 +24,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/spyroot/hestia/cmd/client/main/app"
-	_ "github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/csar"
-	"github.com/spyroot/hestia/pkg/io"
-	_ "github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/client/main/app"
+	_ "github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/csar"
+	"github.com/spyroot/tcactl/pkg/io"
+	_ "github.com/spyroot/tcactl/pkg/io"
 )
 
 var (
@@ -152,6 +152,6 @@ func main() {
 	substitution["descriptorId"] = "nfd_1234"
 
 	csar.ApplyTransformation(
-		"/Users/spyroot/go/src/hestia/tests/smokeping-cnf.csar",
+		"/Users/spyroot/go/src/tcactl/tests/smokeping-cnf.csar",
 		"NFD.yaml", csar.NfdYamlPropertyTransformer, substitution)
 }

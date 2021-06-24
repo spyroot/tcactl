@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/pkg/io"
 	"net/http"
 )
 
@@ -38,11 +38,6 @@ const (
 func (c *RestClient) HarborAuthenticate() (bool, error) {
 
 	c.Client = resty.New()
-
-	fmt.Println("Username", c.Username)
-	fmt.Println("Username", c.Password)
-	fmt.Println("Username", c.BaseURL)
-
 	// loads cert or skip ssl
 	if len(c.CertKey) > 0 && len(c.CertKey) > 0 {
 		if io.FileExists(c.CertFile) && io.FileExists(c.CertKey) {

@@ -50,10 +50,15 @@ type Extension struct {
 	AutoHealEnabled  bool   `json:"autoHealEnabled" yaml:"autoHealEnabled"`
 }
 
+func (e *Extension) IsEnabled() bool {
+	return strings.ToLower(e.State) == "enabled"
+}
+
 type Extensions struct {
 	ExtensionsList []Extension `json:"extensions"`
 }
 
+// FindRepo
 func (e *Extensions) FindRepo(q string) (*Extension, error) {
 
 	if e == nil {

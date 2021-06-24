@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/glog"
-	"github.com/spyroot/hestia/cmd/client/request"
-	"github.com/spyroot/hestia/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/client/request"
+	"github.com/spyroot/tcactl/cmd/client/response"
 	"net/http"
 )
 
@@ -84,7 +84,6 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 	}
 	if len(req) == 2 {
 		isArray = false
-		glog.Infof("ID %v", req[1])
 		resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + req[1])
 	}
 
@@ -121,7 +120,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 }
 
 // GetRunningVnflcm return state of CNF
-func (c *RestClient) GetRunningVnflcm(req string) (*response.LcmInfo, error) {
+func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 
 	var (
 		err  error
@@ -129,7 +128,7 @@ func (c *RestClient) GetRunningVnflcm(req string) (*response.LcmInfo, error) {
 	)
 
 	c.GetClient()
-	resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + req)
+	resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + r)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -152,32 +151,6 @@ func (c *RestClient) GetRunningVnflcm(req string) (*response.LcmInfo, error) {
 	}
 
 	return &cnflcm, nil
-}
-
-// CnfScale action
-// TODO
-func (c *RestClient) CnfScale(scaleUri string) error {
-
-	c.GetClient()
-
-	resp, err := c.Client.R().Get(scaleUri)
-
-	if err != nil {
-		if c.IsDebug {
-			glog.Error(err)
-		}
-		return err
-	}
-
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.NewDecoder(resp.RawResponse.Body).Decode(&errRes); err == nil {
-			return fmt.Errorf(errRes.Message)
-		}
-		return fmt.Errorf("unknown error, status code: %d", resp.StatusCode())
-	}
-
-	return nil
 }
 
 // CnfTerminate action
@@ -236,8 +209,8 @@ func (c *RestClient) CnfRollback(instanceId string) error {
 	return nil
 }
 
-// CnfVnfInstantiate vnf instances
-func (c *RestClient) CnfVnfInstantiate(req *request.CreateVnfLcm) (*response.VNFInstantiate, error) {
+// CnfVnfCreate vnf instances
+func (c *RestClient) CnfVnfCreate(req *request.CreateVnfLcm) (*response.VNFInstantiate, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("unutilized client")
@@ -265,6 +238,7 @@ func (c *RestClient) CnfVnfInstantiate(req *request.CreateVnfLcm) (*response.VNF
 
 	var vnfCreateResp response.VNFInstantiate
 	if err := json.Unmarshal(resp.Body(), &vnfCreateResp); err != nil {
+		glog.Errorf("Failed parse server respond.")
 		return nil, err
 	}
 
@@ -288,6 +262,91 @@ func (c *RestClient) CnfInstantiate(instanceId string, req request.InstantiateVn
 		glog.Error(err)
 		return err
 	}
+
+	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		var errRes ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("Server return error %v", errRes.Details)
+			return fmt.Errorf(errRes.Message)
+		}
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
+		return fmt.Errorf("unknown error, status code: %v %v", resp.StatusCode(), string(resp.Body()))
+	}
+
+	return nil
+}
+
+// CnfUpdateState current state of running instance.
+func (c *RestClient) CnfUpdateState(instanceId string, req request.InstantiateVnfRequest) error {
+
+	if c == nil {
+		return fmt.Errorf("unutilized client")
+	}
+
+	c.GetClient()
+	resp, err := c.Client.R().
+		SetBody(req).
+		Post(c.BaseURL + "/hybridity/api/vnflcm/v1/vnf_instances/" + instanceId + "/update_state")
+
+	if err != nil {
+		glog.Error(err)
+		return err
+	}
+
+	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		var errRes ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("Server return error %v", errRes.Details)
+			return fmt.Errorf(errRes.Message)
+		}
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
+		return fmt.Errorf("unknown error, status code: %v %v", resp.StatusCode(), string(resp.Body()))
+	}
+
+	return nil
+}
+
+// CnfReconfigure - reconfigure instance.
+func (c *RestClient) CnfReconfigure(r *request.CnfReconfigure, id string) error {
+
+	c.GetClient()
+	resp, err := c.Client.R().SetBody(r).Post(c.BaseURL + "/telco/api/vnflcm/v2/vnf_instances/" + id + "/scale")
+
+	if err != nil {
+		if c.IsDebug {
+			glog.Error(err)
+		}
+		return err
+	}
+
+	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		var errRes ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("Server return error %v", errRes.Details)
+			return fmt.Errorf(errRes.Message)
+		}
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
+		return fmt.Errorf("unknown error, status code: %v %v", resp.StatusCode(), string(resp.Body()))
+	}
+
+	return nil
+}
+
+// DeleteInstance - reconfigure instance.
+func (c *RestClient) DeleteInstance(id string) error {
+
+	c.GetClient()
+	glog.Infof("Sending Delete %v", c.BaseURL+"/telco/api/vnflcm/v2/vnf_instances/"+id)
+	resp, err := c.Client.R().Delete(c.BaseURL + "/telco/api/vnflcm/v2/vnf_instances/" + id)
+
+	if err != nil {
+		if c.IsDebug {
+			glog.Error(err)
+		}
+		return err
+	}
+
+	fmt.Println(string(resp.Body()))
 
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
 		var errRes ErrorResponse

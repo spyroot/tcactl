@@ -1,6 +1,6 @@
 package request
 
-import "github.com/spyroot/hestia/cmd/models"
+import "github.com/spyroot/tcactl/cmd/models"
 
 type ClusterEntityTaskFilter struct {
 	EntityIds []string `json:"entityIds" yaml:"entity_ids"`

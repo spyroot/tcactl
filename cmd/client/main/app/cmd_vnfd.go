@@ -22,10 +22,10 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/hestia/cmd/client/main/app/ui"
-	"github.com/spyroot/hestia/cmd/client/response"
-	"github.com/spyroot/hestia/cmd/models"
-	"github.com/spyroot/hestia/pkg/io"
+	"github.com/spyroot/tcactl/cmd/client/main/app/ui"
+	"github.com/spyroot/tcactl/cmd/client/response"
+	"github.com/spyroot/tcactl/cmd/models"
+	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
 )
 
