@@ -407,7 +407,8 @@ Updates CNF or VNF instance state, need to provide ID or Name
 of instance. --block provides option to block and wait when task finished.
 
 `),
-		Example: "tcactl update cnf up testapp --stderrthreshold INFO --block",
+		Example: "\ttcactl update cnf up testapp\n" +
+			"\ttcactl update cnf up --stderrthreshold INFO --block --pool my_pool01\n",
 		Aliases: []string{"up"},
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -448,7 +449,8 @@ of instance. --block provides option to block and wait when task finished.
 	return updateInstance
 }
 
-// CmdDeleteInstances delete instance
+// CmdDeleteInstances command deletes existing instance
+// force flag provide option to terminate and delete
 func (ctl *TcaCtl) CmdDeleteInstances() *cobra.Command {
 
 	var (

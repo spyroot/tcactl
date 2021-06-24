@@ -1526,18 +1526,18 @@ func (a *TcaApi) CreateCnfInstance(instanceName string, poolName string,
 		}
 	}
 
-	// get list all all cnfs
-	respond, err := a.rest.GetVnflcm()
+	_instances, err := a.rest.GetVnflcm()
 	if err != nil {
 		return err
 	}
 
-	cnfs, ok := respond.(*response.CnfsExtended)
-	if ok != false {
-		return errors.New("Server return wrong type")
+	// for extension request we route to correct printer
+	instances, ok := _instances.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("wrong instance type")
 	}
 
-	instance, err := cnfs.ResolveFromName(instanceName)
+	instance, err := instances.ResolveFromName(instanceName)
 	if err != nil {
 		return err
 	}
@@ -1606,7 +1606,7 @@ func (a *TcaApi) CreateCnfInstance(instanceName string, poolName string,
 	return nil
 }
 
-//
+// BlockWaitStateChange - simple block and pull status
 func (a *TcaApi) BlockWaitStateChange(instanceId string, waitFor string, maxRetry int, verbose bool) error {
 
 	for i := 1; i < maxRetry; i++ {
