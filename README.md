@@ -103,6 +103,9 @@ username and password.
 defaultcloud: default
 defaultcluster: edge
 defaultnodepool: default
+defaultcluster: edge-test01
+defaultnodepool: default-pool01
+defaultreponame: https://my_repo/chartrepo/library
 license: apache
 output: default
 stderrthreshold: INFO
