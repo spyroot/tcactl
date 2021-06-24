@@ -29,6 +29,13 @@ import (
 	"path/filepath"
 )
 
+const (
+	CliBlock       = "block"
+	CliPool        = "pool"
+	CliDisableGran = "grant"
+	CliForce       = "force"
+)
+
 // CmdInitConfig - initialize configuration file, for initial
 // setup TCA and other defaults
 func (ctl *TcaCtl) CmdInitConfig() *cobra.Command {
