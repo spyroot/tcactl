@@ -8,7 +8,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 APP_NAME=tcactl
 BINARY=tcactl
-VERSION=1.0.0
+VERSION=0.3.0
 PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
 
@@ -24,7 +24,7 @@ build:
 
 build_all:
 	$(foreach GOOS, $(PLATFORMS),\
-	$(foreach GOARCH, $(ARCHITECTURES), $(shell export GOOS=$(GOOS); export GOARCH=$(GOARCH); go build -v -o $(BINARY)-$(GOOS)-$(GOARCH) cmd/client/main/main.go)))
+	$(foreach GOARCH, $(ARCHITECTURES), $(shell export GOOS=$(GOOS); export GOARCH=$(GOARCH); go build -v -o $(BINARY)-$(GOOS)-$(GOARCH) app/main/main.go)))
 
 run:
 	go run cmd/client/main/main.go
