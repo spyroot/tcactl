@@ -133,3 +133,8 @@ func CheckErr(msg interface{}) {
 		os.Exit(1)
 	}
 }
+
+func PrintAndExit(msg string) {
+	fmt.Fprintln(os.Stderr, "Error:", msg)
+	os.Exit(1)
+}

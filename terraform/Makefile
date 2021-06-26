@@ -1,6 +1,6 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=github.com
-NAMESPACE=vmware
+NAMESPACE=spyroot
 NAME=tca
 BINARY=terraform-provider-${NAME}
 VERSION=0.2

@@ -19,58 +19,83 @@ package tca
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/spyroot/tcactl/cmd/api"
-	"github.com/spyroot/tcactl/cmd/client"
+	"github.com/spyroot/tcactl/lib/api"
+	"github.com/spyroot/tcactl/lib/client"
 	"log"
 )
 
-// Provider -
+// New - return new instance
 func New() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"username": &schema.Schema{
+			"tca_username": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TCA_USERNAME", nil),
 			},
-			"password": &schema.Schema{
+			"tca_password": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TCA_PASSWORD", nil),
 			},
+			"tca_url": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				DefaultFunc: schema.EnvDefaultFunc("TCA_URL", nil),
+			},
 		},
-		ResourcesMap: map[string]*schema.Resource{},
+		ResourcesMap: map[string]*schema.Resource{
+			"tca_templates": resourceClusterTemplate(),
+		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"tca_cnfs": dataSourceCnfs(),
+			"instances":     dataSourceCnfs(),
+			"tca_templates": dataSourceTemplates(),
+			"tca_clusters":  dataSourceClusters(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
 	}
 }
 
+//
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	username := d.Get("username").(string)
-	password := d.Get("password").(string)
 
-	log.Println("Connecting")
+	username := d.Get("tca_username").(string)
+	password := d.Get("tca_password").(string)
+	tcaUrl := d.Get("tca_url").(string)
+
+	log.Println("[INFO] Connecting")
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
+	if len(username) == 0 {
+		return nil, diag.FromErr(fmt.Errorf("TCA_USERNAME not set"))
+	}
+	if len(password) == 0 {
+		return nil, diag.FromErr(fmt.Errorf("TCA_PASSWORD not set"))
+	}
+	if len(tcaUrl) == 0 {
+		return nil, diag.FromErr(fmt.Errorf("TCA_URL not set"))
+	}
+
 	if (username != "") && (password != "") {
 		c, err := api.NewTcaApi(&client.RestClient{
-			BaseURL:  "https://tca-vip03.cnfdemo.io",
+			BaseURL:  tcaUrl,
 			ApiKey:   "",
 			SkipSsl:  true,
 			Client:   nil,
-			IsDebug:  true,
+			isDebug:  true,
 			Username: username,
 			Password: password,
 		},
 		)
+
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
@@ -83,7 +108,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		ApiKey:   "",
 		SkipSsl:  true,
 		Client:   nil,
-		IsDebug:  true,
+		isDebug:  true,
 		Username: username,
 		Password: password,
 	},

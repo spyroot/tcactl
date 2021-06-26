@@ -20,7 +20,7 @@ default: build
 all: clean build_all install
 
 build:
-	go build ${LDFLAGS} -o tcactl cmd/client/main/main.go
+	go build ${LDFLAGS} -o tcactl app/main/main.go
 
 build_all:
 	$(foreach GOOS, $(PLATFORMS),\

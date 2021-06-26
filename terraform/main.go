@@ -35,14 +35,14 @@ func main() {
 
 	var debugMode bool
 
-	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.BoolVar(&debugMode, "debug", false,
+		"set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
 	opts := &plugin.ServeOpts{ProviderFunc: tca.New}
 
 	if debugMode {
-		// TODO: update this string with the full name of your provider as used in your configs
-		err := plugin.Debug(context.Background(), "github.com/vmware/tca", opts)
+		err := plugin.Debug(context.Background(), "github.com/spyroot/tca", opts)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
