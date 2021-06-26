@@ -39,7 +39,7 @@ func (c *RestClient) GetClusters() (*response.Clusters, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -75,7 +75,7 @@ func (c *RestClient) GetCluster(clusterId string) (*response.ClusterSpec, error)
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -116,7 +116,7 @@ func (c *RestClient) GetClusterNodePools(clusterId string) (*response.NodePool, 
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -171,8 +171,8 @@ func (m *TaskNotFound) Error() string {
 	return m.errMsg + " cluster not found"
 }
 
-// GetClusterTask - returns infrastructure k8s clusters
-func (c *RestClient) GetClusterTask(f *request.ClusterTaskQuery) (*models.ClusterTask, error) {
+// GetClustersTask - returns infrastructure k8s clusters
+func (c *RestClient) GetClustersTask(f *request.ClusterTaskQuery) (*models.ClusterTask, error) {
 
 	c.GetClient()
 
@@ -182,7 +182,7 @@ func (c *RestClient) GetClusterTask(f *request.ClusterTaskQuery) (*models.Cluste
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -193,6 +193,43 @@ func (c *RestClient) GetClusterTask(f *request.ClusterTaskQuery) (*models.Cluste
 	var task models.ClusterTask
 	if err := json.Unmarshal(resp.Body(), &task); err != nil {
 		glog.Errorf("Failed parse server respond.")
+		return nil, err
+	}
+
+	return &task, nil
+}
+
+// GetClusterTask returns k8s execution current task.
+func (c *RestClient) GetClusterTask(clusterId string) (*models.ClusterTask, error) {
+
+	if len(clusterId) == 0 {
+		return nil, fmt.Errorf("cluster id is empty string")
+	}
+
+	c.GetClient()
+	resp, err := c.Client.R().Get(c.BaseURL + fmt.Sprintf(TcaClusterTask, clusterId))
+
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	if c.isTrace && resp != nil {
+		fmt.Println(string(resp.Body()))
+	}
+
+	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		var errRes ErrorResponse
+		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("server return error %v %v %v", errRes.Details, errRes.Message, string(resp.Body()))
+			return nil, fmt.Errorf("server return error %v", errRes.Message)
+		}
+		glog.Errorf("server return unknown error %v %v", resp.StatusCode(), string(resp.Body()))
+		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+	}
+
+	var task models.ClusterTask
+	if err := json.Unmarshal(resp.Body(), &task); err != nil {
 		return nil, err
 	}
 
@@ -211,7 +248,7 @@ func (c *RestClient) CreateCluster(spec *request.Cluster) (bool, error) {
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -234,7 +271,7 @@ func (c *RestClient) DeleteCluster(clusterId string) (bool, error) {
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

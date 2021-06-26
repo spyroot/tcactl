@@ -116,7 +116,8 @@ func (ctl *TcaCtl) CmdCreateClusterTemplates() *cobra.Command {
 		Aliases: []string{"template"},
 		Short:   "Command creates a cluster template.",
 		Long: templates.LongDesc(`
-									Command creates a cluster template.`),
+Command creates a cluster template from input spec.
+`),
 		Example: " - tcactl create template template_spec.yaml -o json --dry",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

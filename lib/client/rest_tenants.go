@@ -48,7 +48,7 @@ func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -77,7 +77,7 @@ func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -106,7 +106,7 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -133,7 +133,7 @@ func (c *RestClient) DeleteTenant(tenantCluster string) (bool, error) {
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

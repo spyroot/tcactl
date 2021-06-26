@@ -93,7 +93,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -139,7 +139,7 @@ func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -176,7 +176,7 @@ func (c *RestClient) CnfTerminate(terminateUri string, terminateReq request.Term
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -207,7 +207,7 @@ func (c *RestClient) CnfRollback(instanceId string) error {
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -241,7 +241,7 @@ func (c *RestClient) CnfVnfCreate(req *request.CreateVnfLcm) (*response.VNFInsta
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -282,7 +282,7 @@ func (c *RestClient) CnfInstantiate(instanceId string, req request.InstantiateVn
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -316,7 +316,7 @@ func (c *RestClient) CnfUpdateState(instanceId string, req request.InstantiateVn
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -345,7 +345,7 @@ func (c *RestClient) CnfReconfigure(r *request.CnfReconfigure, id string) error 
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -376,7 +376,7 @@ func (c *RestClient) DeleteInstance(id string) error {
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

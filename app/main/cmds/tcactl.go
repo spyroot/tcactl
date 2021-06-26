@@ -85,6 +85,9 @@ const (
 	// ConfigHarborPassword default harbor password
 	ConfigHarborPassword = "harbor-password"
 
+	// ConfigTrace dump server respond
+	ConfigTrace = "trace"
+
 	// FlagOutput - default logging level
 	FlagOutput = "output"
 
@@ -209,6 +212,8 @@ type TcaCtl struct {
 
 	// HarborPassword harbor password
 	HarborPassword string
+
+	IsTrace bool
 }
 
 // NewTcaCtl - main abstraction for a tool

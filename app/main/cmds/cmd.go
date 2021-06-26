@@ -260,12 +260,14 @@ func (ctl *TcaCtl) BuildCmd() {
 		ctl.CmdCreateCluster(),
 		ctl.CmdCreateCnf(),
 		ctl.CmdCreateClusterTemplates(),
-		ctl.CmdCreatePackage())
+		ctl.CmdCreatePackage(),
+		ctl.CmdCreatePoolNodes())
 
 	// Delete
 	cmdDelete.AddCommand(
 		ctl.CmdDeleteClusterTemplates(),
 		ctl.CmdDeleteCluster(),
 		ctl.CmdDeleteTenantCluster(),
-		ctl.CmdDeleteInstances())
+		ctl.CmdDeleteInstances(),
+		ctl.CmdDeletePoolNodes())
 }

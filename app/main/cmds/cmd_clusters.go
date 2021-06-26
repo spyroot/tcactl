@@ -41,10 +41,13 @@ import (
 func (ctl *TcaCtl) CmdGetClusters() *cobra.Command {
 
 	var _cmdClusters = &cobra.Command{
-		Use:     "clusters",
-		Short:   "Return cluster information",
-		Long:    `Return a list of CNFs or VNFs catalog entities or single element if -i id provide.`,
-		Example: "- tcactl get clusters info\n- tcactl get clusters pool edge",
+		Use:   "clusters",
+		Short: "Command retrieves cluster related information.",
+		Long: `
+Command retrieves cluster-related information. Each sub-command 
+require either cluster name or cluster id.
+`,
+		Example: "- tcactl get clusters info\n - tcactl get clusters pool edge",
 		Args:    cobra.MinimumNArgs(1),
 		Aliases: []string{"cluster", "cl"},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -56,6 +59,7 @@ func (ctl *TcaCtl) CmdGetClusters() *cobra.Command {
 	_cmdClusters.AddCommand(ctl.CmdGetClustersK8SConfig())
 	_cmdClusters.AddCommand(ctl.CmdGetClustersPool())
 	_cmdClusters.AddCommand(ctl.CmdGetClustersPoolNodes())
+	_cmdClusters.AddCommand(ctl.CmdGetClusterTasks())
 
 	return _cmdClusters
 }
@@ -487,8 +491,8 @@ Command create cluster from input spec. Spec can be in yaml or json format.`,
 	}
 
 	_cmd.Flags().BoolVar(&isDry,
-		"dry", false, "Parse template spec, validate, dry run outputs spec "+
-			"to terminal screen and format based based on -o.")
+		"dry", false, "Parses input template spec, "+
+			"validates, outputs spec to the terminal screen. Format based on -o flag.")
 
 	return _cmd
 }
@@ -503,8 +507,8 @@ func (ctl *TcaCtl) CmdDescribeTask() *cobra.Command {
 
 	var _cmd = &cobra.Command{
 		Use:     "task [task_id]",
-		Short:   "Command return current running cluster task.",
-		Long:    `Command return current running cluster task.`,
+		Short:   "Command return current running task.",
+		Long:    `Command return current running task.`,
 		Example: "- tcactl desc task 9411f70f-d24d-4842-ab56-b7214d",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -553,6 +557,45 @@ func (ctl *TcaCtl) CmdDeleteCluster() *cobra.Command {
 			}
 			if ok {
 				fmt.Println("Cluster deleted.")
+			}
+		},
+	}
+
+	return _cmd
+}
+
+// CmdGetClusterTasks - command return current list of task.
+func (ctl *TcaCtl) CmdGetClusterTasks() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "tasks [cluster name or id]",
+		Aliases: []string{"task"},
+		Short:   "Command returns currently running task on a particular cluster.",
+		Long: `
+
+Command returns currently running task on a particular cluster.`,
+
+		Example: "- tcactl get cluster tasks 9411f70f-d24d-4842-ab56-b7214d",
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type, and terminal wide or not
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			ctl.tca.SetTrace(ctl.IsTrace)
+
+			task, err := ctl.tca.GetClusterTask(args[0], true)
+			CheckErrLogError(err)
+
+			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {
+				_printer(task, _defaultStyler)
 			}
 		},
 	}

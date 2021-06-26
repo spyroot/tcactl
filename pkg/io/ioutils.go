@@ -24,6 +24,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/pretty"
+	"gopkg.in/yaml.v3"
 	"io"
 	"net"
 	"os"
@@ -116,6 +118,22 @@ func PrettyPrint(v interface{}) (err error) {
 		fmt.Println(string(b))
 	}
 	return
+}
+
+// YamlPrinter Default Json printer
+func YamlPrinter(t interface{}, isColor bool) error {
+	b, err := yaml.Marshal(t)
+	if err != nil {
+		return err
+	}
+
+	if isColor {
+		fmt.Println(string(pretty.Color(b, nil)))
+	} else {
+		fmt.Println(string(b))
+	}
+
+	return nil
 }
 
 // PrettyString print string as pretty json

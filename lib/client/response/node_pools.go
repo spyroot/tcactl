@@ -4,16 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/models"
 	"strings"
 )
 
 // NodePoolFilterType - cnf filter types
 type NodePoolFilterType int32
 
-type NewNodePool struct {
-	Id          string `json:"id"`
-	OperationId string `json:"operationId"`
-}
+//type NewNodePoolSpec struct {
+//	Id          string `json:"id"`
+//	OperationId string `json:"operationId"`
+//}
 
 const (
 	//
@@ -23,13 +24,6 @@ const (
 	//
 	FilterByStatus NodePoolFilterType = 2
 )
-
-// NodePoolNetwork - Node Pool contains Network information
-type NodePoolNetwork struct {
-	Label       string   `json:"label" yaml:"label"`
-	NetworkName string   `json:"networkName" yaml:"network_name"`
-	Nameservers []string `json:"nameservers" yaml:"nameservers"`
-}
 
 // NodePoolConfig - hold all metadata about node pools
 type NodePoolConfig struct {
@@ -64,13 +58,13 @@ type NodesDetails struct {
 
 type NodesSpecs struct {
 	// linked or not
-	CloneMode       string            `json:"cloneMode" yaml:"cloneMode"`
-	Cpu             int               `json:"cpu" yaml:"cpu"`
-	Id              string            `json:"id" yaml:"id"`
-	Labels          []string          `json:"labels" yaml:"labels"`
-	Memory          int               `json:"memory" yaml:"memory"`
-	Name            string            `json:"name" yaml:"entity_id" yaml:"name"`
-	Networks        []NodePoolNetwork `json:"networks" yaml:"networks"`
+	CloneMode       string           `json:"cloneMode" yaml:"cloneMode"`
+	Cpu             int              `json:"cpu" yaml:"cpu"`
+	Id              string           `json:"id" yaml:"id"`
+	Labels          []string         `json:"labels" yaml:"labels"`
+	Memory          int              `json:"memory" yaml:"memory"`
+	Name            string           `json:"name" yaml:"entity_id" yaml:"name"`
+	Networks        []models.Network `json:"networks" yaml:"networks"`
 	PlacementParams []struct {
 		Name string `json:"name" yaml:"name"`
 		Type string `json:"type" yaml:"type"`

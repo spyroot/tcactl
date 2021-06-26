@@ -95,7 +95,7 @@ type RestClient struct {
 	CertKey string
 
 	// dump server respond (debug server output)
-	dumpRespond bool
+	isTrace bool
 
 	// authentication type
 	isBasicAuthentication bool
@@ -119,7 +119,7 @@ func NewRestClient(baseURL string, skipSsl bool, username string, password strin
 
 // SetDumpRespond sets client in output mode.
 func (c *RestClient) SetDumpRespond(dumpRespond bool) {
-	c.dumpRespond = dumpRespond
+	c.isTrace = dumpRespond
 }
 
 const (
@@ -228,4 +228,8 @@ func (c *RestClient) checkErrors(r *resty.Response) error {
 	}
 
 	return fmt.Errorf("unknown error, status code: %v ", r.StatusCode())
+}
+
+func (c *RestClient) SetTrace(trace bool) {
+	c.isTrace = trace
 }

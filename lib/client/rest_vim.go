@@ -80,7 +80,7 @@ func (c *RestClient) GetVmwareNetworks(f *request.VMwareNetworkQuery) (*models.C
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -113,7 +113,7 @@ func (c *RestClient) GetVMwareTemplates(f *request.VMwareTemplateQuery) (*models
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -146,7 +146,7 @@ func (c *RestClient) GetVMwareFolders(f *request.VmwareFolderQuery) (*models.Fol
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -174,7 +174,7 @@ func (c *RestClient) GetVMwareResourcePool(f *request.VMwareResourcePoolQuery) (
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

@@ -18,10 +18,13 @@
 package cmds
 
 import (
+	"fmt"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
+	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
 )
 
@@ -127,6 +130,106 @@ func (ctl *TcaCtl) CmdGetPoolNodes() *cobra.Command {
 	// output filter , filter specific value from data structure
 	_cmd.Flags().StringVar(&_outputFilter, "ofilter", "",
 		"Output filter.")
+
+	return _cmd
+}
+
+// CmdDeletePoolNodes - command delete a node pool from a cluster.
+// Note worker node must not have any active instances.
+func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+		_outputFilter   string
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "pool [cluster name or id,  pool name or id]",
+		Short:   "Command deletes kubernetes node pool.",
+		Long:    `Command deletes kubernetes node pool.`,
+		Example: "tcactl delete pool my_cluster my_pool",
+		Aliases: []string{"pools", "node_pool"},
+		Args:    cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+
+			// swap filter if output filter required
+			if len(_outputFilter) > 0 {
+				outputFields := strings.Split(_outputFilter, ",")
+				_defaultPrinter = FilteredOutFilter
+				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+			}
+
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			task, err := ctl.tca.DeleteNodePool(args[0], args[1])
+			CheckErrLogError(err)
+
+			fmt.Printf("Node pool deleted, task id %v\n", task.OperationId)
+		},
+	}
+
+	return _cmd
+}
+
+// CmdCreatePoolNodes - command create a node pool
+// from a node pool spec.
+func (ctl *TcaCtl) CmdCreatePoolNodes() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+		_outputFilter   string
+		isDry           bool
+	)
+
+	var _cmd = &cobra.Command{
+		Use:   "pool [cluster name or id,  spec file]",
+		Short: "Command create additional node pool on target kubernetes cluster.",
+		Long: `
+
+Command create additional node pool on target kubernetes cluster.
+
+`,
+		Example: "tcactl create node-pool my_cluster example/node-pool.yaml",
+		Aliases: []string{"pools", "pool"},
+		Args:    cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+
+			// swap filter if output filter required
+			if len(_outputFilter) > 0 {
+				outputFields := strings.Split(_outputFilter, ",")
+				_defaultPrinter = FilteredOutFilter
+				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+			}
+
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			nodePoolSpec, err := api.ReadNodeSpecFromFile(args[1])
+			CheckErrLogError(err)
+
+			if isDry && nodePoolSpec != nil {
+				err := io.YamlPrinter(nodePoolSpec, false)
+				CheckErrLogError(err)
+			}
+
+			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry)
+			CheckErrLogError(err)
+			fmt.Printf("Node Pool task %v created.\n", task.OperationId)
+		},
+	}
+
+	_cmd.Flags().BoolVar(&isDry,
+		"dry", false, "Parses input template spec, "+
+			"validates, outputs spec to the terminal screen. Format based on -o flag.")
 
 	return _cmd
 }

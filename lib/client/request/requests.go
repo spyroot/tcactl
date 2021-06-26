@@ -31,12 +31,20 @@ type TerminateVnfRequest struct {
 	} `json:"additionalParams" yaml:"additionalParams"`
 }
 
+// Task Query filter
+// Request URL: https://tca-vip03.cnfdemo.io/hybridity/api/infra/k8s/tasks
+type TaskFilter struct {
+	Filter struct {
+		EntityIds []string `json:"entityIds"`
+	} `json:"filter"`
+}
+
 type VduParam struct {
-	Namespace string `json:"namespace" :"namespace"`
-	RepoURL   string `json:"repoUrl" :"repoUrl"`
-	Username  string `json:"username" :"username"`
-	Password  string `json:"password" :"password"`
-	VduName   string `json:"vduName" :"vduName"`
+	Namespace string `json:"namespace" yaml:"namespace"`
+	RepoURL   string `json:"repoUrl" yaml:"repoUrl"`
+	Username  string `json:"username" yaml:"username"`
+	Password  string `json:"password" yaml:"password"`
+	VduName   string `json:"vduName" yaml:"vduName"`
 }
 
 type AdditionalParams struct {

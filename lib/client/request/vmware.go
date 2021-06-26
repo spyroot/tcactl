@@ -11,7 +11,8 @@ func NewClusterEntityTaskFilter(id string) *ClusterEntityTaskFilter {
 }
 
 type ClusterTaskQuery struct {
-	Filter ClusterEntityTaskFilter `json:"filter" yaml:"filter"`
+	Filter            ClusterEntityTaskFilter `json:"filter" yaml:"filter" yaml:"filter"`
+	IncludeChildTasks bool                    `json:"includeChildTasks,omitempty" yaml:"includeChildTasks"`
 }
 
 func NewClusterTaskQuery(id string) *ClusterTaskQuery {

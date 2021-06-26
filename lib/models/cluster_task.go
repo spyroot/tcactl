@@ -17,6 +17,12 @@
 // Mustafa mbayramo@vmware.com
 package models
 
+// TcaTask - generic task respond
+type TcaTask struct {
+	Id          string `json:"id"`
+	OperationId string `json:"operationId"`
+}
+
 // TaskErrors error for give task
 type TaskErrors struct {
 	InternalMessage string `json:"internalMessage" yaml:"internal_message"`

@@ -99,6 +99,11 @@ func init() {
 		cmds.ConfigHarborUsername, "",
 		"Harbor username.")
 
+	// TODO enable for all command
+	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsTrace,
+		cmds.ConfigTrace, "x", false,
+		"Enables trace.")
+
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborPassword,
 		cmds.ConfigHarborPassword, "",
 		"Harbor password.")
@@ -110,7 +115,7 @@ func init() {
 		cmds.FlagCliWide, "w", false, "Wide terminal output.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&userLicense,
-		"license", "l", "", "name of license for the project")
+		"license", "l", "", "license type")
 
 	tcaCtl.RootCmd.PersistentFlags().Bool(
 		"viper", true, "use Viper for configuration")
@@ -225,7 +230,6 @@ func initConfig() {
 
 	tcaCtl.Printer = viper.GetString("output")
 	glog.Infof("TCA Base set to %v", viper.GetString(cmds.ConfigTcaEndpoint))
-
 }
 
 // @title VMware TCA CTL proto API

@@ -39,7 +39,7 @@ func (c *RestClient) ExtensionQuery() (*response.Extensions, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

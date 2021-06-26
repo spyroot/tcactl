@@ -97,7 +97,7 @@ func (c *RestClient) UploadHelm(csar []byte, fileName string) (bool, error) {
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -130,7 +130,7 @@ func (c *RestClient) GetCharts() ([]response.HelmChart, error) {
 		return helmCharts, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -167,7 +167,7 @@ func (c *RestClient) GetRepos() ([]response.Repos, error) {
 		return repos, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -195,7 +195,7 @@ func (c *RestClient) GetChart(chartName string) (bool, error) {
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

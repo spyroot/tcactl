@@ -187,3 +187,50 @@ workerNodes:
 var yamlWorkloadEmpty = `
 
 `
+
+var jsonNodeSpec = `
+{"name":"temp1234",
+"storage":50,
+"cpu":2,
+"memory":16384,"replica":1,
+"labels":["type=hub"],"networks":[{"label":"MANAGEMENT",
+"networkName":"/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0","nameservers":["10.246.2.9"]}],
+"placementParams":[{"type":"ClusterComputeResource","name":"hubsite"},
+{"type":"Datastore","name":"vsanDatastore"},{"type":"ResourcePool","name":"k8s"}],
+"config":{"cpuManagerPolicy":{"type":"kubernetes","policy":"default"}}}
+`
+var yamlNodeSpec = `
+id: ""
+clone_mode: ""
+cpu: 2
+labels:
+    - type=hub
+memory: 16384
+name: temp
+networks:
+    - label: MANAGEMENT
+      network_name: ""
+      nameservers:
+        - 10.246.2.9
+placement_params: []
+replica: 1
+storage: 50
+config:
+    cpu_manager_policy:
+        type: ""
+        policy: ""
+        properties:
+            kube_reserved:
+                cpu: 0
+                memoryInGiB: 0
+            system_reserved:
+                cpu: 0
+                memoryInGiB: 0
+    health_check:
+        nodeStartupTimeout: ""
+        unhealthy_conditions: []
+status: ""
+active_tasks_count: 0
+nodes: []
+is_node_customization_deprecated: false
+`

@@ -41,7 +41,7 @@ func (c *RestClient) GetClusterTemplates() (*response.ClusterTemplates, error) {
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -68,7 +68,7 @@ func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplate) error
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -102,7 +102,7 @@ func (c *RestClient) UpdateClusterTemplate(spec *response.ClusterTemplate) error
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -134,7 +134,7 @@ func (c *RestClient) GetClusterTemplate(clusterId string) (*response.ClusterTemp
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -165,7 +165,7 @@ func (c *RestClient) DeleteClusterTemplate(clusterId string) error {
 		return err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

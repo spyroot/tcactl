@@ -36,7 +36,7 @@ func (c *RestClient) GetInfraNetworks(tenantId string) (*models.CloudNetworks, e
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

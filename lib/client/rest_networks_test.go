@@ -7,13 +7,13 @@ import (
 
 var (
 	rest = &RestClient{
-		BaseURL:     os.Getenv("TCA_URL"),
-		ApiKey:      "",
-		IsDebug:     true,
-		Username:    os.Getenv("TCA_USERNAME"),
-		Password:    os.Getenv("TCA_PASSWORD"),
-		SkipSsl:     true,
-		dumpRespond: true,
+		BaseURL:  os.Getenv("TCA_URL"),
+		ApiKey:   "",
+		IsDebug:  true,
+		Username: os.Getenv("TCA_USERNAME"),
+		Password: os.Getenv("TCA_PASSWORD"),
+		SkipSsl:  true,
+		isTrace:  true,
 	}
 
 	harbor = &RestClient{
@@ -23,7 +23,7 @@ var (
 		Username:              os.Getenv("HARBOR_USERNAME"),
 		Password:              os.Getenv("HARBOR_PASSWORD"),
 		SkipSsl:               true,
-		dumpRespond:           true,
+		isTrace:               true,
 		isBasicAuthentication: true,
 	}
 )

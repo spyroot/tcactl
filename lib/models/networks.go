@@ -11,6 +11,13 @@ package models
 // "isShared" : false,
 // "type" : "DistributedVirtualPortgroup"
 
+// Network Generic Network
+type Network struct {
+	Label       string   `json:"label" yaml:"label"`
+	NetworkName string   `json:"networkName" yaml:"networkName"`
+	Nameservers []string `json:"nameservers" yaml:"nameservers"`
+}
+
 type NetworkSpec struct {
 	Status          string `json:"status" yaml:"status"`
 	TenantId        string `json:"tenantId" yaml:"tenantId"`

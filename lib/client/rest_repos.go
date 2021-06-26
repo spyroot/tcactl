@@ -67,7 +67,7 @@ func (c *RestClient) RepositoriesQuery(query *request.RepoQuery) (*response.Repo
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -102,7 +102,7 @@ func (c *RestClient) GetRepositoriesQuery(query *request.RepoQuery) (*response.R
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

@@ -27,6 +27,10 @@ const (
 	// TcaInfraClusterTask - api cluster task
 	TcaInfraClusterTask = "/hybridity/api/infra/k8s/tasks"
 
+	// TcaClusterTask - API query current cluster task
+	TcaClusterTask = "/hybridity/api/infra/k8s/clusters/%s/tasks"
+
+	//
 	TcaApiVnfLcmExtensionVnfInstance = "/telco/api/vnflcm/v2/extension/vnf_instances"
 
 	TcaApiVnfLcmVnfInstance = "/telco/api/vnflcm/v2/vnf_instances"
@@ -57,4 +61,25 @@ const (
 
 	// TcaVmwareVnflcmInstance operation on instance
 	TcaVmwareVnflcmInstance = "/telco/api/vnflcm/v2/vnf_instances/"
+
+	// TcaInfraPoolRetry Retry task
+	TcaInfraPoolRetry = "/hybridity/api/infra/k8s/operations/%s/retry"
+
+	// TcaInfraPoolAbort abort task
+	TcaInfraPoolAbort = "/hybridity/api/infra/k8s/operations/%s/abort"
+
+	// TcaInfraCreatPool API call create node pool on target cluster
+	TcaInfraCreatPool = "/hybridity/api/infra/k8s/cluster/%s/nodepool"
+
+	// TcaInfraDeletePool API call delete Node pool
+	TcaInfraDeletePool = "/hybridity/api/infra/k8s/cluster/%s/nodepool/%s"
+
+	// TcaInfraSupportedVer return list of supported version
+	TcaInfraSupportedVer = "/hybridity/api/infra/k8s/supportedK8sVersions"
+
+	// TcaClusterChangePassword change password for existing cluster
+	TcaClusterChangePassword = "/hybridity/api/infra/k8s/clusters/%s/changePassword"
+
+	// TcaClustersNodePoolUpgrade upgrade existing node pool
+	TcaClustersNodePoolUpgrade = "/hybridity/infra/k8s/cluster/%s/nodepool/%s/upgrade"
 )

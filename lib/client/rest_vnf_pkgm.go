@@ -120,7 +120,7 @@ func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPacka
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -166,7 +166,7 @@ func (c *RestClient) GetVnfPkgmVnfd(pkgId string) (*response.VduPackage, error) 
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -196,7 +196,7 @@ func (c *RestClient) DeleteVnfPkgmVnfd(pkgId string) (bool, error) {
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -220,7 +220,7 @@ func (c *RestClient) CreateVnfPkgmVnfd(pkg *PackageUpload) (*PackageCreatedSucce
 		return nil, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
@@ -273,7 +273,7 @@ func (c *RestClient) UploadVnfPkgmVnfd(pkgId string, csar []byte, name string) (
 		return false, err
 	}
 
-	if c.dumpRespond && resp != nil {
+	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 

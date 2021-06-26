@@ -214,31 +214,6 @@ func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error)
 	return &networks, nil
 }
 
-// GetNodePool return a Node pool for particular cluster
-func (a *TcaApi) GetNodePool(clusterId string) (*response.NodePool, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	clusters, err := a.rest.GetClusters()
-	if err != nil || clusters == nil {
-		return nil, err
-	}
-
-	clusterId, err = clusters.GetClusterId(clusterId)
-	if err != nil {
-		return nil, err
-	}
-
-	pool, err := a.rest.GetClusterNodePools(clusterId)
-	if err != nil {
-		return nil, err
-	}
-
-	return pool, nil
-}
-
 // GetAllNodePool return a Node pool for particular cluster
 // It generally useful to get list only if want to display
 // in all other cases it efficient to use direct call for cluster.
@@ -340,7 +315,7 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 	}
 
 	glog.Infof("Retrieving current task task list for cluster '%v'", cid)
-	task, err := a.rest.GetClusterTask(request.NewClusterTaskQuery(taskId))
+	task, err := a.rest.GetClustersTask(request.NewClusterTaskQuery(taskId))
 	if err != nil {
 		return nil, err
 	}
@@ -1331,13 +1306,6 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBloc
 	return instance, nil
 }
 
-// CreateNewNodePool create a new instance of VNF or CNF.
-// Dry run will validate request but will not create any CNF.
-func (a *TcaApi) CreateNewNodePool(n *request.NewNodePool, clusterId string, isDry bool) (*response.NewNodePool, error) {
-	return a.rest.CreateNewNodePool(n, clusterId)
-
-}
-
 // CnfReconfigure - reconfigure existing instance
 func (a *TcaApi) CnfReconfigure(instanceName string, valueFile string, vduName string, isDry bool) error {
 
@@ -1657,4 +1625,8 @@ func (a *TcaApi) GetApiKey() interface{} {
 	}
 
 	return ""
+}
+
+func (a *TcaApi) SetTrace(trace bool) {
+	a.rest.SetTrace(trace)
 }
