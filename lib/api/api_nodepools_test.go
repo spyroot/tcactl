@@ -2,33 +2,14 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"github.com/nsf/jsondiff"
 	_ "github.com/nsf/jsondiff"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
-	"os"
 	"testing"
 )
-
-const (
-	testClusterName = "edge-test01"
-)
-
-func getTestClusterName() string {
-	testCluster := os.Getenv("TCA_TEST_CLUSTER")
-	if len(testCluster) == 0 {
-		return testClusterName
-	}
-	return testCluster
-}
-
-func generateName() string {
-	n := uuid.New().String()
-	return n[0:12]
-}
 
 // Reads spec and validate parser
 func TestReadNodeSpecFromString(t *testing.T) {

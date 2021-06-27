@@ -1,5 +1,40 @@
 package api
 
+import (
+	"github.com/google/uuid"
+	"os"
+)
+
+const (
+	// test name, if you already have cluster adjust or pass TCA_TEST_CLUSTER env
+	testClusterName = "edge-test01"
+
+	// test cloud provider name
+	testCloudName = "edge"
+)
+
+func getTestClusterName() string {
+	testCluster := os.Getenv("TCA_TEST_CLUSTER")
+	if len(testCluster) == 0 {
+		return testClusterName
+	}
+	return testCluster
+}
+
+func getTestCloudProvider() string {
+	testCluster := os.Getenv("TCA_TEST_CLOUD")
+	if len(testCluster) == 0 {
+		return testCloudName
+	}
+	return testCluster
+}
+
+// generate name string
+func generateName() string {
+	n := uuid.New().String()
+	return n[0:12]
+}
+
 var yamlMgmtTemplate = `
 clusterType: MANAGEMENT
 clusterConfig:

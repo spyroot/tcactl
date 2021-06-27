@@ -40,22 +40,34 @@ import (
 type VmTemplateFilterType string
 
 const (
+
+	//VmwareTemplateK8s default filter for k8s  templates
 	VmwareTemplateK8s VmTemplateFilterType = "k8svm"
+
+	// DefaultNamespace - default name space used for placement
+	DefaultNamespace = "default"
+
+	// DefaultFlavor default vdu flavor
+	DefaultFlavor = "default"
 )
 
-//var validate *validator.Validate
-
 // TcaApi - TCA Api interface
+// Called need to use NewTcaApi to get instance before
 type TcaApi struct {
-	rest          *client.RestClient
+
+	// rest client used to interact with tca
+	rest *client.RestClient
+
+	// spec validator.
 	specValidator *validator.Validate
 }
 
 // NewTcaApi - return instance for API.
+//
 func NewTcaApi(rest *client.RestClient) (*TcaApi, error) {
 
 	if rest == nil {
-		return nil, fmt.Errorf("nil rest client argument")
+		return nil, fmt.Errorf("rest client is nil, initilize rest client first")
 	}
 
 	a := &TcaApi{
@@ -72,7 +84,7 @@ type CloudProviderNotFound struct {
 	errMsg string
 }
 
-//
+// Error - return if cloud provider not found
 func (m *CloudProviderNotFound) Error() string {
 	return m.errMsg + " cloud provider not found"
 }
@@ -86,11 +98,6 @@ type UnsupportedCloudProvider struct {
 func (m *UnsupportedCloudProvider) Error() string {
 	return m.errMsg + " cloud provider not supported"
 }
-
-const (
-	DefaultNamespace = "default"
-	DefaultFlavor    = "default"
-)
 
 func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
 	repo string, instanceName string, nodePoolName string) *InstanceRequestSpec {
@@ -108,46 +115,8 @@ func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string
 	return i
 }
 
-// GetVimComputeClusters - return compute cluster attached to VIM
-// For example VMware VIM
-func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	tenants, err := a.rest.GetVimTenants()
-	if err != nil {
-		return nil, err
-	}
-
-	tenant, err := tenants.FindCloudProvider(cloudName)
-	if err != nil {
-		return nil, err
-	}
-
-	if tenant.IsVMware() {
-		//
-		glog.Infof("Retrieving list for cloud provider %v '%v'",
-			tenant.HcxUUID, tenant.VimURL)
-
-		f := request.NewClusterFilterQuery(tenant.HcxUUID)
-		clusterInventory, err := a.rest.GetVmwareCluster(f)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return clusterInventory, nil
-
-	} else {
-		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
-	}
-
-	return nil, &CloudProviderNotFound{errMsg: cloudName}
-}
-
-// GetCnfs
+// GetCnfs method return list of cnf instances in
+// response.CnfsExtended that encapsulate in collection
 func (a *TcaApi) GetCnfs() (*response.CnfsExtended, error) {
 
 	genericRespond, err := a.rest.GetVnflcm()
@@ -162,56 +131,6 @@ func (a *TcaApi) GetCnfs() (*response.CnfsExtended, error) {
 	}
 
 	return nil, err
-}
-
-// GetVimNetworks - return compute cluster attached to vim
-func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	tenants, err := a.rest.GetVimTenants()
-	if err != nil {
-		return nil, err
-	}
-
-	tenant, err := tenants.FindCloudProvider(cloudName)
-	if err != nil {
-		return nil, err
-	}
-
-	glog.Infof("Retrieving network list for cloud provider uuid %s,  %s", tenant.HcxUUID, tenant.VimURL)
-
-	if !tenant.IsVMware() {
-		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
-	}
-
-	// get cluster id
-	f := request.NewClusterFilterQuery(tenant.HcxUUID)
-	clusterInventory, err := a.rest.GetVmwareCluster(f)
-	if err != nil {
-		return nil, err
-	}
-
-	var networks models.CloudNetworks
-
-	// get all network for all clusters
-	for _, item := range clusterInventory.Items {
-		networkFilter := request.VMwareNetworkQuery{}
-		networkFilter.Filter.TenantId = tenant.HcxUUID
-		if strings.HasPrefix(item.EntityId, "domain") {
-			networkFilter.Filter.ClusterId = item.EntityId
-			net, err := a.rest.GetVmwareNetworks(&networkFilter)
-			if err != nil {
-				return nil, err
-			}
-
-			networks.Network = append(networks.Network, net.Network...)
-		}
-	}
-
-	return &networks, nil
 }
 
 // GetAllNodePool return a Node pool for particular cluster
@@ -233,9 +152,7 @@ func (a *TcaApi) GetAllNodePool() (*response.NodePool, error) {
 	for _, cluster := range clusters.Clusters {
 
 		glog.Infof("Retrieving pool for a cluster name: '%v' uuid: '%v' state '%v'",
-			cluster.ClusterName,
-			cluster.Id,
-			cluster.Status)
+			cluster.ClusterName, cluster.Id, cluster.Status)
 
 		// if cluster in failed state we have no pool.s
 		if len(cluster.Id) == 0 {
@@ -261,29 +178,8 @@ func (a *TcaApi) GetAllNodePool() (*response.NodePool, error) {
 	return &pools, nil
 }
 
-// TenantsCloudProvider return a tenant attached to cloud provide for lookup query string
-func (a *TcaApi) TenantsCloudProvider(query string) (*response.Tenants, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	tenants, err := a.rest.GetVimTenants()
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := tenants.FindCloudProvider(query)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response.Tenants{
-		TenantsList: []response.TenantsDetails{*r},
-	}, nil
-}
-
-// GetVimTenants return vim tenants
+// GetVimTenants method return vim tenants as response.Tenants
+// collection.
 func (a *TcaApi) GetVimTenants() (*response.Tenants, error) {
 
 	if a.rest == nil {
@@ -323,7 +219,9 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 	return task, nil
 }
 
-// DeleteCluster get current cluster task
+// DeleteCluster method deletes cluster, note you can't
+// delete cluster that is active and contains running instances,
+// TCA will return error.
 func (a *TcaApi) DeleteCluster(clusterId string) (bool, error) {
 
 	if a.rest == nil {
@@ -340,9 +238,8 @@ func (a *TcaApi) DeleteCluster(clusterId string) (bool, error) {
 		glog.Error(clusterErr)
 		return false, err
 	}
-	glog.Infof("Retrieving current task task list for cluster '%v'", cid)
 
-	ok, err := a.rest.DeleteCluster(clusterId)
+	ok, err := a.rest.DeleteCluster(cid)
 	if err != nil {
 		return false, err
 	}
@@ -359,6 +256,10 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
+	if len(cloudName) == 0 {
+		return nil, fmt.Errorf("empty cloud provider name")
+	}
+
 	tenants, err := a.rest.GetVimTenants()
 	if err != nil {
 		return nil, err
@@ -369,12 +270,15 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 		return nil, err
 	}
 
-	glog.Infof("Retrieving network list for cloud provider uuid %s url %s", tenant.HcxUUID, tenant.VimURL)
+	glog.Infof("Retrieving vm template list for cloud provider "+
+		"uuid %s url %s", tenant.HcxUUID, tenant.VimURL)
+
 	if len(tenant.HcxUUID) == 0 {
-		return nil, fmt.Errorf("cloud provider is empty")
+		return nil, fmt.Errorf("cloud provider hcx uuid is empty string")
 	}
 
 	if !tenant.IsVMware() {
+		glog.Errorf("unsupported vim")
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
 	}
 
@@ -387,12 +291,16 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 	return t, nil
 }
 
-// GetVimFolders - return folder in target VIM.
-// caller need indicate template type and version.
+// GetVimFolders - return folders in target cloud provider.
+// for VMware VC it list of VM Folders, models.Folders
 func (a *TcaApi) GetVimFolders(cloudName string) (*models.Folders, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	if len(cloudName) == 0 {
+		return nil, fmt.Errorf("empty cloud provider name")
 	}
 
 	tenants, err := a.rest.GetVimTenants()
@@ -405,9 +313,11 @@ func (a *TcaApi) GetVimFolders(cloudName string) (*models.Folders, error) {
 		return nil, err
 	}
 
-	glog.Infof("Retrieving network list for cloud provider %v %v", tenant.HcxUUID, tenant.VimURL)
+	glog.Infof("Retrieving vim folders list for cloud provider '%v' , '%v'",
+		tenant.HcxUUID, tenant.VimURL)
+
 	if len(tenant.HcxUUID) == 0 {
-		return nil, fmt.Errorf("cloud provider is empty")
+		return nil, fmt.Errorf("cloud provider hcx uuid is empty string")
 	}
 
 	if !tenant.IsVMware() {
