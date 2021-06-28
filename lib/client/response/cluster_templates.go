@@ -20,34 +20,6 @@ const (
 
 	// FilterById filer by vnf instance name
 	FilterById TemplateFilterType = 1
-
-	// CniTypeAntrea
-	CniTypeAntrea = "antrea"
-
-	// CniTypeMultus
-	CniTypeMultus = "multus"
-
-	// CniTypeCalico - calico cni
-	CniTypeCalico = "calico"
-
-	// CniTypeWhereAbouts - cni CniTypeWhereAbouts
-	CniTypeWhereAbouts = "whereabouts"
-
-	//vsphere-csi
-	//nfs_client
-	//v1.20.4+vmware.1
-	//helm
-	// 2.17.0
-
-	// TemplateTypeMgmt cluster template mgmt
-	TemplateTypeMgmt TemplateType = 0
-
-	//TemplateTypeWorkload cluster template workload
-	TemplateTypeWorkload TemplateType = 1
-
-	TemplateMgmt string = "MANAGEMENT"
-
-	TemplateWorkload string = "WORKLOAD"
 )
 
 // ClusterConfigSpec cluster config spec hols CNI/CSI

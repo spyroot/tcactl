@@ -19,8 +19,10 @@
 package response
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/models"
 	"reflect"
 	"strings"
 )
@@ -55,18 +57,14 @@ type MasterNodesDetails struct {
 }
 
 type WorkerNodesDetails struct {
-	Cpu      int    `json:"cpu"`
-	Memory   int    `json:"memory"`
-	Name     string `json:"name"`
-	Networks []struct {
-		Label       string   `json:"label"`
-		NetworkName string   `json:"networkName"`
-		Nameservers []string `json:"nameservers"`
-	} `json:"networks"`
-	Storage   int      `json:"storage"`
-	Replica   int      `json:"replica"`
-	Labels    []string `json:"labels"`
-	CloneMode string   `json:"cloneMode"`
+	Cpu       int               `json:"cpu"`
+	Memory    int               `json:"memory"`
+	Name      string            `json:"name"`
+	Networks  []models.Networks `json:"networks"`
+	Storage   int               `json:"storage"`
+	Replica   int               `json:"replica"`
+	Labels    []string          `json:"labels"`
+	CloneMode string            `json:"cloneMode"`
 	Config    struct {
 		CpuManagerPolicy struct {
 			Type       string `json:"type"`
@@ -82,14 +80,7 @@ type WorkerNodesDetails struct {
 				} `json:"systemReserved"`
 			} `json:"properties"`
 		} `json:"cpuManagerPolicy"`
-		HealthCheck struct {
-			NodeStartupTimeout  string `json:"nodeStartupTimeout"`
-			UnhealthyConditions []struct {
-				Type    string `json:"type"`
-				Status  string `json:"status"`
-				Timeout string `json:"timeout"`
-			} `json:"unhealthyConditions"`
-		} `json:"healthCheck"`
+		HealthCheck *models.HealthCheck `json:"healthCheck"`
 	} `json:"config"`
 }
 
@@ -106,7 +97,7 @@ type ClusterSpec struct {
 	HcxUUID             string               `json:"hcxUUID"`
 	Status              string               `json:"status"`
 	ActiveTasksCount    int                  `json:"activeTasksCount"`
-	ClusterTemplate     ClusterSpecTemplate  `json:"clusterTemplate"`
+	ClusterTemplate     *ClusterSpecTemplate `json:"clusterTemplate"`
 	ClusterId           string               `json:"clusterId"`
 	ClusterUrl          string               `json:"clusterUrl"`
 	KubeConfig          string               `json:"kubeConfig"`
@@ -127,6 +118,22 @@ func (t *ClusterSpec) GetField(field string) string {
 	r := reflect.ValueOf(t)
 	f := reflect.Indirect(r).FieldByName(strings.Title(field))
 	return f.String()
+}
+
+func (t *ClusterSpec) GetFields() (map[string]interface{}, error) {
+
+	var m map[string]interface{}
+
+	b, err := json.Marshal(t)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
 
 type ClusterNotFound struct {

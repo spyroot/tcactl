@@ -21,4 +21,5 @@ package printer
 // struct field name
 type FilteredOutput interface {
 	GetField(field string) string
+	GetFields() (map[string]interface{}, error)
 }

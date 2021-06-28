@@ -30,10 +30,17 @@ import (
 )
 
 const (
-	CliBlock       = "block"
-	CliPool        = "pool"
+	// CliBlock command line flag to block thread of execution
+	CliBlock = "block"
+
+	// CliPool node pool flag
+	CliPool = "pool"
+
+	// CliDisableGran disable grand validation flag
 	CliDisableGran = "grant"
-	CliForce       = "force"
+
+	// CliForce force delete flag
+	CliForce = "force"
 )
 
 // CmdInitConfig - initialize configuration file, for initial
@@ -70,7 +77,8 @@ func (ctl *TcaCtl) CmdInitConfig() *cobra.Command {
 			io.CheckErr(err)
 
 			fmt.Println("Default config file generated: ", configPath)
-			fmt.Println("Now run tcactl set and set username, password and TCA Cluster Endpoint.")
+			fmt.Println("Now run tcactl set and set username, " +
+				"password and TCA Cluster endpoint and other configuration settings.")
 		},
 	}
 
@@ -120,8 +128,8 @@ func (ctl *TcaCtl) BuildCmd() {
 
 	var describe = &cobra.Command{
 		Use:     "describe [cloud or cluster or nodes or pool or template]",
-		Long:    `Command describes object TCA. CNFI is CNFI in the inventory, CNFC Catalog entities.`,
-		Short:   "Describe TCA object details",
+		Long:    `Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entities. `,
+		Short:   "Command describes describe TCA object in details.",
 		Aliases: []string{"desc"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
@@ -138,10 +146,12 @@ func (ctl *TcaCtl) BuildCmd() {
 	// root cmd for all get
 	var cmdGet = &cobra.Command{
 		Use:   "get [cnfi, cnfc, clusters, pools]",
-		Short: "Gets object from TCA, cnfi, cnfc etc",
-		Long:  `Gets object from TCA. CNFI is CNFI in the inventory, CNFC Catalog entities.`,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		Short: "Command retrieves tca entity (cnf, catalog, cluster) etc",
+		Long: `
 
+Command retrieves tca entity from. CNFI is CNFI in the inventory, CNFC Catalog entities.`,
+
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
 				CheckErrLogError(err)
@@ -156,8 +166,11 @@ func (ctl *TcaCtl) BuildCmd() {
 	// root cmd for all update commands
 	var cmdUpdate = &cobra.Command{
 		Use:   "update [cnfi or cnfc]",
-		Short: "Updates cnf, cnf catalog etc",
-		Long:  `Updates cnf state, (terminate, scale etc), or CNF catalog`,
+		Short: "Command updates or apply changes tca entity cnf, cnf catalog , cluster or node pool.",
+		Long: `
+Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node pool.)`,
+		Aliases: []string{"apply"},
+
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
@@ -169,11 +182,11 @@ func (ctl *TcaCtl) BuildCmd() {
 		},
 	}
 
-	// create
+	// create root command
 	var cmdCreate = &cobra.Command{
 		Use:   "create",
-		Short: "Create a new object in TCA.",
-		Long:  `Create a new object in TCA. For example new CNF instance.`,
+		Short: "Command creates a new object in TCA.",
+		Long:  `Command creates a new object in TCA. For example new CNF instance, cluster , cluster template etc.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
@@ -185,7 +198,7 @@ func (ctl *TcaCtl) BuildCmd() {
 		},
 	}
 
-	// set
+	// set root command
 	var cmdSet = &cobra.Command{
 		Use:   "set",
 		Short: "Command sets config variables (Username, Password etc) for tcactl.",
@@ -221,17 +234,21 @@ func (ctl *TcaCtl) BuildCmd() {
 		ctl.CmdSetPassword())
 
 	// Describe sub command
-	describe.AddCommand(ctl.CmdDescribeVim())
-	describe.AddCommand(ctl.CmdGetCluster())
-	describe.AddCommand(ctl.CmdDescClusterNodePool())
-	describe.AddCommand(ctl.CmdDescClusterNodePools())
-	describe.AddCommand(ctl.CmdDescClusterNodes())
-	describe.AddCommand(ctl.CmdDescribeTemplate())
-	describe.AddCommand(ctl.CmdDescribeTask())
+	describe.AddCommand(
+		ctl.CmdDescribeVim(),
+		ctl.CmdGetCluster(),
+		ctl.CmdDescClusterNodePool(),
+		ctl.CmdDescClusterNodePools(),
+		ctl.CmdDescClusterNodes(),
+		ctl.CmdDescribeTemplate(),
+		ctl.CmdDescribeTask())
 
 	// Update sub-commands
-	cmdUpdate.AddCommand(ctl.CmdUpdateClusterTemplates())
-	cmdUpdate.AddCommand(ctl.CmdUpdateInstance())
+	cmdUpdate.AddCommand(
+		ctl.CmdUpdatePoolNodes(),
+		ctl.CmdUpdateTenant(),
+		ctl.CmdUpdateClusterTemplates(),
+		ctl.CmdUpdateInstance())
 
 	// root command
 	ctl.RootCmd.AddCommand(describe,
@@ -244,19 +261,21 @@ func (ctl *TcaCtl) BuildCmd() {
 		ctl.CmdInitConfig())
 
 	// Get command
-	cmdGet.AddCommand(ctl.CmdGetPackages())
-	cmdGet.AddCommand(ctl.CmdGetInstances())
-	cmdGet.AddCommand(ctl.CmdGetRepos())
-	cmdGet.AddCommand(ctl.CmdGetClouds())
-	cmdGet.AddCommand(ctl.CmdGetPool())
-	cmdGet.AddCommand(ctl.CmdGetClusters())
-	cmdGet.AddCommand(ctl.CmdGetVdu())
-	cmdGet.AddCommand(ctl.CmdGetExtensions())
-	cmdGet.AddCommand(ctl.CmdGetClusterTemplates())
-	cmdGet.AddCommand(ctl.CmdGetVim())
+	cmdGet.AddCommand(
+		ctl.CmdGetPackages(),
+		ctl.CmdGetInstances(),
+		ctl.CmdGetRepos(),
+		ctl.CmdGetClouds(),
+		ctl.CmdVims(),
+		ctl.CmdGetClusters(),
+		ctl.CmdGetVdu(),
+		ctl.CmdGetExtensions(),
+		ctl.CmdGetClusterTemplates(),
+		ctl.CmdGetVim())
 
 	// Create root command
 	cmdCreate.AddCommand(
+		ctl.CmdCreateTenant(),
 		ctl.CmdCreateCluster(),
 		ctl.CmdCreateCnf(),
 		ctl.CmdCreateClusterTemplates(),
@@ -265,6 +284,7 @@ func (ctl *TcaCtl) BuildCmd() {
 
 	// Delete
 	cmdDelete.AddCommand(
+		ctl.CmdDeleteTenant(),
 		ctl.CmdDeleteClusterTemplates(),
 		ctl.CmdDeleteCluster(),
 		ctl.CmdDeleteTenantCluster(),

@@ -19,15 +19,48 @@
 package cmds
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
+	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
 )
 
-// CmdGetClouds - return list of cloud provider attached to TCA
+// Chunks splits string to chunks,
+// it uses sep to split near chunkSize limit.
+// Each chunk is variable size. Method used to partition
+// flags usage.
+func Chunks(s string, chunkSize int, sep byte) []string {
+
+	if len(s) == 0 {
+		return nil
+	}
+
+	if chunkSize >= len(s) {
+		return []string{s}
+	}
+
+	var chunks []string = make([]string, 0, (len(s)-1)/chunkSize+1)
+	currentLen := 0
+	currentStart := 0
+	for i := range s {
+		if currentLen >= chunkSize && s[i-1] == sep {
+			chunks = append(chunks, s[currentStart:i])
+			currentLen = 0
+			currentStart = i
+		}
+		currentLen++
+	}
+	chunks = append(chunks, s[currentStart:])
+	return chunks
+}
+
+// CmdGetClouds - return list of cloud provider
+// attached to Telco Cloud Automation
 func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 
 	var (
@@ -42,11 +75,16 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:     "clouds [name or id]",
 		Aliases: []string{"cloud"},
-		Short:   "Command retrieves a list of cloud providers.",
+		Short:   "Command retrieves a list of cloud providers. (tenants)",
 		Long: templates.LongDesc(`
-									Command retrieve a list of cloud providers currently attached to TCA.`),
-		Example: " - tcactl get clouds \n - tcactl get clouds edge",
-		Args:    cobra.RangeArgs(0, 1),
+
+Command retrieve a list of cloud providers currently attached to Telco Cloud Automation.
+Workload and Tenant cluster must be attached to target provider.
+
+`),
+		Example: "\t- tcactl get clouds \n" +
+			"\t- tcactl get clouds edge",
+		Args: cobra.RangeArgs(0, 1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
@@ -75,10 +113,9 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 			}
 
 			if len(vimType) > 0 {
-				r, err := tenants.Filter(response.FilterVimType, func(q string) bool {
-					return strings.HasPrefix(q, vimType)
+				r := tenants.Filter(response.FilterVimType, func(q string) bool {
+					return strings.HasPrefix(strings.ToLower(q), strings.ToLower(vimType))
 				})
-				CheckErrLogError(err)
 				if printer, ok := ctl.TenantsPrinter[_defaultPrinter]; ok {
 					printer(&response.Tenants{TenantsList: r}, _defaultStyler)
 				}
@@ -86,10 +123,9 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 			}
 
 			if len(hcxUuid) > 0 {
-				r, err := tenants.Filter(response.FilterHcxUUID, func(q string) bool {
+				r := tenants.Filter(response.FilterHcxUUID, func(q string) bool {
 					return strings.HasPrefix(q, hcxUuid)
 				})
-				CheckErrLogError(err)
 				if printer, ok := ctl.TenantsPrinter[_defaultPrinter]; ok {
 					printer(&response.Tenants{TenantsList: r}, _defaultStyler)
 				}
@@ -105,15 +141,31 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 	}
 
 	//
+	vimTypeUsage := fmt.Sprintf("filter by VIM Type. %s\n",
+		strings.Join(models.VimType(), ","))
+
 	_cmd.Flags().StringVar(&vimType,
-		"vim_type", "", "filter by VIM Type. KUBERNETES|VC")
+		"vim_type", "", vimTypeUsage)
 	//
 	_cmd.Flags().StringVar(&hcxUuid,
 		"hcx_uuid", "", "filter by HCX UUID.")
 
-	// output filter , filter specific value from data structure
-	_cmd.Flags().StringVar(&_outputFilter, "ofilter", "",
-		"Output filter.")
+	fields := strings.Join(api.TenantFields(), ",")
+	chunks := Chunks(fields, 50, ',')
+	outputUsage := fmt.Sprintf("Output filter. (%s", chunks[0])
+	for i, chunk := range chunks {
+		if i > 0 {
+			outputUsage += chunk
+		}
+		if i == len(chunk) {
+			outputUsage += "\n)"
+		} else {
+			outputUsage += "\n"
+		}
+	}
+
+	//outputFilterUsage := fmt.Sprintf("filter by VIM Type. %s\n", strings.Join(models.,","))
+	_cmd.Flags().StringVar(&_outputFilter, "ofilter", "", outputUsage)
 
 	return _cmd
 }

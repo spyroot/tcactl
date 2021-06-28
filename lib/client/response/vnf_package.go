@@ -18,10 +18,11 @@
 package response
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/spyroot/tcactl/lib/models"
 	"reflect"
 	"strings"
-	"time"
 )
 
 // VnfdFilterType - vnfd filter types
@@ -39,6 +40,16 @@ const (
 	OperationalState VnfdFilterType = 2
 )
 
+// CatalogNotFound error raised if tenant cloud not found
+type CatalogNotFound struct {
+	errMsg string
+}
+
+//
+func (m *CatalogNotFound) Error() string {
+	return "Catalog entity '" + m.errMsg + "' not found"
+}
+
 // VnfPackagesError - TCA Error rest API error response format
 type VnfPackagesError struct {
 	Type     string `json:"type" yaml:"type"`
@@ -50,32 +61,17 @@ type VnfPackagesError struct {
 
 // VnfPackage - TCA VNF Package TCA format
 type VnfPackage struct {
-	PID                string        `json:"id" yaml:"pid"`
-	VnfdID             string        `json:"vnfdId" yaml:"vnfd_id"`
-	VnfProvider        string        `json:"vnfProvider" yaml:"vnf_provider"`
-	VnfProductName     string        `json:"vnfProductName" yaml:"vnf_product_name"`
-	VnfSoftwareVersion string        `json:"vnfSoftwareVersion" yaml:"vnf_software_version"`
-	VnfdVersion        string        `json:"vnfdVersion" yaml:"vnfd_version"`
-	OnboardingState    string        `json:"onboardingState" yaml:"onboarding_state"`
-	OperationalState   string        `json:"operationalState" yaml:"operational_state"`
-	UsageState         string        `json:"usageState" yaml:"usage_state"`
-	VnfmInfo           []interface{} `json:"vnfmInfo" yaml:"vnfm_info"`
-	UserDefinedData    struct {
-		Name                   string            `json:"name" yaml:"name"`
-		Tags                   []interface{}     `json:"tags" yaml:"tags"`
-		NfType                 string            `json:"nfType" yaml:"nf_type"`
-		ManagedBy              InternalManagedBy `json:"managedBy" yaml:"managed_by"`
-		LocalFilePath          string            `json:"localFilePath" yaml:"local_file_path"`
-		LastUpdated            time.Time         `json:"lastUpdated" yaml:"last_updated"`
-		LastUpdateEnterprise   string            `json:"lastUpdateEnterprise" yaml:"last_update_enterprise"`
-		LastUpdateOrganization string            `json:"lastUpdateOrganization" yaml:"last_update_organization"`
-		LastUpdateUser         string            `json:"lastUpdateUser" yaml:"last_update_user"`
-		CreationDate           time.Time         `json:"creationDate" yaml:"creation_date"`
-		CreationEnterprise     string            `json:"creationEnterprise" yaml:"creation_enterprise"`
-		CreationOrganization   string            `json:"creationOrganization" yaml:"creation_organization"`
-		CreationUser           string            `json:"creationUser" yaml:"creation_user"`
-		IsDeleted              bool              `json:"isDeleted" yaml:"is_deleted"`
-	} `yaml:"user_defined_data"`
+	PID                string                 `json:"id" yaml:"pid"`
+	VnfdID             string                 `json:"vnfdId" yaml:"vnfdId"`
+	VnfProvider        string                 `json:"vnfProvider" yaml:"vnfProvider"`
+	VnfProductName     string                 `json:"vnfProductName" yaml:"vnfProductName"`
+	VnfSoftwareVersion string                 `json:"vnfSoftwareVersion" yaml:"vnfSoftwareVersion"`
+	VnfdVersion        string                 `json:"vnfdVersion" yaml:"vnfdVersion"`
+	OnboardingState    string                 `json:"onboardingState" yaml:"onboardingState"`
+	OperationalState   string                 `json:"operationalState" yaml:"operationalState"`
+	UsageState         string                 `json:"usageState" yaml:"usage_state"`
+	VnfmInfo           []interface{}          `json:"vnfmInfo" yaml:"vnfmInfo"`
+	UserDefinedData    models.UserDefinedData `yaml:"user_defined_data"`
 }
 
 // VnfPackages - array of VNF Packages.
@@ -83,21 +79,35 @@ type VnfPackages struct {
 	Packages []VnfPackage
 }
 
-// CatalogNotFound error raised if tenant cloud not found
-type CatalogNotFound struct {
-	errMsg string
+// GetField - return struct field value
+func (t *VnfPackage) GetField(field string) string {
+
+	r := reflect.ValueOf(t)
+	fields, _ := t.GetFields()
+	if _, ok := fields[field]; ok {
+		f := reflect.Indirect(r).FieldByName(strings.Title(field))
+		return f.String()
+	}
+
+	return ""
 }
 
-//
-func (m *CatalogNotFound) Error() string {
-	return "Catalog entity '" + m.errMsg + "' not found"
-}
+// GetFields return VduPackage fields name as
+// map[string], each key is field name
+func (t *VnfPackage) GetFields() (map[string]interface{}, error) {
 
-// GetField - return field from VNfPackage struct
-func (p *VnfPackage) GetField(field string) string {
-	r := reflect.ValueOf(p)
-	f := reflect.Indirect(r).FieldByName(strings.Title(field))
-	return f.String()
+	var m map[string]interface{}
+
+	b, err := json.Marshal(t)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
 
 // GetVnfdID - find by either VnfdID or ProductName, id
@@ -123,20 +133,15 @@ func (v *VnfPackages) Filter(q VnfdFilterType, f func(string) bool) ([]VnfPackag
 
 	filtered := make([]VnfPackage, 0)
 	for _, v := range v.Packages {
-		if q == VnfProductName {
-			if f(v.VnfProductName) {
-				filtered = append(filtered, v)
-			}
+		if q == VnfProductName && f(v.VnfProductName) {
+			filtered = append(filtered, v)
+
 		}
-		if q == VnfdId {
-			if f(v.VnfdID) {
-				filtered = append(filtered, v)
-			}
+		if q == VnfdId && f(v.VnfdID) {
+			filtered = append(filtered, v)
 		}
-		if q == OperationalState {
-			if f(v.VnfdID) {
-				filtered = append(filtered, v)
-			}
+		if q == OperationalState && f(v.VnfdID) {
+			filtered = append(filtered, v)
 		}
 	}
 

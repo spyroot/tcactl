@@ -18,6 +18,34 @@
 package client
 
 const (
+
+	// DefaultContentType content type used
+	defaultContentType = "application/json"
+
+	// uriAuthorize
+	uriAuthorize = "/hybridity/api/sessions"
+
+	// authorizationHeader - TCA authorization header
+	authorizationHeader = "x-hm-authorization"
+
+	// DefaultVersion api version used
+	defaultVersion = "2"
+
+	// DefaultAccept default content type we receive
+	defaultAccept = "application/json"
+
+	// apiTenants - list of vim tenant rest call
+	apiTenants = "/hybridity/api/vims/v1/tenants"
+
+	// TcaDeleteTenant - api call delete tenant
+	TcaDeleteTenant = "/hybridity/api/vims/v1/tenants/%s"
+
+	// apiVim - attached vim list rest call
+	apiVim = "/hybridity/api/vims/v1/"
+
+	// apiTenantAction query action
+	apiTenantAction = "action=query"
+
 	// TcaInfraCluster api endpoint clusters api.
 	TcaInfraCluster = "/hybridity/api/infra/k8s/cluster"
 
@@ -41,7 +69,7 @@ const (
 	//TcaVmwareExtensionsTypes extensions types
 	TcaVmwareExtensionsTypes = "/hybridity/api/extensions/types"
 
-	//
+	// TcaVmwareNfvNetworks api request to get networks
 	TcaVmwareNfvNetworks = "/hybridity/api/nfv/networks"
 
 	// TcaVmwareRepositories - getter for repositories
@@ -50,7 +78,7 @@ const (
 	// TcaVmwareRepos rest call to manipulate repositories
 	TcaVmwareRepos = "/hybridity/api/repositories"
 
-	//
+	// TcaVmwarePackagesActionContent pacakge content suffix
 	TcaVmwarePackagesActionContent = "package_content"
 
 	// TcaVmwareTelcoPackages api endpoint for vnf packages.
@@ -60,7 +88,7 @@ const (
 	TcaVmwareVnflcmInstances = "/telco/api/vnflcm/v2/vnf_instances"
 
 	// TcaVmwareVnflcmInstance operation on instance
-	TcaVmwareVnflcmInstance = "/telco/api/vnflcm/v2/vnf_instances/"
+	TcaVmwareVnflcmInstance = "/telco/api/vnflcm/v2/vnf_instances/%s"
 
 	// TcaInfraPoolRetry Retry task
 	TcaInfraPoolRetry = "/hybridity/api/infra/k8s/operations/%s/retry"
@@ -74,12 +102,15 @@ const (
 	// TcaInfraDeletePool API call delete Node pool
 	TcaInfraDeletePool = "/hybridity/api/infra/k8s/cluster/%s/nodepool/%s"
 
+	// TcaInfraUpdatePool API call update Node pool
+	TcaInfraUpdatePool = "/hybridity/api/infra/k8s/cluster/%s/nodepool/%s"
+
+	// TcaClustersNodePoolUpgrade upgrade existing node pool
+	TcaClustersNodePoolUpgrade = "/hybridity/infra/k8s/cluster/%s/nodepool/%s/upgrade"
+
 	// TcaInfraSupportedVer return list of supported version
 	TcaInfraSupportedVer = "/hybridity/api/infra/k8s/supportedK8sVersions"
 
 	// TcaClusterChangePassword change password for existing cluster
 	TcaClusterChangePassword = "/hybridity/api/infra/k8s/clusters/%s/changePassword"
-
-	// TcaClustersNodePoolUpgrade upgrade existing node pool
-	TcaClustersNodePoolUpgrade = "/hybridity/infra/k8s/cluster/%s/nodepool/%s/upgrade"
 )

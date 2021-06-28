@@ -1,10 +1,12 @@
 package response
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/models"
+	"reflect"
 	"strings"
 )
 
@@ -41,14 +43,7 @@ type NodePoolConfig struct {
 			} `json:"systemReserved" yaml:"system_reserved"`
 		} `json:"properties" yaml:"properties"`
 	} `json:"cpuManagerPolicy"`
-	HealthCheck struct {
-		NodeStartupTimeout  string `json:"nodeStartupTimeout"`
-		UnhealthyConditions []struct {
-			Type    string `json:"type"`
-			Status  string `json:"status"`
-			Timeout string `json:"timeout"`
-		} `json:"unhealthyConditions"`
-	} `json:"healthCheck"`
+	HealthCheck *models.HealthCheck `json:"healthCheck"`
 }
 
 type NodesDetails struct {
@@ -69,14 +64,45 @@ type NodesSpecs struct {
 		Name string `json:"name" yaml:"name"`
 		Type string `json:"type" yaml:"type"`
 	} `json:"placementParams" yaml:"placement_params"`
-	Replica          int            `json:"replica" yaml:"replica"`
-	Storage          int            `json:"storage" yaml:"storage"`
-	Config           NodePoolConfig `json:"config" yaml:"config"`
-	Status           string         `json:"status" yaml:"status"`
-	ActiveTasksCount int            `json:"activeTasksCount" yaml:"active_tasks_count"`
+	Replica          int             `json:"replica" yaml:"replica"`
+	Storage          int             `json:"storage" yaml:"storage"`
+	Config           *NodePoolConfig `json:"config" yaml:"config"`
+	Status           string          `json:"status" yaml:"status"`
+	ActiveTasksCount int             `json:"activeTasksCount" yaml:"active_tasks_count"`
 	// nodes that part of cluster.
 	Nodes                         []NodesDetails `json:"nodes" yaml:"nodes"`
 	IsNodeCustomizationDeprecated bool           `json:"isNodeCustomizationDeprecated" yaml:"is_node_customization_deprecated"`
+}
+
+// GetField - return struct field value
+func (t *NodesSpecs) GetField(field string) string {
+
+	r := reflect.ValueOf(t)
+	fields, _ := t.GetFields()
+	if _, ok := fields[field]; ok {
+		f := reflect.Indirect(r).FieldByName(strings.Title(field))
+		return f.String()
+	}
+
+	return ""
+}
+
+// GetFields return VduPackage fields name as
+// map[string], each key is field name
+func (t *NodesSpecs) GetFields() (map[string]interface{}, error) {
+
+	var m map[string]interface{}
+
+	b, err := json.Marshal(t)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
 
 func (n *NodesSpecs) GetNodesSpecs() []NodesDetails {

@@ -342,7 +342,7 @@ func TenantTabularPinter(tenants *response.Tenants, style ui.PrinterStyle) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 
-	t.AppendHeader(table.Row{"#", "ID", "Name", "Vin Name", "Tenant Name", "VIM ID", "Type"})
+	t.AppendHeader(table.Row{"#", "ID", "Name", "Vim Name", "Tenant Name", "VIM ID", "Type"})
 	for i, it := range tenants.TenantsList {
 		t.AppendRows([]table.Row{
 			{i, it.ID, it.Name, it.VimName, it.TenantName, it.VimID, it.VimType},

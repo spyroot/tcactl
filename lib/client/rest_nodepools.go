@@ -173,6 +173,48 @@ func (c *RestClient) DeleteNodePool(clusterId string, nodePoolId string) (*model
 	return &task, nil
 }
 
+// UpdateNodePool - update a note pool
+func (c *RestClient) UpdateNodePool(r *request.NewNodePoolSpec, clusterId string, nodePoolId string) (*models.TcaTask, error) {
+
+	if len(clusterId) == 0 {
+		return nil, fmt.Errorf("cluster id is empty string")
+	}
+
+	if len(nodePoolId) == 0 {
+		return nil, fmt.Errorf("nodePool id is empty string")
+	}
+
+	c.GetClient()
+	resp, err := c.Client.R().SetBody(r).Put(c.BaseURL + fmt.Sprintf(TcaInfraUpdatePool, clusterId, nodePoolId))
+
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	if c.isTrace && resp != nil {
+		fmt.Println(string(resp.Body()))
+	}
+
+	if !resp.IsSuccess() {
+		var errRes ErrorResponse
+		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("server return error %v %v %v", errRes.Details, errRes.Message, string(resp.Body()))
+			return nil, fmt.Errorf("server return error %v", errRes.Message)
+		}
+		glog.Errorf("server return unknown error %v %v", resp.StatusCode(), string(resp.Body()))
+		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+	}
+
+	var task models.TcaTask
+	if err := json.Unmarshal(resp.Body(), &task); err != nil {
+		glog.Errorf("Failed parse server respond.")
+		return nil, err
+	}
+
+	return &task, nil
+}
+
 // NodePoolRetryTask - retry task related to node pool
 func (c *RestClient) NodePoolRetryTask(taskId string) (*models.TcaTask, error) {
 

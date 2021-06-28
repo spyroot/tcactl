@@ -21,13 +21,32 @@ package api
 import (
 	"fmt"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/models"
 )
+
+// TenantFields method return all struct
+// fields name
+func TenantFields() []string {
+	f := response.TenantsDetails{}
+	fields, _ := f.GetFields()
+
+	var keys []string
+	for s, _ := range fields {
+		keys = append(keys, s)
+	}
+
+	return keys
+}
 
 // TenantsCloudProvider return a tenant attached to cloud provide for lookup query string
 func (a *TcaApi) TenantsCloudProvider(query string) (*response.Tenants, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	if len(query) == 0 {
+		return nil, fmt.Errorf("empty query string")
 	}
 
 	tenants, err := a.rest.GetVimTenants()
@@ -43,4 +62,24 @@ func (a *TcaApi) TenantsCloudProvider(query string) (*response.Tenants, error) {
 	return &response.Tenants{
 		TenantsList: []response.TenantsDetails{*r},
 	}, nil
+}
+
+// DeleteTenantsProvider delete a tenant attached to cloud provide.
+func (a *TcaApi) DeleteTenantsProvider(tenantCluster string) (*models.TcaTask, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	tenants, err := a.rest.GetVimTenants()
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := tenants.FindCloudProvider(tenantCluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.rest.DeleteTenant(r.TenantID)
 }

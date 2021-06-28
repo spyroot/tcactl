@@ -208,3 +208,40 @@ func (a *TcaApi) CreateNewNodePool(spec *request.NewNodePoolSpec,
 
 	return a.rest.CreateNewNodePool(spec, _clusterId)
 }
+
+// UpdateNodePool api call update a new node pool for a given cluster name or id.
+// both cluster can be named or ids.  API call returns models.TcaTas that monitored.
+// isDry run provide capability only validate specs without creating actual node pool.
+func (a *TcaApi) UpdateNodePool(spec *request.NewNodePoolSpec,
+	cluster string, isDry bool) (*models.TcaTask, error) {
+
+	if a.rest == nil {
+		return nil, errnos.RestNilError
+	}
+
+	_clusterId := cluster
+
+	if IsValidUUID(cluster) {
+		c, err := a.GetCluster(_clusterId)
+		if err != nil {
+			glog.Error(err)
+			return nil, err
+		}
+		_clusterId = c.ClusterId
+	} else {
+		c, err := a.ResolveClusterName(_clusterId)
+		if err != nil {
+			glog.Error(err)
+			return nil, err
+		}
+		_clusterId = c
+	}
+
+	// in dry we just return
+	if isDry {
+		return &models.TcaTask{}, nil
+	}
+
+	// TODO
+	return a.rest.UpdateNodePool(spec, _clusterId, "")
+}

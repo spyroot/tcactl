@@ -233,3 +233,62 @@ Command create additional node pool on target kubernetes cluster.
 
 	return _cmd
 }
+
+// CmdUpdatePoolNodes - command create a node pool
+// from a node pool spec.
+// TODO
+func (ctl *TcaCtl) CmdUpdatePoolNodes() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+		_outputFilter   string
+		isDry           bool
+	)
+
+	var _cmd = &cobra.Command{
+		Use:   "pool [cluster name or id,  spec file]",
+		Short: "Command update node pool for target kubernetes cluster.",
+		Long: `
+
+Command update node pool for target kubernetes cluster.
+
+`,
+		Example: "tcactl create node-pool my_cluster example/node-pool.yaml",
+		Aliases: []string{"pools", "pool"},
+		Args:    cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+
+			// swap filter if output filter required
+			if len(_outputFilter) > 0 {
+				outputFields := strings.Split(_outputFilter, ",")
+				_defaultPrinter = FilteredOutFilter
+				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+			}
+
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			nodePoolSpec, err := api.ReadNodeSpecFromFile(args[1])
+			CheckErrLogError(err)
+
+			if isDry && nodePoolSpec != nil {
+				err := io.YamlPrinter(nodePoolSpec, false)
+				CheckErrLogError(err)
+			}
+
+			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry)
+			CheckErrLogError(err)
+			fmt.Printf("Node Pool task %v created.\n", task.OperationId)
+		},
+	}
+
+	_cmd.Flags().BoolVar(&isDry,
+		"dry", false, "Parses input template spec, "+
+			"validates, outputs spec to the terminal screen. Format based on -o flag.")
+
+	return _cmd
+}

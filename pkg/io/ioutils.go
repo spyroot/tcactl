@@ -121,13 +121,13 @@ func PrettyPrint(v interface{}) (err error) {
 }
 
 // YamlPrinter Default Json printer
-func YamlPrinter(t interface{}, isColor bool) error {
+func YamlPrinter(t interface{}, isColor ...bool) error {
 	b, err := yaml.Marshal(t)
 	if err != nil {
 		return err
 	}
 
-	if isColor {
+	if len(isColor) > 0 {
 		fmt.Println(string(pretty.Color(b, nil)))
 	} else {
 		fmt.Println(string(b))

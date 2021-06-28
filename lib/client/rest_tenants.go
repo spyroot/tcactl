@@ -23,22 +23,11 @@ import (
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
-	"net/http"
+	"github.com/spyroot/tcactl/lib/models"
 )
 
-const (
-	// apiTenants - list of vim tenant rest call
-	apiTenants = "/hybridity/api/vims/v1/tenants"
-
-	// apiVim - attached vim list rest call
-	apiVim = "/hybridity/api/vims/v1/"
-
-	// apiTenantAction query action
-	apiTenantAction = "action=query"
-)
-
-// GetVimTenants return list of all cloud provider attached
-// to TCA
+// GetVimTenants return list of all cloud provider
+// attached to TCA
 func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 
 	c.GetClient()
@@ -52,7 +41,7 @@ func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -65,7 +54,7 @@ func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 	return &tenants, nil
 }
 
-// GetVim return list of cloud provider attached to TCA
+// GetVim return vim  attached to TCA
 func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 
 	c.GetClient()
@@ -81,7 +70,7 @@ func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -110,7 +99,7 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -124,28 +113,28 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 }
 
 // DeleteTenant delete tenant cluster
-func (c *RestClient) DeleteTenant(tenantCluster string) (bool, error) {
+func (c *RestClient) DeleteTenant(tenantCluster string) (*models.TcaTask, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().Delete(c.BaseURL + "/hybridity/api/vims/v1/tenants/" + tenantCluster)
+	resp, err := c.Client.R().Delete(c.BaseURL + fmt.Sprintf(TcaDeleteTenant, tenantCluster))
 	if err != nil {
 		glog.Error(err)
-		return false, err
+		return nil, err
 	}
 
 	if c.isTrace && resp != nil {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		return false, c.checkErrors(resp)
+	if !resp.IsSuccess() {
+		return nil, c.checkErrors(resp)
 	}
 
-	var tenants response.Tenants
-	if err := json.Unmarshal(resp.Body(), &tenants); err != nil {
+	var task models.TcaTask
+	if err := json.Unmarshal(resp.Body(), &task); err != nil {
 		glog.Error("Failed parse server respond.")
-		return false, err
+		return nil, err
 	}
 
-	return resp.StatusCode() == http.StatusOK, nil
+	return &task, nil
 }

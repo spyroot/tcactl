@@ -18,6 +18,7 @@
 package client
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -30,9 +31,9 @@ import (
 
 // makeDefaultHeaders default headers
 func (c *RestClient) makeDefaultHeaders() {
-	c.Client.SetHeader("Content-Type", "application/json")
-	c.Client.SetHeader("Version", "2")
-	c.Client.SetHeader("Accept", "application/json")
+	c.Client.SetHeader("Content-Type", defaultContentType)
+	c.Client.SetHeader("Version", defaultVersion)
+	c.Client.SetHeader("Accept", defaultAccept)
 	c.Client.SetHeader("Authorization", c.ApiKey)
 	c.Client.SetHeader("x-hm-authorization", c.ApiKey)
 }
@@ -41,7 +42,7 @@ func (c *RestClient) makeDefaultHeaders() {
 func (c *RestClient) GetClient() {
 
 	if c.Client == nil {
-		glog.Infof("Creating rest client")
+		glog.Infof("Creating a new rest client")
 		c.Client = resty.New()
 		if c.SkipSsl {
 			tr := &http.Transport{
@@ -65,7 +66,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 	var (
 		err     error
 		resp    *resty.Response
-		isArray bool = true
+		isArray = true
 	)
 
 	c.GetClient()
@@ -162,8 +163,8 @@ func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 	return &cnflcm, nil
 }
 
-// CnfTerminate action
-func (c *RestClient) CnfTerminate(terminateUri string, terminateReq request.TerminateVnfRequest) error {
+// TerminateInstance action
+func (c *RestClient) TerminateInstance(terminateUri string, terminateReq request.TerminateVnfRequest) error {
 
 	c.GetClient()
 
@@ -192,7 +193,7 @@ func (c *RestClient) CnfTerminate(terminateUri string, terminateReq request.Term
 }
 
 // CnfRollback action
-func (c *RestClient) CnfRollback(instanceId string) error {
+func (c *RestClient) CnfRollback(ctx context.Context, instanceId string) error {
 
 	if c == nil {
 		return fmt.Errorf("unutilized client")
@@ -211,7 +212,7 @@ func (c *RestClient) CnfRollback(instanceId string) error {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("Server return error %v", errRes.Details)
@@ -224,15 +225,15 @@ func (c *RestClient) CnfRollback(instanceId string) error {
 	return nil
 }
 
-// CnfVnfCreate vnf instances
-func (c *RestClient) CnfVnfCreate(req *request.CreateVnfLcm) (*response.VNFInstantiate, error) {
+// CreateInstance vnf instances
+func (c *RestClient) CreateInstance(ctx context.Context, req *request.CreateVnfLcm) (*response.VNFInstantiate, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("unutilized client")
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().
+	resp, err := c.Client.R().SetContext(ctx).
 		SetBody(req).
 		Post(c.BaseURL + TcaVmwareVnflcmInstances)
 
@@ -245,7 +246,7 @@ func (c *RestClient) CnfVnfCreate(req *request.CreateVnfLcm) (*response.VNFInsta
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("Server return error %v", errRes.Details)
@@ -264,16 +265,16 @@ func (c *RestClient) CnfVnfCreate(req *request.CreateVnfLcm) (*response.VNFInsta
 	return &vnfCreateResp, nil
 }
 
-// CnfInstantiate - instantiate CNF or VNF
+// InstanceInstantiate - instantiate CNF or VNF
 // Note instance state must be terminated.
-func (c *RestClient) CnfInstantiate(instanceId string, req request.InstantiateVnfRequest) error {
+func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string, req request.InstantiateVnfRequest) error {
 
 	if c == nil {
 		return fmt.Errorf("unutilized client")
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().
+	resp, err := c.Client.R().SetContext(ctx).
 		SetBody(req).
 		Post(c.BaseURL + TcaVmwareVnflcmInstance + instanceId + "/instantiate")
 
@@ -299,15 +300,15 @@ func (c *RestClient) CnfInstantiate(instanceId string, req request.InstantiateVn
 	return nil
 }
 
-// CnfUpdateState current state of running instance.
-func (c *RestClient) CnfUpdateState(instanceId string, req request.InstantiateVnfRequest) error {
+// InstanceUpdateState current state of running instance.
+func (c *RestClient) InstanceUpdateState(ctx context.Context, instanceId string, req request.InstantiateVnfRequest) error {
 
 	if c == nil {
 		return fmt.Errorf("unutilized client")
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().
+	resp, err := c.Client.R().SetContext(ctx).
 		SetBody(req).
 		Post(c.BaseURL + "/hybridity/api/vnflcm/v1/vnf_instances/" + instanceId + "/update_state")
 
@@ -320,7 +321,7 @@ func (c *RestClient) CnfUpdateState(instanceId string, req request.InstantiateVn
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("Server return error %v", errRes.Details)
@@ -333,12 +334,12 @@ func (c *RestClient) CnfUpdateState(instanceId string, req request.InstantiateVn
 	return nil
 }
 
-// CnfReconfigure - reconfigure cnf instance.
-func (c *RestClient) CnfReconfigure(r *request.CnfReconfigure, id string) error {
+// InstanceReconfigure - reconfigure cnf instance.
+func (c *RestClient) InstanceReconfigure(ctx context.Context, r *request.CnfReconfigure, id string) error {
 
 	c.GetClient()
 
-	resp, err := c.Client.R().SetBody(r).Post(c.BaseURL + TcaVmwareVnflcmInstance + id + "/scale")
+	resp, err := c.Client.R().SetContext(ctx).SetBody(r).Post(c.BaseURL + TcaVmwareVnflcmInstance + id + "/scale")
 
 	if err != nil {
 		glog.Error(err)
@@ -349,7 +350,7 @@ func (c *RestClient) CnfReconfigure(r *request.CnfReconfigure, id string) error 
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("Server return error %v", errRes.Details)
@@ -363,16 +364,15 @@ func (c *RestClient) CnfReconfigure(r *request.CnfReconfigure, id string) error 
 }
 
 // DeleteInstance - delete cnf instance.
-func (c *RestClient) DeleteInstance(id string) error {
+func (c *RestClient) DeleteInstance(ctx context.Context, id string) error {
 
 	c.GetClient()
-	glog.Infof("Sending Delete %v", c.BaseURL+TcaVmwareVnflcmInstance+id)
-	resp, err := c.Client.R().Delete(c.BaseURL + TcaVmwareVnflcmInstance + id)
+	req := c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmInstance, id)
+	glog.Infof("Sending Delete %v", req)
+	resp, err := c.Client.R().SetContext(ctx).Delete(req)
 
 	if err != nil {
-		if c.IsDebug {
-			glog.Error(err)
-		}
+		glog.Error(err)
 		return err
 	}
 
@@ -380,7 +380,7 @@ func (c *RestClient) DeleteInstance(id string) error {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("Server return error %v", errRes.Details)

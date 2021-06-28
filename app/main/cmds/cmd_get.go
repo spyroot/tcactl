@@ -24,53 +24,6 @@ import (
 	"strings"
 )
 
-// CmdGetPool - Command retrieves K8s tenant cluster.
-func (ctl *TcaCtl) CmdGetPool() *cobra.Command {
-
-	var (
-		_defaultNfType  = "CNF"
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
-	)
-
-	var _cmd = &cobra.Command{
-		Use:   "tenant [tca catalog name or id]",
-		Short: "Command retrieves K8s tenant cluster, -t option provided option retrieves VIM clusters.",
-		Long:  `Command retrieves K8s tenant cluster, -t option provided option retrieves VIM clusters`,
-		//Args:  cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-
-			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
-
-			// swap filter if output filter required
-			if len(_outputFilter) > 0 {
-				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
-				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
-			}
-
-			// global output type, and terminal wide or not
-			_defaultStyler.SetColor(ctl.IsColorTerm)
-			_defaultStyler.SetWide(ctl.IsWideTerm)
-
-			q, err := ctl.tca.GetTenantsQuery(args[0], _defaultNfType)
-			CheckErrLogError(err)
-			if printer, ok := ctl.TenantQueryPrinter[_defaultPrinter]; ok {
-				printer(q, _defaultStyler)
-			}
-		},
-	}
-
-	// output filter , filter specific value from data structure
-	_cmd.Flags().StringVar(&_outputFilter,
-		"ofilter", "",
-		"Output filter.")
-
-	return _cmd
-}
-
 //
 func (ctl *TcaCtl) CmdGetExtensions() *cobra.Command {
 

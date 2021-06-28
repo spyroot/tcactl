@@ -103,9 +103,6 @@ const (
 
 type TcaCtl struct {
 
-	// rest client (TODO this need to be slowly refactored and moved to TcaAPI abstraction)
-	//TcaClient *client.RestClient
-
 	//
 	HarborClient *client.RestClient
 
@@ -230,6 +227,7 @@ func NewTcaCtl() *TcaCtl {
 			ConfigDefaultPinter: printer.CnfInstanceExtendedTablePrinter,
 			ConfigJsonPinter:    printer.CnfInstanceExtendedJsonPrinter,
 			ConfigYamlPinter:    printer.CnfInstanceExtendedYamlPrinter,
+			FilteredOutFilter:   printer.CnfsExtendedFilteredOutput,
 		},
 		CnfPackagePrinters: map[string]func(*response.VnfPackages, ui.PrinterStyle){
 			ConfigDefaultPinter: printer.CnfPackageTablePrinter,
@@ -408,27 +406,32 @@ func (ctl *TcaCtl) BasicAuthentication() {
 }
 
 // ResolvePoolName - resolve pool name to id in given cluster
+// TODO this method will go away
 func (ctl *TcaCtl) ResolvePoolName(poolName string, clusterName string) (string, string, error) {
 	return ctl.tca.ResolvePoolName(poolName, clusterName)
 }
 
 // ResolveClusterName - resolve cluster name to cluster id
+// TODO this method will go away
 func (ctl *TcaCtl) ResolveClusterName(q string) (string, error) {
 	return ctl.tca.ResolveClusterName(q)
 }
 
+// SetTcaBase sets tca base url
 func (ctl *TcaCtl) SetTcaBase(url string) {
 	if ctl.tca != nil {
 		ctl.tca.SetBaseUrl(url)
 	}
 }
 
+//SetTcaUsername sets tca username
 func (ctl *TcaCtl) SetTcaUsername(username string) {
 	if ctl.tca != nil {
 		ctl.tca.SetUsername(username)
 	}
 }
 
+// SetPassword sets tca password
 func (ctl *TcaCtl) SetPassword(password string) {
 	if ctl.tca != nil {
 		ctl.tca.SetPassword(password)
@@ -474,7 +477,7 @@ func IsValidUUID(u string) bool {
 
 // isValidTemplateType check template type value
 func isValidTemplateType(templateType string) bool {
-	if templateType == response.TemplateMgmt || templateType == response.TemplateWorkload {
+	if templateType == models.TemplateMgmt || templateType == models.TemplateWorkload {
 		return true
 	}
 	return false

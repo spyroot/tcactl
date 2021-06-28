@@ -74,10 +74,11 @@ func (ctl *TcaCtl) CmdGetClustersPool() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "pool [name or id of cluster]",
-		Short:   "Command returns kubernetes node pool for a given cluster",
-		Long:    `Command returns a list kubernetes node pool for a given cluster name.`,
-		Example: "- tcactl get clusters pool 794a675c-777a-47f4-8edb-36a686ef4065\n -tcactl get cluster mycluster",
+		Use:   "pool [name or id of cluster]",
+		Short: "Command returns kubernetes node pool for a given cluster.",
+		Long:  `Command returns a list kubernetes node pool for a given cluster name.`,
+		Example: "\t - tcactl get clusters pool 794a675c-777a-47f4-8edb-36a686ef4065\n " +
+			"\t - tcactl get cluster mycluster",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (

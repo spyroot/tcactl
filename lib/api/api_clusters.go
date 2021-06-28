@@ -24,6 +24,18 @@ import (
 	"github.com/spyroot/tcactl/lib/models"
 )
 
+func ClusterFields() []string {
+	f := response.ClusterSpec{}
+	fields, _ := f.GetFields()
+
+	var keys []string
+	for s, _ := range fields {
+		keys = append(keys, s)
+	}
+
+	return keys
+}
+
 // GetCluster -  method retrieve cluster information
 func (a *TcaApi) GetCluster(clusterId string) (*response.ClusterSpec, error) {
 
@@ -75,13 +87,13 @@ func (a *TcaApi) GetClusterNodePool(clusterId string, nodePoolId string) (*respo
 
 // GetClusterTask method return list task models.ClusterTask
 // currently executing on given cluster
-func (a *TcaApi) GetClusterTask(clusterid string, showChildren bool) (*models.ClusterTask, error) {
+func (a *TcaApi) GetClusterTask(clusterId string, showChildren bool) (*models.ClusterTask, error) {
 
 	var err error
-	_clusterid := clusterid
+	_clusterid := clusterId
 
 	if !IsValidUUID(_clusterid) {
-		glog.Infof("Resolving cluster id from name %s", clusterid)
+		glog.Infof("Resolving cluster id from name %s", clusterId)
 		_clusterid, err = a.ResolveClusterName(_clusterid)
 		if err != nil {
 			return nil, err
@@ -93,7 +105,7 @@ func (a *TcaApi) GetClusterTask(clusterid string, showChildren bool) (*models.Cl
 		return nil, nil
 	}
 
-	clusterSpec, err := clusters.GetClusterSpec(clusterid)
+	clusterSpec, err := clusters.GetClusterSpec(clusterId)
 	if err != nil {
 		return nil, err
 	}

@@ -122,17 +122,6 @@ func (c *RestClient) SetDumpRespond(dumpRespond bool) {
 	c.isTrace = dumpRespond
 }
 
-const (
-	// defaultContentType
-	defaultContentType = "application/json"
-
-	// uriAuthorize
-	uriAuthorize = "/hybridity/api/sessions"
-
-	// authorizationHeader - TCA auth
-	authorizationHeader = "x-hm-authorization"
-)
-
 // GetAuthorization retrieve API key from TCA
 // and update internal state.
 func (c *RestClient) GetAuthorization() (bool, error) {

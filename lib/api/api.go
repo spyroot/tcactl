@@ -19,12 +19,12 @@
 package api
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
@@ -720,10 +720,10 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster, isDry bool) (bool, error)
 }
 
 // DeleteTenantCluster - deletes tenant cluster
-func (a *TcaApi) DeleteTenantCluster(tenantCluster string) (bool, error) {
+func (a *TcaApi) DeleteTenantCluster(tenantCluster string) (*models.TcaTask, error) {
 
 	if a.rest == nil {
-		return false, fmt.Errorf("rest interface is nil")
+		return nil, fmt.Errorf("rest interface is nil")
 	}
 
 	// TODO add validation and name resolution
@@ -933,6 +933,44 @@ func (a *TcaApi) GetCatalogId(catalogId string) (string, string, error) {
 	return a.rest.GetPackageCatalogId(catalogId)
 }
 
+// GetTenant method return tenant as response.Tenants
+// if tenant is name, method will lookup by name.
+// if tenant is UUID it will lookup by id
+// if it has prefix vmware it will lookup by VIM id.
+func (a *TcaApi) GetTenant(tenant string) (*response.Tenants, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	if len(tenant) == 0 {
+		return nil, fmt.Errorf("empty tenant")
+	}
+
+	tenants, err := a.rest.GetVimTenants()
+	if err != nil {
+		return nil, err
+	}
+
+	r := response.Tenants{}
+
+	if strings.Contains(tenant, "vmware") {
+		r.TenantsList = tenants.Filter(response.FilterVimId, func(s string) bool {
+			return s == tenant
+		})
+	} else if IsValidUUID(tenant) {
+		r.TenantsList = tenants.Filter(response.FilterId, func(s string) bool {
+			return s == tenant
+		})
+	} else {
+		r.TenantsList = tenants.Filter(response.FilterName, func(s string) bool {
+			return s == tenant
+		})
+	}
+
+	return &r, err
+}
+
 // GetTenantsQuery query tenant information based on
 // tenant id and package id
 func (a *TcaApi) GetTenantsQuery(tenantId string, nfType string) (*response.Tenants, error) {
@@ -951,12 +989,13 @@ func (a *TcaApi) GetTenantsQuery(tenantId string, nfType string) (*response.Tena
 
 	// attach tenant id if need
 	if len(tenantId) > 0 {
-		cid, vnfdId, err := a.GetCatalogId(tenantId)
-		if err != nil {
-			return nil, nil
-		}
-		glog.Infof("Acquired catalog id '%v', for vnfId '%v'", cid, vnfdId)
-		reqFilter.Filter.NfdId = vnfdId
+		reqFilter.Filter.NfdId = tenantId
+		//cid, vnfdId, err := a.GetCatalogId(tenantId)
+		//if err != nil {
+		//	return nil, nil
+		//}
+		//glog.Infof("Acquired catalog id '%v', for vnfId '%v'", cid, vnfdId)
+		//reqFilter.Filter.NfdId = vnfdId
 	}
 
 	return a.rest.GetTenantsQuery(&reqFilter)
@@ -1077,7 +1116,7 @@ func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *respon
 
 // CreateCnfNewInstance create a new instance of VNF or CNF.
 // Dry run will validate request but will not create any CNF.
-func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBlocked bool) (*response.LcmInfo, error) {
+func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpec, isDry bool, isBlocked bool) (*response.LcmInfo, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -1148,7 +1187,7 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBloc
 		return nil, nil
 	}
 
-	vnfLcm, err := a.rest.CnfVnfCreate(&request.CreateVnfLcm{
+	vnfLcm, err := a.rest.CreateInstance(ctx, &request.CreateVnfLcm{
 		VnfdId:                 pkg.VnfdID,
 		VnfInstanceName:        n.instanceName,
 		VnfInstanceDescription: n.description,
@@ -1193,7 +1232,7 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBloc
 
 		glog.Infof("Instantiating %v", vnfLcm.Id)
 
-		err := a.rest.CnfInstantiate(vnfLcm.Id, req)
+		err := a.rest.InstanceInstantiate(ctx, vnfLcm.Id, req)
 		if err != nil {
 			glog.Errorf("Failed create cnf instance information %v", err)
 			return nil, err
@@ -1208,7 +1247,7 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBloc
 	}
 
 	if isBlocked {
-		err := a.BlockWaitStateChange(vnfLcm.Id, StateInstantiate, DefaultMaxRetry, true)
+		err := a.BlockWaitStateChange(ctx, vnfLcm.Id, StateInstantiate, DefaultMaxRetry, true)
 		if err != nil {
 			return instance, err
 		}
@@ -1216,205 +1255,45 @@ func (a *TcaApi) CreateCnfNewInstance(n *InstanceRequestSpec, isDry bool, isBloc
 	return instance, nil
 }
 
-// CnfReconfigure - reconfigure existing instance
-func (a *TcaApi) CnfReconfigure(instanceName string, valueFile string, vduName string, isDry bool) error {
-
-	if a.rest == nil {
-		return fmt.Errorf("rest interface is nil")
-	}
-
-	_instances, err := a.rest.GetVnflcm()
-	if err != nil {
-		return err
-	}
-
-	// for extension request we route to correct printer
-	instances, ok := _instances.(*response.CnfsExtended)
-	if !ok {
-		return errors.New("wrong instance type")
-	}
-
-	instance, err := instances.ResolveFromName(instanceName)
-	if err != nil {
-		return err
-	}
-
-	vduId := instance.CID
-	chartName := ""
-	for _, vdu := range instance.InstantiatedVnfInfo {
-		if vdu.ChartName == vduName {
-			chartName = vdu.ChartName
-		}
-	}
-
-	if len(chartName) == 0 {
-		return fmt.Errorf("chart name %s not found", vduName)
-	}
-
-	b, err := ioutil.ReadFile(valueFile)
-	if err != nil {
-		glog.Errorf("Failed to read value file.")
-		return err
-	}
-
-	override := b64.StdEncoding.EncodeToString(b)
-	p := request.VduParams{
-		Overrides: override,
-		ChartName: chartName,
-	}
-
-	var newVduParams []request.VduParams
-	newVduParams = append(newVduParams, p)
-
-	req := request.CnfReconfigure{}
-	req.AdditionalParams.VduParams = newVduParams
-	req.AspectId = request.AspectId
-	req.NumberOfSteps = 2
-	req.Type = request.LcmTypeScaleOut
-
-	if isDry {
-		return nil
-	}
-
-	return a.rest.CnfReconfigure(&req, vduId)
-}
-
-// TerminateCnfInstance method terminate cnf instance
-// caller need provider either name or uuid and vimName
-// doBlock block and wait task to finish
-// verbose output status on screen after each pool timer.
-func (a *TcaApi) TerminateCnfInstance(instanceName string, vimName string, doBlock bool, verbose bool) error {
-
-	respond, err := a.rest.GetVnflcm()
-	if err != nil {
-		return err
-	}
-
-	cnfs, ok := respond.(*response.CnfsExtended)
-	if !ok {
-		return errors.New("Received wrong object type")
-	}
-
-	instance, err := cnfs.ResolveFromName(instanceName)
-	if err != nil {
-		return err
-	}
-
-	if instance.IsInCluster(vimName) == false {
-		return fmt.Errorf("instance not found in %v cluster", vimName)
-	}
-
-	glog.Infof("terminating cnfName %v instance ID %v.", instanceName, instance.CID)
-	if strings.Contains(instance.Meta.LcmOperationState, "STARTING") {
-		return fmt.Errorf("'%v' instance ID %v "+
-			"need finish current action", instanceName, instance.CID)
-	}
-
-	if strings.Contains(instance.Meta.LcmOperation, "TERMINATE") &&
-		strings.Contains(instance.Meta.LcmOperationState, "COMPLETED") {
-		return fmt.Errorf("'%v' instance ID %v "+
-			"already terminated", instanceName, instance.CID)
-	}
-
-	if err = a.rest.CnfTerminate(
-		instance.Links.Terminate.Href,
-		request.TerminateVnfRequest{
-			TerminationType:            "GRACEFUL",
-			GracefulTerminationTimeout: 120,
-		}); err != nil {
-		return err
-	}
-
-	if doBlock {
-		err := a.BlockWaitStateChange(instance.CID, "NOT_INSTANTIATED", DefaultMaxRetry, verbose)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// DeleteCnfInstance - deletes instance
-func (a *TcaApi) DeleteCnfInstance(instanceName string, vimName string, isForce bool) error {
-
-	_instances, err := a.rest.GetVnflcm()
-	if err != nil {
-		return err
-	}
-
-	// for extension request we route to correct printer
-	instances, ok := _instances.(*response.CnfsExtended)
-	if !ok {
-		return errors.New("wrong instance type")
-	}
-
-	instance, err := instances.ResolveFromName(instanceName)
-	if err != nil {
-		return err
-	}
-
-	if instance.IsInCluster(vimName) == false {
-		return fmt.Errorf("instance not found in %v cluster", vimName)
-	}
-
-	if isForce && !strings.Contains(instance.Meta.LcmOperation, StateTerminate) {
-
-		fmt.Printf("Terminating cnf instance %s state %s status %s\n",
-			instance.CID, instance.Meta.LcmOperation, instance.Meta.LcmOperationState)
-		err := a.TerminateCnfInstance(instanceName, vimName, true, false)
-		if err != nil {
-			return err
-		}
-
-		terminated, err := a.rest.GetRunningVnflcm(instance.CID)
-		if err != nil {
-			return err
-		}
-
-		instance.Meta.LcmOperationState = terminated.Metadata.LcmOperationState
-		instance.Meta.LcmOperation = terminated.Metadata.LcmOperation
-
-		fmt.Printf("Instance state %s and operation state, %s\n",
-			terminated.Metadata.LcmOperation,
-			terminated.Metadata.LcmOperationState)
-	}
-
-	if strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
-		strings.Contains(instance.Meta.LcmOperationState, StateCompleted) {
-		// for force case we terminate and block.
-		return a.rest.DeleteInstance(instance.CID)
-	}
-
-	return errors.New("Instance must be terminated before delete")
-}
-
 // BlockWaitStateChange - simple block and pull status
 // instanceId is instance that method will pull and check
 // waitFor is target status method waits.
 // maxRetry a limit.
-func (a *TcaApi) BlockWaitStateChange(instanceId string, waitFor string, maxRetry int, verbose bool) error {
+func (a *TcaApi) BlockWaitStateChange(ctx context.Context, instanceId string, waitFor string, maxRetry int, verbose bool) error {
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
 
 	for i := 1; i < maxRetry; i++ {
-		instance, err := a.rest.GetRunningVnflcm(instanceId)
-		if err != nil {
-			return err
+		{
+
+			select {
+			case <-ctx.Done():
+
+				return nil
+			default:
+
+				instance, err := a.rest.GetRunningVnflcm(instanceId)
+				if err != nil {
+					return err
+				}
+
+				if verbose {
+					fmt.Printf("Current state %s waiting for %s\n",
+						instance.InstantiationState, waitFor)
+
+					fmt.Printf("Current LCM Operation status %s target state %s\n\n",
+						instance.Metadata.LcmOperationState,
+						instance.Metadata.LcmOperation)
+				}
+
+				if strings.HasPrefix(instance.InstantiationState, waitFor) {
+					break
+				}
+
+				time.Sleep(10 * time.Second)
+			}
 		}
-
-		if verbose {
-			fmt.Printf("Current state %s waiting for %s\n",
-				instance.InstantiationState, waitFor)
-
-			fmt.Printf("Current LCM Operation status %s target state %s\n\n",
-				instance.Metadata.LcmOperationState,
-				instance.Metadata.LcmOperation)
-		}
-
-		if strings.HasPrefix(instance.InstantiationState, waitFor) {
-			break
-		}
-
-		time.Sleep(30 * time.Second)
 	}
 
 	return nil
@@ -1539,4 +1418,12 @@ func (a *TcaApi) GetApiKey() interface{} {
 
 func (a *TcaApi) SetTrace(trace bool) {
 	a.rest.SetTrace(trace)
+}
+
+func (a *TcaApi) GetVims() (*response.Tenants, error) {
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	return a.rest.GetVimTenants()
 }

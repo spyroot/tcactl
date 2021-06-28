@@ -288,3 +288,28 @@ It take input spec and apply to existing cluster template.`),
 
 	return _cmd
 }
+
+// CmdDeleteTenantCluster - Deletes cluster template.
+func (ctl *TcaCtl) CmdDeleteTenantCluster() *cobra.Command {
+
+	var _cmd = &cobra.Command{
+		Use:     "template [id or name of tenant cluster]",
+		Aliases: []string{"templates"},
+		Short:   "Command deletes a tenant cluster.",
+		Long: templates.LongDesc(`
+
+Command deletes a tenant cluster. Note in order to delete cluster
+all instance must be removed`),
+
+		Example: " - tcactl delete cluster cluster",
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			task, err := ctl.tca.DeleteTenantCluster(args[0])
+			CheckErrLogError(err)
+			fmt.Printf("Template %v deleted. Task id %s\n", args[0], task.OperationId)
+		},
+	}
+
+	return _cmd
+}

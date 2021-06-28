@@ -32,6 +32,18 @@ import (
 	"strings"
 )
 
+func TemplateFields() []string {
+	f := response.TenantSpecs{}
+	fields, _ := f.GetFields()
+
+	var keys []string
+	for s, _ := range fields {
+		keys = append(keys, s)
+	}
+
+	return keys
+}
+
 func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplate, error) {
 
 	file, err := os.Open(fileName)
@@ -42,6 +54,7 @@ func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplate, error
 	return ReadTemplateSpec(file)
 }
 
+// ReadTemplateSpecFromString read spec from reader
 func ReadTemplateSpecFromString(str string) (*response.ClusterTemplate, error) {
 	r := strings.NewReader(str)
 	return ReadTemplateSpec(r)

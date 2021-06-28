@@ -1,4 +1,4 @@
-// Package app
+// Package cmds
 // Copyright 2020-2021 Author.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,9 @@ func (ctl *TcaCtl) CmdGetVim() *cobra.Command {
 		Aliases: []string{"vims"},
 		Short:   "Command retrieves a vim-cloud provider information.",
 		Long: templates.LongDesc(`
-									Command retrieves a vim-cloud provider information.`),
+
+Command retrieves a vim-cloud provider information.`),
+
 		Example: " - tcactl describe vim compute my_cloud_provider",
 		//Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

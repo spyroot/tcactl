@@ -44,3 +44,36 @@ func TenantsFilteredOutput(r *response.Tenants, style ui.PrinterStyle) {
 		}
 	}
 }
+
+// ClusterFilteredOutput output filter for tenants
+func ClusterFilteredOutput(r *response.Clusters, style ui.PrinterStyle) {
+	fields := style.GetFields()
+	for _, t := range r.Clusters {
+		for _, f := range fields {
+			f = t.GetField(f)
+			fmt.Println(f)
+		}
+	}
+}
+
+// CnfsExtendedFilteredOutput output filter for tenants
+func CnfsExtendedFilteredOutput(r *response.CnfsExtended, style ui.PrinterStyle) {
+	fields := style.GetFields()
+	for _, t := range r.CnfLcms {
+		for _, f := range fields {
+			f = t.GetField(f)
+			fmt.Println(f)
+		}
+	}
+}
+
+// PoolsFilteredOutput output filter for tenants
+func PoolsFilteredOutput(r *response.NodePool, style ui.PrinterStyle) {
+	fields := style.GetFields()
+	for _, t := range r.Pools {
+		for _, f := range fields {
+			f = t.GetField(f)
+			fmt.Println(f)
+		}
+	}
+}

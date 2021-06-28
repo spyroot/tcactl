@@ -21,12 +21,24 @@ func getTestClusterName() string {
 	return testCluster
 }
 
+// getTestCloudProvider should return a cloud provider
+// that attached in TCA
 func getTestCloudProvider() string {
-	testCluster := os.Getenv("TCA_TEST_CLOUD")
-	if len(testCluster) == 0 {
+	e := os.Getenv("TCA_TEST_CLOUD")
+	if len(e) == 0 {
 		return testCloudName
 	}
-	return testCluster
+	return e
+}
+
+// getTenantCluster - should return tenant that
+// already present in TCA
+func getTenantCluster() string {
+	e := os.Getenv("TCA_TEST_TENANT")
+	if len(e) == 0 {
+		return testClusterName
+	}
+	return e
 }
 
 // generate name string

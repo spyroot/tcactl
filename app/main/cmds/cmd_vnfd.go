@@ -1,4 +1,4 @@
-// Package app
+// Package cmds
 // Copyright 2020-2021 Author.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,9 +48,13 @@ func (ctl *TcaCtl) CmdGetPackages() *cobra.Command {
 		Use:     "cnfc",
 		Aliases: []string{"catalog"},
 		Short:   "Command retrieves CNF or VNF catalogs entity.",
-		Long:    `Command retrieves a list of CNFs or VNFs catalog entities or single element if -i id provide.`,
-		Example: "\ttcactl get catalog df5f3ba2-62f1-4c47-9498-6f7e1acc35cc -o json\n\t" +
-			"tcactl get catalog --vnfd_id nfd_1b6bed2e-6c93-4fd7-83a9-4a8d060fe728 --ofilter PID",
+		Long: `
+
+Command retrieves a list of CNFs or VNFs catalog entities or single element if -i id provide.`,
+
+		Example: "\t - tcactl get catalog df5f3ba2-62f1-4c47-9498-6f7e1acc35cc -o json\n" +
+			"\t - tcactl get catalog --vnfd_id nfd_1b6bed2e-6c93-4fd7-83a9-4a8d060fe728 --ofilter PID",
+
 		Run: func(cmd *cobra.Command, args []string) {
 
 			if len(args) > 0 {

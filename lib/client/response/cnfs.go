@@ -18,7 +18,10 @@
 package response
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/spyroot/tcactl/lib/models"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -29,10 +32,13 @@ type CnfFilterType int32
 const (
 	// FilterCnfCID by cnf id
 	FilterCnfCID CnfFilterType = 0
+
 	// FilerVnfInstanceName filer by vnf instance name
 	FilerVnfInstanceName CnfFilterType = 1
+
 	// FilterVnfdID by vnfd id
 	FilterVnfdID CnfFilterType = 2
+
 	// FilterVnfCatalogName filters by vnf catalog name
 	FilterVnfCatalogName CnfFilterType = 3
 )
@@ -52,21 +58,16 @@ type RespondID struct {
 	Counter           int `json:"counter" yaml:"counter"`
 }
 
-type InternalManagedBy struct {
-	ExtensionSubtype string `json:"extensionSubtype"`
-	ExtensionName    string `json:"extensionName"`
-}
-
 //CnfMetadata Metadata information attached to respond for cnflcm req
 type CnfMetadata struct {
-	VnfPkgID          string            `json:"vnfPkgId" yaml:"vnfPkgId"`
-	VnfCatalogName    string            `json:"vnfCatalogName" yaml:"vnfCatalogName"`
-	ManagedBy         InternalManagedBy `json:"managedBy" yaml:"managedBy"`
-	NfType            string            `json:"nfType" yaml:"nfType"`
-	LcmOperation      string            `json:"lcmOperation" yaml:"lcmOperation"`
-	LcmOperationState string            `json:"lcmOperationState" yaml:"lcmOperationState"`
-	IsUsedByNS        string            `json:"isUsedByNS" yaml:"isUsedByNS"`
-	AttachedNSCount   string            `json:"attachedNSCount" yaml:"attachedNSCount"`
+	VnfPkgID          string                   `json:"vnfPkgId" yaml:"vnfPkgId"`
+	VnfCatalogName    string                   `json:"vnfCatalogName" yaml:"vnfCatalogName"`
+	ManagedBy         models.InternalManagedBy `json:"managedBy" yaml:"managedBy"`
+	NfType            string                   `json:"nfType" yaml:"nfType"`
+	LcmOperation      string                   `json:"lcmOperation" yaml:"lcmOperation"`
+	LcmOperationState string                   `json:"lcmOperationState" yaml:"lcmOperationState"`
+	IsUsedByNS        string                   `json:"isUsedByNS" yaml:"isUsedByNS"`
+	AttachedNSCount   string                   `json:"attachedNSCount" yaml:"attachedNSCount"`
 }
 
 // VimConnectionInfo - Contains extra information including vim id , type
@@ -139,7 +140,7 @@ type CnfLcmExtended struct {
 	VnfdVersion            string                         `json:"vnfdVersion" yaml:"vnfdVersion"`
 	OnboardedVnfPkgInfoID  string                         `json:"onboardedVnfPkgInfoId" yaml:"onboardedVnfPkgInfoId"`
 	InstantiationState     string                         `json:"instantiationState" yaml:"instantiationState"`
-	ManagedBy              InternalManagedBy              `json:"managedBy" yaml:"managed_by"`
+	ManagedBy              *models.InternalManagedBy      `json:"managedBy,omitempty" yaml:"managedBy,omitempty"`
 	NfType                 string                         `json:"nfType" yaml:"nf_type"`
 	Links                  PolicyLinks                    `json:"_links" yaml:"links"`
 	LastUpdated            time.Time                      `json:"lastUpdated" yaml:"lastUpdated"`
@@ -155,13 +156,46 @@ type CnfLcmExtended struct {
 	LcmOperation           string                         `json:"lcmOperation" yaml:"lcmOperation"`
 	LcmOperationState      string                         `json:"lcmOperationState" yaml:"lcmOperationState"`
 	RowType                string                         `json:"rowType" yaml:"rowType"`
-	InstantiatedNfInfo     map[string]CnfInstantiateEntry `json:"instantiatedNfInfo,omitempty" yaml:"instantiated_nf_info"`
-	InstantiatedVnfInfo    map[string]CnfInstantiateEntry `json:"instantiatedVnfInfo,omitempty" yaml:"instantiated_vnf_info"`
+	InstantiatedNfInfo     map[string]CnfInstantiateEntry `json:"instantiatedNfInfo,omitempty" yaml:"instantiatedNfInfo"`
+	InstantiatedVnfInfo    map[string]CnfInstantiateEntry `json:"instantiatedVnfInfo,omitempty" yaml:"instantiatedVnfInfo"`
 	IsUsedByNS             bool                           `json:"isUsedByNS" yaml:"isUsedByNS"`
 	AttachedNSCount        int                            `json:"attachedNSCount" yaml:"attachedNSCount"`
 	Meta                   CnfMetadata                    `json:"metadata,omitempty" yaml:"meta"`
 }
 
+// GetField - return struct field value
+func (t *CnfLcmExtended) GetField(field string) string {
+
+	r := reflect.ValueOf(t)
+	fields, _ := t.GetFields()
+	if _, ok := fields[field]; ok {
+		f := reflect.Indirect(r).FieldByName(strings.Title(field))
+		return f.String()
+	}
+
+	return ""
+}
+
+// GetFields return VduPackage fields name as
+// map[string], each key is field name
+func (t *CnfLcmExtended) GetFields() (map[string]interface{}, error) {
+
+	var m map[string]interface{}
+
+	b, err := json.Marshal(t)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
+}
+
+//IsInCluster return true if cnf in cluster indicated
+//vimName.
 func (e *CnfLcmExtended) IsInCluster(vimName string) bool {
 
 	if e == nil {

@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/pkg/io"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -15,20 +16,23 @@ func TestTenantsCloudProvider(t *testing.T) {
 		reset             bool
 		dumpJson          bool
 		cloudProviderName string
+		expectedErrorMsg  string
 	}{
 		{
-			name:              "Basic get list network details",
+			name:              "Basic get tenant positive case",
 			rest:              rest,
 			wantErr:           false,
 			dumpJson:          true,
-			cloudProviderName: getTestCloudProvider(),
+			cloudProviderName: getTenantCluster(),
+			expectedErrorMsg:  "",
 		},
 		{
-			name:              "Basic error case bogus cloud provider",
+			name:              "Basic get tenant negative case",
 			rest:              rest,
 			wantErr:           true,
-			dumpJson:          false,
-			cloudProviderName: "test",
+			dumpJson:          true,
+			cloudProviderName: "test123",
+			expectedErrorMsg:  "tenant 'test123' not found",
 		},
 	}
 	for _, tt := range tests {
@@ -39,21 +43,32 @@ func TestTenantsCloudProvider(t *testing.T) {
 				a.rest = nil
 			}
 
-			got, err := a.GetVimNetworks(tt.cloudProviderName)
+			got, err := a.TenantsCloudProvider(tt.cloudProviderName)
+			if got != nil && tt.dumpJson {
+				err := io.PrettyPrint(got)
+				if err != nil {
+					return
+				}
+			}
+
+			// for error case we check what we got
+			if tt.wantErr && err != nil {
+				assert.EqualErrorf(t, err, tt.expectedErrorMsg, "Error should be: %v, got: %v", tt.expectedErrorMsg, err)
+			}
 
 			if err != nil != tt.wantErr {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TenantsCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr && got == nil {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TenantsCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			// we want err and got not nil instance
 			if tt.wantErr && got != nil {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TenantsCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -62,19 +77,12 @@ func TestTenantsCloudProvider(t *testing.T) {
 			}
 
 			// if we got at least something in list we are ok
-			if !tt.wantErr && len(got.Network) > 0 {
+			if !tt.wantErr && len(got.TenantsList) > 0 {
 				return
 			}
 
 			if got != nil {
-				t.Log(got.Network)
-			}
-
-			if tt.dumpJson {
-				err := io.PrettyPrint(got)
-				if err != nil {
-					return
-				}
+				t.Log(got)
 			}
 
 			if tt.wantErr && err == nil {

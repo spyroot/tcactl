@@ -18,6 +18,7 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -34,7 +35,7 @@ func (ctl *TcaCtl) CmdUpdateInstance() *cobra.Command {
 
 	var cmdUpdateCnf = &cobra.Command{
 		Use:   "cnf",
-		Short: "Update , reconfigure scale, existing cnf instance state.",
+		Short: "Command updates, reconfigure scale, existing cnf instance state.",
 		Long: templates.LongDesc(`
 
 Command creates a new cnf instance.  By default it uses
@@ -71,9 +72,12 @@ func (ctl *TcaCtl) CmdGetInstances() *cobra.Command {
 	)
 
 	var cmdCnfInstance = &cobra.Command{
-		Use:     "cnfi",
-		Short:   "Return cnf instance or all instances",
-		Long:    `Returns list of cnf instances or instance if -i id provided.`,
+		Use:   "cnfi",
+		Short: "Command returns cnf instance or all instances",
+		Long: `
+
+Command returns cnf instance or all instance..`,
+
 		Example: "tcactl get cnfi -o json --filter \"{eq,id,5c11bd9c-085d-4913-a453-572457ddffe2}\"",
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -131,6 +135,10 @@ func (ctl *TcaCtl) CmdGetInstances() *cobra.Command {
 		"filter", "",
 		"filter for query example, filter by id --filter \"{eq,id,5c11bd9c-085d-4913-a453-572457ddffe2}\"")
 
+	// output filter , filter specific value from data structure
+	cmdCnfInstance.Flags().StringVar(&_outputFilter, "ofilter", "",
+		"Output filter.")
+
 	return cmdCnfInstance
 }
 
@@ -148,7 +156,7 @@ func (ctl *TcaCtl) CmdCreateCnf() *cobra.Command {
 
 	var cmdCreate = &cobra.Command{
 		Use:   "cnf [catalog name or catalog id, and instance name]",
-		Short: "Create a new cnf instance.",
+		Short: "Command creates a new cnf or vnf instance.",
 		Long: templates.LongDesc(`
 
 Command creates a new cnf instance.  By default it uses
@@ -156,9 +164,9 @@ a configuration as default parameter for cloud provider, cluster name,
 node pool.
 
 `),
-		Example: "\tcreate cnf myapp myapp-instance1\n" +
-			"\tcreate cnf myapp myapp-instance2 --disable_grant\n " +
-			"\tcreate cnf myapp myapp-instance3 --disable_grant --dry",
+		Example: "\t - tca create cnf myapp myapp-instance1\n" +
+			"\t - tca create cnf myapp myapp-instance2 --disable_grant\n " +
+			"\t -create cnf myapp myapp-instance3 --disable_grant --dry",
 		Args: cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -192,7 +200,7 @@ node pool.
 			newInstanceReq.SetDisableAutoRollback(disableAutoRollback)
 			newInstanceReq.SetIgnoreGrantFailure(ignoreGrantFailure)
 
-			instance, err := ctl.tca.CreateCnfNewInstance(newInstanceReq, isDryRun, doBlock)
+			instance, err := ctl.tca.CreateCnfNewInstance(context.Background(), newInstanceReq, isDryRun, doBlock)
 			CheckErrLogError(err)
 
 			if isDryRun == false {
@@ -275,7 +283,7 @@ node pool.
 				return
 			}
 
-			err := ctl.tca.CnfReconfigure(args[0], args[1], args[2], isDryRun)
+			err := ctl.tca.CnfReconfigure(context.Background(), args[0], args[1], args[2], isDryRun)
 			CheckErrLogError(err)
 		},
 	}
@@ -324,7 +332,8 @@ Terminate CNF or VNF instance, client must instance identifier or name.
 			CheckErrLogError(err)
 
 			ctl.checkDefaultsConfig()
-			err = ctl.tca.TerminateCnfInstance(args[0], ctl.DefaultClusterName, doBlock, true)
+			err = ctl.tca.TerminateCnfInstance(context.Background(),
+				args[0], ctl.DefaultClusterName, doBlock, true)
 			CheckErrLogError(err)
 
 			fmt.Println("Successfully updated state.")
@@ -355,8 +364,9 @@ func (ctl *TcaCtl) CmdUpdateInstances() *cobra.Command {
 		Short: "Updates CNF or VNF instance state.",
 		Long: templates.LongDesc(`
 
-Updates CNF or VNF instance state, need to provide ID or Name
-of instance. --block provides option to block and wait when task finished.
+Updates CNF or VNF instance state, need to provide id or name of
+of the instance. --block provides option to block and 
+wait when task will finished.
 
 `),
 		Example: "\ttcactl update cnf up testapp\n" +
@@ -376,7 +386,7 @@ of instance. --block provides option to block and wait when task finished.
 			// resolve pool id, if client indicated target pool
 			poolName := cmd.Flags().Lookup(CliPool)
 
-			err = ctl.tca.CreateCnfInstance(args[0], poolName.Value.String(),
+			err = ctl.tca.CreateCnfInstance(context.Background(), args[0], poolName.Value.String(),
 				ctl.DefaultClusterName, ctl.DefaultClusterName, _doBlock, _disableGrant, true)
 
 			CheckErrLogError(err)
@@ -412,11 +422,11 @@ func (ctl *TcaCtl) CmdDeleteInstances() *cobra.Command {
 	// cnf instances
 	var updateInstance = &cobra.Command{
 		Use:   "cnf [instance name or id]",
-		Short: "Deletes CNF or VNF instance state.",
+		Short: "Command deletes CNF or VNF instance state.",
 		Long: templates.LongDesc(`
 
 Deletes CNF or VNF instance, client must provide ID or Name of the instance.
-Instance must in current active cluster.
+Instance must be in current active cluster.
 
 `),
 		Example: "\ttcactl delete cnf testapp\t" +
@@ -426,7 +436,7 @@ Instance must in current active cluster.
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctl.checkDefaultsConfig()
-			err := ctl.tca.DeleteCnfInstance(args[0], ctl.DefaultClusterName, _isForce)
+			err := ctl.tca.DeleteCnfInstance(context.Background(), args[0], ctl.DefaultClusterName, _isForce)
 			CheckErrLogError(err)
 
 			fmt.Printf("Instance '%s' delete\n", args[0])
@@ -459,22 +469,30 @@ func (ctl *TcaCtl) checkDefaultsConfig() {
 // CmdRollbackInstances command to update CNF state. i.e terminate
 func (ctl *TcaCtl) CmdRollbackInstances() *cobra.Command {
 
+	var (
+		_doBlock = false
+	)
+
 	var cmdTerminate = &cobra.Command{
 		Use:   "rollback [instance name or id]",
 		Short: "Rollback CNF or VNF instance",
-		Long:  `Rollback CNF instance, caller need to provide valid id or name.`,
-		Args:  cobra.MinimumNArgs(1),
+		Long: templates.LongDesc(
+			`Rollback CNF instance, caller need to provide valid instance id or a name.`),
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctl.checkDefaultsConfig()
 
-			err := ctl.tca.CnfRollback(args[0])
+			err := ctl.tca.RollbackCnf(context.Background(), args[0], _doBlock, true)
 			CheckErrLogError(err)
 
-			// TODO add rollback and delete
 			fmt.Println("Successfully rollback state.")
 		},
 	}
+
+	// blocking flag
+	cmdTerminate.Flags().BoolVarP(&_doBlock, CliBlock, "b", false,
+		"Blocks and Pool the operations status.")
 
 	return cmdTerminate
 }

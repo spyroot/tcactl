@@ -45,7 +45,7 @@ func (c *RestClient) GetClusterTemplates() (*response.ClusterTemplates, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -72,7 +72,7 @@ func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplate) error
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errResp ErrorsResponse
 		if err = json.Unmarshal(resp.Body(), &errResp); err == nil {
 			errs := errResp.GetErrors()
@@ -106,7 +106,7 @@ func (c *RestClient) UpdateClusterTemplate(spec *response.ClusterTemplate) error
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errResp ErrorsResponse
 		if err = json.Unmarshal(resp.Body(), &errResp); err == nil {
 			errs := errResp.GetErrors()
@@ -143,7 +143,7 @@ func (c *RestClient) GetClusterTemplate(clusterId string) (*response.ClusterTemp
 		return nil, fmt.Errorf("template not found")
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -169,7 +169,7 @@ func (c *RestClient) DeleteClusterTemplate(clusterId string) error {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return c.checkError(resp)
 	}
 

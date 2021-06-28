@@ -1,5 +1,11 @@
 package response
 
+import (
+	"encoding/json"
+	"reflect"
+	"strings"
+)
+
 // InfraRequirements csar section
 type InfraRequirements struct {
 	NodeComponents struct {
@@ -13,6 +19,7 @@ type InfraRequirements struct {
 }
 
 type ToscaProperties struct {
+	// DescriptorId main id to identify vdu
 	DescriptorId       string             `json:"descriptor_id" yaml:"descriptor_id"`
 	Provider           string             `json:"provider" yaml:"provider"`
 	ProductName        string             `json:"product_name" yaml:"product_name"`
@@ -24,6 +31,37 @@ type ToscaProperties struct {
 	FlavourDescription string             `json:"flavour_description" yaml:"flavour_description"`
 	VnfmInfo           []string           `json:"vnfm_info" yaml:"vnfm_info"`
 	InfraRequirements  *InfraRequirements `json:"infra_requirements,omitempty" yaml:"infra_requirements,omitempty"`
+}
+
+// GetField - return struct field value
+func (t *ToscaProperties) GetField(field string) string {
+
+	r := reflect.ValueOf(t)
+	fields, _ := t.GetFields()
+	if _, ok := fields[field]; ok {
+		f := reflect.Indirect(r).FieldByName(strings.Title(field))
+		return f.String()
+	}
+
+	return ""
+}
+
+// GetFields return VduPackage fields name as
+// map[string], each key is field name
+func (t *ToscaProperties) GetFields() (map[string]interface{}, error) {
+
+	var m map[string]interface{}
+
+	b, err := json.Marshal(t)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
 
 // VduPackage - vdu package
@@ -90,4 +128,35 @@ type VduPackage struct {
 	VduDependencyDetails struct {
 		Field1 []string `json:"0" yaml:"field_1"`
 	} `json:"vduDependencyDetails" yaml:"vdu_dependency_details"`
+}
+
+// GetField - return struct field value
+func (t *VduPackage) GetField(field string) string {
+
+	r := reflect.ValueOf(t)
+	fields, _ := t.GetFields()
+	if _, ok := fields[field]; ok {
+		f := reflect.Indirect(r).FieldByName(strings.Title(field))
+		return f.String()
+	}
+
+	return ""
+}
+
+// GetFields return VduPackage fields name as
+// map[string], each key is field name
+func (t *VduPackage) GetFields() (map[string]interface{}, error) {
+
+	var m map[string]interface{}
+
+	b, err := json.Marshal(t)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }

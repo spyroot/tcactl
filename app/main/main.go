@@ -69,7 +69,7 @@ func init() {
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.Printer,
 		cmds.FlagOutput, "o", "default",
-		"Output format json, yaml. (default console)")
+		"output format json, yaml. (default console)")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.CfgFile,
 		cmds.FlagConfig, "c", "",
@@ -77,42 +77,42 @@ func init() {
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultCloudName,
 		cmds.ConfigDefaultCloud, "p", "",
-		"Default Cloud Provider used by tcactl.")
+		"overwrites default cloud provider used by tcactl.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultClusterName,
 		cmds.ConfigDefaultCluster, "m", "",
-		"Default Tenant Cluster Name.")
+		"overwrites default Tenant Cluster Name.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultRepoName,
 		cmds.ConfigRepoName, "z", "",
-		"Default Cloud Provider used by tcactl.")
+		"overwrites default Cloud Provider used by tcactl.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultNodePoolName,
 		cmds.ConfigNodePool, "",
-		"Default node pool to use.")
+		"overwrites default node pool to use.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.Harbor,
 		cmds.ConfigHarborEndpoint, "r", "",
-		"Harbor API end-point url.")
+		"overwrites harbor API end-point url.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborUsername,
 		cmds.ConfigHarborUsername, "",
-		"Harbor username.")
+		"overwrites harbor username.")
 
 	// TODO enable for all command
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsTrace,
 		cmds.ConfigTrace, "x", false,
-		"Enables trace.")
+		"enables trace.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborPassword,
 		cmds.ConfigHarborPassword, "",
-		"Harbor password.")
+		"overwrites harbor password.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsColorTerm,
-		cmds.FlagCliTerm, "t", false, "Disables color output.")
+		cmds.FlagCliTerm, "t", false, "disables color output.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsWideTerm,
-		cmds.FlagCliWide, "w", false, "Wide terminal output.")
+		cmds.FlagCliWide, "w", false, "wide terminal output.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&userLicense,
 		"license", "l", "", "license type")

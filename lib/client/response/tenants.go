@@ -19,8 +19,13 @@
 package response
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/spyroot/tcactl/lib/models"
+	"gopkg.in/yaml.v3"
+	"io"
+	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 )
@@ -30,61 +35,34 @@ type TenantCloudFilter int32
 const (
 	// FilterVimType filter by VIM type i.e CNF/VC
 	FilterVimType TenantCloudFilter = 0
+
 	// VimLocationCity filter by City
 	VimLocationCity TenantCloudFilter = 1
+
 	// VimLocationCountry filter by Country
 	VimLocationCountry TenantCloudFilter = 2
+
 	// FilterHcxUUID filter by Hcx UUID
 	FilterHcxUUID TenantCloudFilter = 3
+
+	// FilterName filter by name
+	FilterName TenantCloudFilter = 4
+
+	// FilterId filter by id
+	FilterId TenantCloudFilter = 5
+
+	// FilterVimId filter by vim id
+	FilterVimId TenantCloudFilter = 6
 )
 
-type AuditField struct {
-	CreationUser      string `json:"creationUser" yaml:"creationUser"`
-	CreationTimestamp string `json:"creationTimestamp" yaml:"creationTimestamp"`
+// InvalidTenantsSpec error if specs invalid
+type InvalidTenantsSpec struct {
+	errMsg string
 }
 
-type ClusterNodeConifgList struct {
-	Labels           []string `json:"labels" yaml:"labels"`
-	Id               string   `json:"id" yaml:"id"`
-	Name             string   `json:"name" yaml:"name"`
-	Status           string   `json:"status" yaml:"status"`
-	ActiveTasksCount int      `json:"activeTasksCount" yaml:"activeTasksCount"`
-	Compatible       bool     `json:"compatible" yaml:"compatible"`
-}
-
-// TenantsDetails Tenant Cloud Details
-type TenantsDetails struct {
-	TenantID                      string                  `json:"tenantId" yaml:"tenantId"`
-	VimName                       string                  `json:"vimName" yaml:"vimName"`
-	TenantName                    string                  `json:"tenantName" yaml:"tenantName"`
-	HcxCloudURL                   string                  `json:"hcxCloudUrl" yaml:"hcxCloudUrl"`
-	Username                      string                  `json:"username" yaml:"username"`
-	Password                      string                  `json:"password,omitempty" yaml:"password"`
-	VimType                       string                  `json:"vimType" yaml:"vimType"`
-	VimURL                        string                  `json:"vimUrl" yaml:"vimUrl"`
-	HcxUUID                       string                  `json:"hcxUUID" yaml:"hcxUUID"`
-	HcxTenantID                   string                  `json:"hcxTenantId" yaml:"hcxTenantId"`
-	Location                      models.Location         `json:"location" yaml:"location"`
-	VimID                         string                  `json:"vimId" yaml:"vimId"`
-	Audit                         AuditField              `json:"audit" yaml:"audit"`
-	VimConn                       models.VimConnection    `json:"connection,omitempty" yaml:"connection"`
-	Compatible                    bool                    `json:"compatible" yaml:"compatible"`
-	ID                            string                  `json:"id" yaml:"id"`
-	Name                          string                  `json:"name" yaml:"name"`
-	AuthType                      string                  `json:"authType,omitempty" yaml:"authType"`
-	ClusterName                   string                  `json:"clusterName,omitempty" yaml:"clusterName"`
-	ClusterList                   []ClusterNodeConifgList `json:"clusterNodeConfigList" yaml:"clusterNodeConfigList"`
-	HasSupportedKubernetesVersion bool                    `json:"hasSupportedKubernetesVersion" yaml:"hasSupportedKubernetesVersion"`
-	ClusterStatus                 string                  `json:"clusterStatus" yaml:"clusterStatus"`
-	IsCustomizable                bool                    `json:"isCustomizable" yaml:"isCustomizable"`
-}
-
-type TenantSpecs struct {
-	CloudOwner    string           `json:"cloud_owner" yaml:"cloud_owner"`
-	CloudRegionId string           `json:"cloud_region_id" yaml:"cloud_region_id"`
-	VimId         string           `json:"vimId" yaml:"vimId"`
-	VimName       string           `json:"vimName" yaml:"vimName"`
-	Tenants       []TenantsDetails `json:"tenants" yaml:"tenants"`
+//
+func (m *InvalidTenantsSpec) Error() string {
+	return m.errMsg
 }
 
 // TenantCloudNotFound error raised if tenant cloud not found
@@ -94,19 +72,12 @@ type TenantCloudNotFound struct {
 
 //
 func (m *TenantCloudNotFound) Error() string {
-	return "'" + m.errMsg + "' tenant not found"
+	return "tenant '" + m.errMsg + "' not found"
 }
 
 // Tenants list of Tenants
 type Tenants struct {
-	TenantsList []TenantsDetails `json:"items"`
-}
-
-// GetField - return field from VNfPackage struct
-func (t *TenantsDetails) GetField(field string) string {
-	r := reflect.ValueOf(t)
-	f := reflect.Indirect(r).FieldByName(strings.Title(field))
-	return f.String()
+	TenantsList []TenantsDetails `json:"items" yaml:"items"`
 }
 
 // IsVMware - return if cloud provider is Vmware
@@ -140,7 +111,27 @@ func (t *Tenants) FindCloudProvider(s string) (*TenantsDetails, error) {
 	}
 
 	for _, t := range t.TenantsList {
-		if strings.Contains(t.VimName, s) || strings.Contains(t.ID, s) || strings.Contains(t.VimID, s) {
+		if t.VimName == s || t.ID == s || t.VimID == s {
+			return &t, nil
+		}
+	}
+
+	return nil, &TenantCloudNotFound{errMsg: s}
+}
+
+// Contains search for a cloud provider that contains
+// name in either ID , or Vim Name or Vim ID.
+// it partial match
+func (t *Tenants) Contains(s string) (*TenantsDetails, error) {
+
+	if t == nil {
+		return nil, fmt.Errorf("uninitialized object")
+	}
+
+	for _, t := range t.TenantsList {
+		if strings.Contains(t.VimName, s) ||
+			strings.Contains(t.ID, s) ||
+			strings.Contains(t.VimID, s) {
 			return &t, nil
 		}
 	}
@@ -149,6 +140,7 @@ func (t *Tenants) FindCloudProvider(s string) (*TenantsDetails, error) {
 }
 
 // FindCloudLink search for a cloud provider cloud link
+//
 func (t *Tenants) FindCloudLink(s string) (*TenantsDetails, error) {
 
 	if t == nil {
@@ -165,31 +157,83 @@ func (t *Tenants) FindCloudLink(s string) (*TenantsDetails, error) {
 }
 
 // Filter filter on specific filed
-func (t *Tenants) Filter(q TenantCloudFilter, f func(string) bool) ([]TenantsDetails, error) {
+func (t *Tenants) Filter(q TenantCloudFilter, f func(string) bool) []TenantsDetails {
 
 	filtered := make([]TenantsDetails, 0)
 	for _, v := range t.TenantsList {
-		if q == FilterVimType {
-			if f(v.VimType) {
-				filtered = append(filtered, v)
-			}
+		if q == FilterVimType && f(v.VimType) {
+			filtered = append(filtered, v)
 		}
-		if q == FilterHcxUUID {
-			if f(v.HcxUUID) {
-				filtered = append(filtered, v)
-			}
+		if q == FilterId && f(v.ID) {
+			filtered = append(filtered, v)
 		}
-		if q == VimLocationCity {
-			if f(v.Location.City) {
-				filtered = append(filtered, v)
-			}
+		if q == FilterName && f(v.Name) {
+			filtered = append(filtered, v)
 		}
-		if q == VimLocationCountry {
-			if f(v.Location.Country) {
-				filtered = append(filtered, v)
-			}
+		if q == FilterHcxUUID && f(v.HcxUUID) {
+			filtered = append(filtered, v)
+		}
+		if q == VimLocationCity && f(v.Location.City) {
+			filtered = append(filtered, v)
+		}
+		if q == VimLocationCountry && f(v.Location.Country) {
+			filtered = append(filtered, v)
+		}
+		if q == FilterVimId && f(v.VimID) {
+			filtered = append(filtered, v)
 		}
 	}
+	return filtered
+}
 
-	return filtered, nil
+// TenantsSpecsFromFile - reads tenant spec from file
+// and return TenantSpecs instance
+func TenantsSpecsFromFile(fileName string) (*Tenants, error) {
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	return ReadTenantsSpec(file)
+}
+
+// TenantsSpecsFromString take string that hold entire spec
+// passed to reader and return TenantSpecs instance
+func TenantsSpecsFromString(str string) (*Tenants, error) {
+	r := strings.NewReader(str)
+	return ReadTenantsSpec(r)
+}
+
+// ReadTenantsSpec - Read tenants spec from io interface
+// detects format and use either yaml or json parse
+func ReadTenantsSpec(b io.Reader) (*Tenants, error) {
+
+	var spec Tenants
+
+	buffer, err := ioutil.ReadAll(b)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(buffer, &spec)
+	if err == nil {
+		return &spec, nil
+	} else {
+		fmt.Println(reflect.TypeOf(err).String())
+	}
+
+	err = yaml.Unmarshal(buffer, &spec)
+	if err == nil {
+		return &spec, nil
+	} else {
+		fmt.Println(err)
+	}
+
+	return nil, &InvalidTenantsSpec{"unknown format"}
+}
+
+//InstanceSpecsFromString method return instance form string
+func (t Tenants) InstanceSpecsFromString(s string) (interface{}, error) {
+	return TenantsSpecsFromString(s)
 }
