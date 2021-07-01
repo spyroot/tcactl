@@ -225,3 +225,20 @@ func (a *TcaApi) DeleteTemplate(template string) error {
 
 	return nil
 }
+
+// ResolveTemplateId - resolves template name to id
+func (a *TcaApi) ResolveTemplateId(templateId string) (string, error) {
+
+	// resolve template id, in case client used name instead id
+	clusterTemplates, err := a.rest.GetClusterTemplates()
+	if err != nil {
+		return "", err
+	}
+
+	template, err := clusterTemplates.GetTemplate(templateId)
+	if err != nil {
+		return "", err
+	}
+
+	return template.Id, nil
+}

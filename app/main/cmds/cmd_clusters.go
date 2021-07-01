@@ -439,6 +439,8 @@ func (ctl *TcaCtl) CmdCreateCluster() *cobra.Command {
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
 		isDry           = false
+		doBlock         bool
+		showProgress    bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -475,11 +477,10 @@ Command create cluster from input spec. Spec can be in yaml or json format.`,
 			}
 
 			// otherwise create
-			ok, err := ctl.tca.CreateClusters(&spec, isDry)
+			task, err := ctl.tca.CreateClusters(&spec, isDry, doBlock, showProgress)
 			CheckErrLogError(err)
-			if ok {
-				fmt.Println("Cluster created.")
-			}
+
+			fmt.Printf("Cluster created task create, task id %s\n", task.Id)
 
 			// dry run will output template to screen after parser
 			// resolved all name to id.
@@ -492,8 +493,16 @@ Command create cluster from input spec. Spec can be in yaml or json format.`,
 	}
 
 	_cmd.Flags().BoolVar(&isDry,
-		"dry", false, "Parses input template spec, "+
+		CliDryRun, false, "Parses input template spec, "+
 			"validates, outputs spec to the terminal screen. Format based on -o flag.")
+
+	//
+	_cmd.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
+		"Blocks and wait task to finish.")
+
+	//
+	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "p", true,
+		"Show task progress.")
 
 	return _cmd
 }

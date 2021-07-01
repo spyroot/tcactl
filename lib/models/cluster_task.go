@@ -17,10 +17,15 @@
 // Mustafa mbayramo@vmware.com
 package models
 
+import (
+	"fmt"
+	"strings"
+)
+
 // TcaTask - generic task respond
 type TcaTask struct {
-	Id          string `json:"id"`
-	OperationId string `json:"operationId"`
+	Id          string `json:"id" yaml:"id"`
+	OperationId string `json:"operationId" yaml:"operationId"`
 }
 
 // TaskErrors error for give task
@@ -200,28 +205,55 @@ type TaskRequest struct {
 	Payload              *TaskPayload  `json:"payload,omitempty" yaml:"payload"`
 }
 
-type ClusterTask struct {
-	Items []struct {
-		EntityDetails struct {
-			Id   string `json:"id" yaml:"id" yaml:"id"`
-			Type string `json:"type" yaml:"type" yaml:"type"`
-			Name string `json:"name" yaml:"name" yaml:"name"`
-		} `json:"entityDetails" yaml:"entity_details"`
-		Type      string       `json:"type" yaml:"type"`
-		Status    string       `json:"status" yaml:"status"`
-		Progress  int          `json:"progress" yaml:"progress"`
-		Message   string       `json:"message" yaml:"message"`
-		StartTime int64        `json:"startTime" yaml:"start_time"`
-		EndTime   int64        `json:"endTime" yaml:"end_time"`
-		Request   *TaskRequest `json:"request" yaml:"request"`
-		Steps     []TaskSteps  `json:"steps" yaml:"steps"`
-		TaskId    string       `json:"taskId" yaml:"task_id"`
-	} `json:"items"`
+type TaskItems struct {
+	EntityDetails struct {
+		Id   string `json:"id" yaml:"id" yaml:"id"`
+		Type string `json:"type" yaml:"type" yaml:"type"`
+		Name string `json:"name" yaml:"name" yaml:"name"`
+	} `json:"entityDetails" yaml:"entity_details"`
+	Type      string       `json:"type" yaml:"type"`
+	Status    string       `json:"status" yaml:"status"`
+	Progress  int          `json:"progress" yaml:"progress"`
+	Message   string       `json:"message" yaml:"message"`
+	StartTime int64        `json:"startTime" yaml:"startTime"`
+	EndTime   int64        `json:"endTime" yaml:"endTime"`
+	Request   *TaskRequest `json:"request" yaml:"request"`
+	Steps     []TaskSteps  `json:"steps" yaml:"steps"`
+	TaskId    string       `json:"taskId" yaml:"taskId"`
+}
 
+type ClusterTask struct {
+	Items  []TaskItems `json:"items" yaml:"items"`
 	Paging struct {
-		PageSize   int `json:"pageSize"`
-		Offset     int `json:"offset"`
-		TotalSize  int `json:"totalSize"`
-		PageNumber int `json:"pageNumber"`
-	} `json:"paging"`
+		PageSize   int `json:"pageSize" yaml:"page_size"`
+		Offset     int `json:"offset" yaml:"offset"`
+		TotalSize  int `json:"totalSize" yaml:"totalSize"`
+		PageNumber int `json:"pageNumber" yaml:"pageNumber"`
+	} `json:"paging" yaml:"paging"`
+}
+
+func (t *ClusterTask) FindEntity(eid string) (*TaskItems, error) {
+
+	if t != nil {
+		for _, item := range t.Items {
+			if item.EntityDetails.Id == eid {
+				return &item, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("task entity with id %s not found", eid)
+}
+
+func (t *ClusterTask) FindEntityByName(name string) (*TaskItems, error) {
+
+	if t != nil {
+		for _, item := range t.Items {
+			if strings.ToLower(item.EntityDetails.Name) == strings.ToLower(name) {
+				return &item, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("task entity with name %s not found", name)
 }

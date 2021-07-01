@@ -74,8 +74,8 @@ func (c *RestClient) HarborAuthenticate() (bool, error) {
 	glog.Infof("Response time: %v", resp.Time())
 
 	if resp.StatusCode() == http.StatusOK {
-		c.ApiKey = resp.Header().Get(authorizationHeader)
-		return len(c.ApiKey) > 0, nil
+		c.apiKey = resp.Header().Get(authorizationHeader)
+		return len(c.apiKey) > 0, nil
 	}
 
 	return false, fmt.Errorf("server return %v", resp.StatusCode())

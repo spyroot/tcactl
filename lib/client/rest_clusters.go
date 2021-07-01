@@ -79,14 +79,8 @@ func (c *RestClient) GetCluster(clusterId string) (*response.ClusterSpec, error)
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
-			glog.Errorf("server return error %v", errRes.Message)
-			return nil, fmt.Errorf("server return error %v", errRes.Message)
-		}
-		glog.Errorf("server return unknown error %v %v", resp.StatusCode(), string(resp.Body()))
-		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+	if !resp.IsSuccess() {
+		return nil, c.checkErrors(resp)
 	}
 
 	var clusters response.ClusterSpec
@@ -135,6 +129,7 @@ func (c *RestClient) GetClusterNodePools(clusterId string) (*response.NodePool, 
 		return nil, err
 	}
 
+	glog.Infof("return node pool list %d size", len(pools.Pools))
 	return &pools, nil
 }
 
@@ -237,7 +232,7 @@ func (c *RestClient) GetClusterTask(clusterId string) (*models.ClusterTask, erro
 }
 
 // CreateCluster - returns infrastructure k8s clusters
-func (c *RestClient) CreateCluster(spec *request.Cluster) (bool, error) {
+func (c *RestClient) CreateCluster(spec *request.Cluster) (*models.TcaTask, error) {
 
 	c.GetClient()
 	glog.Infof("Creating cluster %v", spec)
@@ -245,7 +240,7 @@ func (c *RestClient) CreateCluster(spec *request.Cluster) (bool, error) {
 	resp, err := c.Client.R().SetBody(spec).Post(c.BaseURL + TcaInfraClusters)
 	if err != nil {
 		glog.Error(err)
-		return false, err
+		return nil, err
 	}
 
 	if c.isTrace && resp != nil {
@@ -253,10 +248,16 @@ func (c *RestClient) CreateCluster(spec *request.Cluster) (bool, error) {
 	}
 
 	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		return false, c.checkErrors(resp)
+		return nil, c.checkErrors(resp)
 	}
 
-	return resp.StatusCode() == http.StatusOK, nil
+	var task models.TcaTask
+	if err := json.Unmarshal(resp.Body(), &task); err != nil {
+		glog.Errorf("Failed parse server respond.")
+		return nil, err
+	}
+
+	return &task, nil
 }
 
 // DeleteCluster - delete  k8s clusters

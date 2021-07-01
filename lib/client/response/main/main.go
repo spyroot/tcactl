@@ -46,7 +46,7 @@ var testTenant = `
       "clusterStatus": "",
       "isCustomizable": false
     }
-  ]
+  
 }`
 
 var testTenantYaml = `

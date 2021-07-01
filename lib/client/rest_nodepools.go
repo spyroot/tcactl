@@ -64,7 +64,7 @@ func (c *RestClient) GetClusterNodePool(clusterId string, nodePoolId string) (*r
 
 	c.GetClient()
 	resp, err := c.Client.R().
-		Get(c.BaseURL + TcaInfraCluster + "/" + clusterId + "/nodepool/" + nodePoolId)
+		Get(c.BaseURL + fmt.Sprintf(TcaClustersNodePool, clusterId, nodePoolId))
 
 	if err != nil {
 		glog.Error(err)
@@ -75,14 +75,8 @@ func (c *RestClient) GetClusterNodePool(clusterId string, nodePoolId string) (*r
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
-			glog.Errorf("server return error %v %v %v", errRes.Details, errRes.Message, string(resp.Body()))
-			return nil, fmt.Errorf("server return error %v", errRes.Message)
-		}
-		glog.Errorf("server return unknown error %v %v", resp.StatusCode(), string(resp.Body()))
-		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+	if !resp.IsSuccess() {
+		return nil, c.checkErrors(resp)
 	}
 
 	var pools response.NodesSpecs
@@ -197,13 +191,8 @@ func (c *RestClient) UpdateNodePool(r *request.NewNodePoolSpec, clusterId string
 	}
 
 	if !resp.IsSuccess() {
-		var errRes ErrorResponse
-		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
-			glog.Errorf("server return error %v %v %v", errRes.Details, errRes.Message, string(resp.Body()))
-			return nil, fmt.Errorf("server return error %v", errRes.Message)
-		}
-		glog.Errorf("server return unknown error %v %v", resp.StatusCode(), string(resp.Body()))
-		return nil, fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+		fmt.Println(string(resp.Body()))
+		return nil, c.checkErrors(resp)
 	}
 
 	var task models.TcaTask

@@ -348,7 +348,6 @@ func NewTcaCtl() *TcaCtl {
 
 	ctl.HarborClient = &client.RestClient{
 		BaseURL:  "",
-		ApiKey:   "",
 		SkipSsl:  true,
 		Client:   nil,
 		IsDebug:  true,
@@ -358,7 +357,6 @@ func NewTcaCtl() *TcaCtl {
 
 	tcaApi, err := api.NewTcaApi(&client.RestClient{
 		BaseURL:  "",
-		ApiKey:   "",
 		SkipSsl:  true,
 		Client:   nil,
 		IsDebug:  true,

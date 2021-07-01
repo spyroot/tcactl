@@ -1,0 +1,20 @@
+# in this example we just update replica for existing pool
+name: test-cluster02
+cpu: 2
+labels:
+  - type=test_cluster02
+memory: 16384
+networks:
+  - label: MANAGEMENT
+    networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+    nameservers:
+      - 10.246.2.9
+placementParams:
+  - name: hubsite
+    type: ClusterComputeResource
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+replica: 2
+storage: 50

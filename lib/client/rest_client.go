@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spyroot/tcactl/pkg/io"
 	"net/http"
+	"strings"
 )
 
 type ErrorResponse struct {
@@ -73,8 +74,8 @@ type RestClient struct {
 	// BaseURL TCA Base API endpoint
 	BaseURL string
 
-	// ApiKey key returned by TCA
-	ApiKey string
+	// apiKey key returned by TCA
+	apiKey string
 
 	// SkipSsl in case client need skip self sign cert check
 	SkipSsl bool
@@ -115,6 +116,32 @@ func NewRestClient(baseURL string, skipSsl bool, username string, password strin
 		return nil, errors.New("password is empty string")
 	}
 	return &RestClient{BaseURL: baseURL, SkipSsl: skipSsl, Username: username, Password: password}, nil
+}
+
+// makeDefaultHeaders default headers
+func (c *RestClient) makeDefaultHeaders() {
+	c.Client.SetHeader("Content-Type", defaultContentType)
+	c.Client.SetHeader("Version", defaultVersion)
+	c.Client.SetHeader("Accept", defaultAccept)
+	c.Client.SetHeader("Authorization", c.apiKey)
+	c.Client.SetHeader("x-hm-authorization", c.apiKey)
+}
+
+// GetClient return rest client
+func (c *RestClient) GetClient() {
+
+	if c.Client == nil {
+		glog.Infof("Creating a new rest client")
+		c.Client = resty.New()
+		if c.SkipSsl {
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: c.SkipSsl},
+			}
+			c.Client.SetTransport(tr)
+		}
+	}
+
+	c.makeDefaultHeaders()
 }
 
 // SetDumpRespond sets client in output mode.
@@ -159,13 +186,22 @@ func (c *RestClient) GetAuthorization() (bool, error) {
 		return false, err
 	}
 
-	glog.Infof("Response status code: %v", resp.StatusCode())
-	glog.Infof("Response status: %v", resp.Status())
-	glog.Infof("Response time: %v", resp.Time())
+	if c.isTrace {
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+		glog.Infof("Response status code: %v", resp.StatusCode())
+		glog.Infof("Response status: %v", resp.Status())
+		glog.Infof("Response time: %v", resp.Time())
+
+		fmt.Println(string(resp.Body()))
+	}
+
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+			if strings.ToLower(errRes.Error) == "unauthorized" {
+				glog.Errorf("Server return error %s", errRes.Message)
+				return false, fmt.Errorf("authentication failed for username %s", c.Username)
+			}
 			glog.Errorf("Server return error %s", errRes.Message)
 			return false, fmt.Errorf("error %s", errRes.Message)
 		} else {
@@ -174,8 +210,8 @@ func (c *RestClient) GetAuthorization() (bool, error) {
 	}
 
 	if resp.StatusCode() == http.StatusOK {
-		c.ApiKey = resp.Header().Get(authorizationHeader)
-		return len(c.ApiKey) > 0, nil
+		c.apiKey = resp.Header().Get(authorizationHeader)
+		return len(c.apiKey) > 0, nil
 	}
 
 	return false, fmt.Errorf("server return %v", resp.StatusCode())
@@ -221,4 +257,8 @@ func (c *RestClient) checkErrors(r *resty.Response) error {
 
 func (c *RestClient) SetTrace(trace bool) {
 	c.isTrace = trace
+}
+
+func (c *RestClient) GetApiKey() string {
+	return c.apiKey
 }

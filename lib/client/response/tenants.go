@@ -65,6 +65,16 @@ func (m *InvalidTenantsSpec) Error() string {
 	return m.errMsg
 }
 
+// InvalidClusterSpec error if specs invalid
+type InvalidClusterSpec struct {
+	errMsg string
+}
+
+//
+func (m *InvalidClusterSpec) Error() string {
+	return m.errMsg
+}
+
 // TenantCloudNotFound error raised if tenant cloud not found
 type TenantCloudNotFound struct {
 	errMsg string

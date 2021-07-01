@@ -16,6 +16,28 @@ type Nodes struct {
 	VmName string `json:"vmName,omitempty" yaml:"vmName,omitempty"`
 }
 
+type Reservation struct {
+	Cpu         int `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+	MemoryInGiB int `json:"memoryInGiB,omitempty" yaml:"memoryInGiB,omitempty"`
+}
+
+type NodePoolProperties struct {
+	KubeReserved   *Reservation `json:"kubeReserved,omitempty" yaml:"kubeReserved,omitempty"`
+	SystemReserved *Reservation `json:"systemReserved,omitempty" yaml:"systemReserved,omitempty"`
+}
+
+type CpuManagerPolicy struct {
+	Type       string              `json:"type,omitempty" yaml:"type,omitempty"`
+	Policy     string              `json:"policy,omitempty" yaml:"policy,omitempty"`
+	Properties *NodePoolProperties `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
+// NodePoolConfig - hold all metadata about node pools
+type NodePoolConfig struct {
+	CpuManagerPolicy *CpuManagerPolicy `json:"cpuManagerPolicy,omitempty" yaml:"cpuManagerPolicy,omitempty"`
+	HealthCheck      *HealthCheck      `json:"healthCheck,omitempty" yaml:"healthCheck,omitempty"`
+}
+
 type UserDefinedData struct {
 	Name                   string            `json:"name" yaml:"name"`
 	Tags                   []interface{}     `json:"tags" yaml:"tags"`

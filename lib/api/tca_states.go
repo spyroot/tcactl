@@ -22,6 +22,9 @@ import (
 )
 
 const (
+	BlockMaxRetryTimer = 32
+	TaskWaitSeconds    = 10
+
 	StateInstantiate  = "INSTANTIATE"
 	StateCompleted    = "COMPLETED"
 	StateStarting     = "STARTING"
@@ -30,6 +33,14 @@ const (
 	StateTerminate    = "TERMINATE"
 
 	DefaultMaxRetry = 32
+
+	TaskStateSuccess = "SUCCESS"
+	TaskStateRunning = "SUCCESS"
+	TaskStateQueued  = "QUEUED"
+
+	TaskTypeNodePoolCreation = "Node Pool Creation"
+	TaskTypeInventoryUpdate  = "Inventory Update"
+	TaskTypeUpdateNodePool   = "Update Node Pool"
 )
 
 type TcaTaskStateType int

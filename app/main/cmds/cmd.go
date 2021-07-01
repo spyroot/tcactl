@@ -23,6 +23,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/pkg/io"
 	"io/ioutil"
 	"os"
@@ -41,6 +42,12 @@ const (
 
 	// CliForce force delete flag
 	CliForce = "force"
+
+	// CliProgress show task progress
+	CliProgress = "progress"
+
+	// CliDryRun dry run flag
+	CliDryRun = "dry"
 )
 
 // CmdInitConfig - initialize configuration file, for initial
@@ -111,8 +118,10 @@ func (ctl *TcaCtl) CmdCreate() *cobra.Command {
 	var cmdCreate = &cobra.Command{
 		Use:   "Create",
 		Short: "Terminate CNF instance",
-		Long:  `Terminate CNF instance, caller need to provide CNF Identifier.`,
-		Args:  cobra.MinimumNArgs(1),
+		Long: templates.LongDesc(
+			`Terminate CNF instance, caller need to provide CNF Identifier.
+`),
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 		},
 	}
@@ -127,9 +136,12 @@ func (ctl *TcaCtl) CmdCreate() *cobra.Command {
 func (ctl *TcaCtl) BuildCmd() {
 
 	var describe = &cobra.Command{
-		Use:     "describe [cloud or cluster or nodes or pool or template]",
-		Long:    `Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entities. `,
-		Short:   "Command describes describe TCA object in details.",
+		Use:   "describe [cloud or cluster or nodes or pool or template]",
+		Short: "Command describes describe TCA object in details.",
+		Long: templates.LongDesc(`
+
+Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entities.`),
+
 		Aliases: []string{"desc"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
@@ -147,9 +159,9 @@ func (ctl *TcaCtl) BuildCmd() {
 	var cmdGet = &cobra.Command{
 		Use:   "get [cnfi, cnfc, clusters, pools]",
 		Short: "Command retrieves tca entity (cnf, catalog, cluster) etc",
-		Long: `
+		Long: templates.LongDesc(`
 
-Command retrieves tca entity from. CNFI is CNFI in the inventory, CNFC Catalog entities.`,
+Command retrieves tca entity from. CNFI is CNFI in the inventory, CNFC Catalog entities.`),
 
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
@@ -167,8 +179,11 @@ Command retrieves tca entity from. CNFI is CNFI in the inventory, CNFC Catalog e
 	var cmdUpdate = &cobra.Command{
 		Use:   "update [cnfi or cnfc]",
 		Short: "Command updates or apply changes tca entity cnf, cnf catalog , cluster or node pool.",
-		Long: `
-Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node pool.)`,
+		Long: templates.LongDesc(`
+
+Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node pool.)
+
+`),
 		Aliases: []string{"apply"},
 
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -186,7 +201,10 @@ Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node
 	var cmdCreate = &cobra.Command{
 		Use:   "create",
 		Short: "Command creates a new object in TCA.",
-		Long:  `Command creates a new object in TCA. For example new CNF instance, cluster , cluster template etc.`,
+		Long: templates.LongDesc(`
+
+Command creates a new object in TCA. For example new CNF instance, cluster , cluster template etc.`),
+
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
@@ -202,8 +220,11 @@ Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node
 	var cmdSet = &cobra.Command{
 		Use:   "set",
 		Short: "Command sets config variables (Username, Password etc) for tcactl.",
-		Long:  `Command sets config variables (Username, Password etc) for tcactl.`,
-		Args:  cobra.MinimumNArgs(1),
+		Long: templates.LongDesc(`
+
+Command sets config variables (Username, Password etc) for tcactl.`),
+
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 		},
 	}

@@ -8,7 +8,7 @@ import (
 var (
 	rest = &RestClient{
 		BaseURL:  os.Getenv("TCA_URL"),
-		ApiKey:   "",
+		apiKey:   "",
 		IsDebug:  true,
 		Username: os.Getenv("TCA_USERNAME"),
 		Password: os.Getenv("TCA_PASSWORD"),
@@ -18,7 +18,7 @@ var (
 
 	harbor = &RestClient{
 		BaseURL:               os.Getenv("HARBOR_URL"),
-		ApiKey:                "",
+		apiKey:                "",
 		IsDebug:               true,
 		Username:              os.Getenv("HARBOR_USERNAME"),
 		Password:              os.Getenv("HARBOR_PASSWORD"),

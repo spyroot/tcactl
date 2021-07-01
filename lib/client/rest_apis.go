@@ -40,6 +40,8 @@ const (
 	// TcaDeleteTenant - api call delete tenant
 	TcaDeleteTenant = "/hybridity/api/vims/v1/tenants/%s"
 
+	TcaVimTenant = "/hybridity/api/vims/v1/%s/tenants"
+
 	// apiVim - attached vim list rest call
 	apiVim = "/hybridity/api/vims/v1/"
 
@@ -58,7 +60,7 @@ const (
 	// TcaClusterTask - API query current cluster task
 	TcaClusterTask = "/hybridity/api/infra/k8s/clusters/%s/tasks"
 
-	//
+	// TcaApiVnfLcmExtensionVnfInstance api return vnf instance
 	TcaApiVnfLcmExtensionVnfInstance = "/telco/api/vnflcm/v2/extension/vnf_instances"
 
 	TcaApiVnfLcmVnfInstance = "/telco/api/vnflcm/v2/vnf_instances"
@@ -99,8 +101,10 @@ const (
 	// TcaInfraCreatPool API call create node pool on target cluster
 	TcaInfraCreatPool = "/hybridity/api/infra/k8s/cluster/%s/nodepool"
 
+	TcaClustersNodePool = "/hybridity/api/infra/k8s/cluster/%s/nodepool/%s"
+
 	// TcaInfraDeletePool API call delete Node pool
-	TcaInfraDeletePool = "/hybridity/api/infra/k8s/cluster/%s/nodepool/%s"
+	TcaInfraDeletePool = TcaClustersNodePool
 
 	// TcaInfraUpdatePool API call update Node pool
 	TcaInfraUpdatePool = "/hybridity/api/infra/k8s/cluster/%s/nodepool/%s"

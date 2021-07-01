@@ -23,6 +23,10 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/models"
+	"gopkg.in/yaml.v3"
+	"io"
+	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 )
@@ -114,17 +118,34 @@ type Clusters struct {
 }
 
 // GetField - return field from Cluster Spec struct
-func (t *ClusterSpec) GetField(field string) string {
-	r := reflect.ValueOf(t)
-	f := reflect.Indirect(r).FieldByName(strings.Title(field))
-	return f.String()
+func (c *ClusterSpec) GetField(field string) string {
+
+	r := reflect.ValueOf(c)
+	v := reflect.Indirect(r)
+
+	if v.IsValid() {
+		f := v.FieldByName(strings.Title(field))
+		if f.IsValid() {
+			k := f.Kind()
+			if k == reflect.Int {
+				return k.String()
+			}
+			if k == reflect.String {
+				return f.String()
+			}
+		} else {
+			return ""
+		}
+	}
+
+	return ""
 }
 
-func (t *ClusterSpec) GetFields() (map[string]interface{}, error) {
+func (c *ClusterSpec) GetFields() (map[string]interface{}, error) {
 
 	var m map[string]interface{}
 
-	b, err := json.Marshal(t)
+	b, err := json.Marshal(c)
 	if err != nil {
 		return m, err
 	}
@@ -193,4 +214,122 @@ func (c *Clusters) GetClusterIds() ([]string, error) {
 		}
 	}
 	return ids, nil
+}
+
+// ClustersSpecsFromFile - reads tenant spec from file
+// and return ClusterSpec instance
+func ClustersSpecsFromFile(fileName string) (*Clusters, error) {
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	return ReadClustersSpec(file)
+}
+
+// ClustersSpecsFromString take string that hold entire spec
+// passed to reader and return ClusterSpec instance
+func ClustersSpecsFromString(str string) (*Clusters, error) {
+	r := strings.NewReader(str)
+	return ReadClustersSpec(r)
+}
+
+// ReadClustersSpec - Read cluster spec from io interface
+// detects format and use either yaml or json parse
+func ReadClustersSpec(b io.Reader) (*Clusters, error) {
+
+	var spec Clusters
+
+	buffer, err := ioutil.ReadAll(b)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(buffer, &spec)
+	if err == nil {
+		return &spec, nil
+	}
+
+	err = yaml.Unmarshal(buffer, &spec)
+	if err == nil {
+		return &spec, nil
+	}
+
+	return nil, &InvalidClusterSpec{"unknown format"}
+}
+
+//InstanceSpecsFromString method return instance form string
+func (c Clusters) InstanceSpecsFromString(s string) (interface{}, error) {
+	return ClustersSpecsFromString(s)
+}
+
+// NewClustersSpecs create cluster
+// spec from reader
+func NewClustersSpecs(r io.Reader) (*Clusters, error) {
+
+	spec, err := ReadClustersSpec(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return spec, nil
+}
+
+// ClusterSpecsFromFile - reads tenant cluster spec from file
+// and return ClusterSpec instance
+func ClusterSpecsFromFile(fileName string) (*ClusterSpec, error) {
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	return ReadClusterSpec(file)
+}
+
+// ClusterSpecsFromString take string that hold entire spec
+// passed to reader and return ClusterSpec instance
+func ClusterSpecsFromString(str string) (*ClusterSpec, error) {
+	r := strings.NewReader(str)
+	return ReadClusterSpec(r)
+}
+
+// ReadClusterSpec - Read cluster spec from io interface
+// detects format and use either yaml or json parse
+func ReadClusterSpec(b io.Reader) (*ClusterSpec, error) {
+
+	var spec ClusterSpec
+
+	buffer, err := ioutil.ReadAll(b)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(buffer, &spec)
+	if err == nil {
+		return &spec, nil
+	}
+
+	err = yaml.Unmarshal(buffer, &spec)
+	if err == nil {
+		return &spec, nil
+	}
+
+	return nil, &InvalidClusterSpec{"unknown format"}
+}
+
+//InstanceSpecsFromString method return instance form string
+func (c ClusterSpec) InstanceSpecsFromString(s string) (interface{}, error) {
+	return ClusterSpecsFromString(s)
+}
+
+// NewClusterSpecs create spec from reader
+func NewClusterSpecs(r io.Reader) (*ClusterSpec, error) {
+	spec, err := ReadClusterSpec(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return spec, nil
 }

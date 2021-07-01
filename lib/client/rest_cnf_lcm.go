@@ -19,7 +19,6 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -28,32 +27,6 @@ import (
 	"github.com/spyroot/tcactl/lib/client/response"
 	"net/http"
 )
-
-// makeDefaultHeaders default headers
-func (c *RestClient) makeDefaultHeaders() {
-	c.Client.SetHeader("Content-Type", defaultContentType)
-	c.Client.SetHeader("Version", defaultVersion)
-	c.Client.SetHeader("Accept", defaultAccept)
-	c.Client.SetHeader("Authorization", c.ApiKey)
-	c.Client.SetHeader("x-hm-authorization", c.ApiKey)
-}
-
-// GetClient return rest client
-func (c *RestClient) GetClient() {
-
-	if c.Client == nil {
-		glog.Infof("Creating a new rest client")
-		c.Client = resty.New()
-		if c.SkipSsl {
-			tr := &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: c.SkipSsl},
-			}
-			c.Client.SetTransport(tr)
-		}
-	}
-
-	c.makeDefaultHeaders()
-}
 
 // GetVnflcm - Retrieves information about a CNF/VNF instance by reading an "Individual VNF instance" resource.
 // This method shall follow the provisions specified in the tables 5.4.3.3.2-1 and 5.4.3.3.2-2

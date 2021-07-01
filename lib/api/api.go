@@ -20,11 +20,9 @@ package api
 
 import (
 	"context"
-	b64 "encoding/base64"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
-	"github.com/google/uuid"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
@@ -134,7 +132,7 @@ func (a *TcaApi) GetCnfs() (*response.CnfsExtended, error) {
 }
 
 // GetAllNodePool return a Node pool for particular cluster
-// It generally useful to get list only if want to display
+// It generally useful to get list only if we need to display all
 // in all other cases it efficient to use direct call for cluster.
 func (a *TcaApi) GetAllNodePool() (*response.NodePool, error) {
 
@@ -200,6 +198,7 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 	if IsValidUUID(taskId) == false {
 		return nil, &InvalidTaskId{taskId}
 	}
+
 	clusters, err := a.rest.GetClusters()
 	if err != nil {
 		return nil, err
@@ -217,34 +216,6 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 	}
 
 	return task, nil
-}
-
-// DeleteCluster method deletes cluster, note you can't
-// delete cluster that is active and contains running instances,
-// TCA will return error.
-func (a *TcaApi) DeleteCluster(clusterId string) (bool, error) {
-
-	if a.rest == nil {
-		return false, fmt.Errorf("rest interface is nil")
-	}
-
-	clusters, err := a.rest.GetClusters()
-	if err != nil {
-		return false, err
-	}
-
-	cid, clusterErr := clusters.GetClusterId(clusterId)
-	if clusterErr != nil {
-		glog.Error(clusterErr)
-		return false, err
-	}
-
-	ok, err := a.rest.DeleteCluster(cid)
-	if err != nil {
-		return false, err
-	}
-
-	return ok, nil
 }
 
 // GetVimVMTemplates - return compute cluster attached to cloud provider.
@@ -476,26 +447,12 @@ func (a *TcaApi) ResolveTypedTemplateId(templateId string, templateType string) 
 	}
 
 	// check template type
-	if template.ClusterType != templateType {
-		return "", fmt.Errorf("found template by template type mistmatch")
+	if strings.ToLower(template.ClusterType) != strings.ToLower(templateType) {
+		return "", fmt.Errorf("found template %s but template type mistmatch, "+
+			"template type %v %v", templateId, template.ClusterType, templateType)
 	}
 
-	return template.Id, nil
-}
-
-// ResolveTemplateId - resolves template name to id
-func (a *TcaApi) ResolveTemplateId(templateId string) (string, error) {
-
-	// resolve template id, in case client used name instead id
-	clusterTemplates, err := a.rest.GetClusterTemplates()
-	if err != nil {
-		return "", err
-	}
-
-	template, err := clusterTemplates.GetTemplate(templateId)
-	if err != nil {
-		return "", err
-	}
+	glog.Infof("Resolved template to template id %v", template.Id)
 
 	return template.Id, nil
 }
@@ -616,107 +573,6 @@ func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.Tena
 	}
 
 	return nil
-}
-
-// CreateClusters - create new cluster
-// in Dry Run we only parse
-func (a *TcaApi) CreateClusters(spec *request.Cluster, isDry bool) (bool, error) {
-
-	if a.rest == nil {
-		return false, fmt.Errorf("rest interface is nil")
-	}
-
-	if spec == nil {
-		return false, fmt.Errorf("new cluster initialSpec can't be nil")
-	}
-
-	spec.ClusterType = strings.ToUpper(spec.ClusterType)
-
-	// validate cluster
-	if err := validateClusterSpec(spec); err != nil {
-		return false, err
-	}
-
-	// do all sanity check here.
-	tenants, err := a.rest.GetClusters()
-	if err != nil {
-		return false, err
-	}
-
-	_, err = tenants.GetClusterId(spec.Name)
-	// swap name
-	if err == nil {
-		spec.Name = spec.Name + "-" + uuid.New().String()
-		spec.Name = string(spec.Name[0:25])
-	}
-
-	// resolve template id, and cluster type
-	spec.ClusterTemplateId, err = a.ResolveTypedTemplateId(spec.ClusterTemplateId, spec.ClusterType)
-	if err != nil {
-		return false, err
-	}
-
-	// get template and validate specs
-	t, err := a.rest.GetClusterTemplate(spec.ClusterTemplateId)
-	if err != nil {
-		return false, err
-	}
-
-	glog.Infof("Validating node pool specs.")
-	_, err = t.ValidateSpec(spec)
-	if err != nil {
-		return false, err
-	}
-
-	glog.Infof("Resolved template id %v", spec.ClusterTemplateId)
-	tenant, err := a.validateCloudEndpoint(spec.HcxCloudUrl)
-	if err != nil {
-		return false, err
-	}
-
-	err = a.validateTenant(tenant)
-	if err != nil {
-		return false, err
-	}
-
-	if spec.ClusterType == string(request.ClusterWorkload) {
-		// resolve template id, in case client used name instead id
-		mgmtClusterId, err := tenants.GetClusterId(spec.ManagementClusterId)
-		if err != nil {
-			return false, err
-		}
-		mgmtSpec, err := tenants.GetClusterSpec(mgmtClusterId)
-		if err != nil {
-			return false, err
-		}
-		if mgmtSpec.ClusterType != string(request.ClusterManagement) {
-			return false, fmt.Errorf("managementClusterId cluster id is not management cluster")
-		}
-		glog.Infof("Resolved cluster name %v", mgmtClusterId)
-		spec.ManagementClusterId = mgmtClusterId
-
-		err = a.validatePlacements(spec, tenant)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	if spec.ClusterType == string(request.ClusterManagement) {
-		// ignoring mgmt cluster id
-		spec.ManagementClusterId = ""
-		err = a.validatePlacements(spec, tenant)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(spec.ClusterPassword))
-
-	if isDry {
-		return true, nil
-	}
-
-	return a.rest.CreateCluster(spec)
 }
 
 // DeleteTenantCluster - deletes tenant cluster
@@ -1291,7 +1147,7 @@ func (a *TcaApi) BlockWaitStateChange(ctx context.Context, instanceId string, wa
 					break
 				}
 
-				time.Sleep(10 * time.Second)
+				time.Sleep(TaskWaitSeconds * time.Second)
 			}
 		}
 	}
@@ -1299,28 +1155,99 @@ func (a *TcaApi) BlockWaitStateChange(ctx context.Context, instanceId string, wa
 	return nil
 }
 
-func (a *TcaApi) ResolvePoolId(poolName string) (string, error) {
+// BlockWaitTaskFinish - simple block and pull status
+// instanceId is instance that method will pull and check
+// waitFor is target status method waits.
+// maxRetry a limit.
+func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, waitFor string, maxRetry int, verbose bool) error {
 
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	req := request.NewClusterTaskQuery(task.Id)
+
+	if verbose {
+		glog.Infof("Waiting task id=%s type=%s", task.Id, task.OperationId)
+	}
+
+	var (
+		allTaskDone = false
+		retry       = 0
+	)
+
+	for !allTaskDone || retry == maxRetry {
+		{
+
+			select {
+			case <-ctx.Done():
+
+				return nil
+			default:
+
+				task, err := a.rest.GetClustersTask(req)
+
+				if err != nil {
+					return err
+				}
+
+				var numTaskWaiting = 0
+				for _, item := range task.Items {
+					if verbose {
+						glog.Infof("Task id=%s type=%s progress=%d status=%s",
+							item.TaskId, item.Type, item.Progress, item.Status)
+					}
+
+					if item.Status != waitFor {
+						glog.Infof("Task still running id=%s type=%s progress=%d status=%s",
+							item.TaskId, item.Type, item.Progress, item.Status)
+						numTaskWaiting++
+					}
+				}
+
+				if numTaskWaiting == 0 {
+					glog.Infof("All task finished.")
+					allTaskDone = true
+				}
+
+				time.Sleep(TaskWaitSeconds * time.Second)
+				retry++
+			}
+		}
+	}
+
+	return nil
+}
+
+// ResolvePoolId method resolves pool name to pool id
+func (a *TcaApi) ResolvePoolId(poolName string, clusterScope ...string) (string, error) {
+
+	// get cluster id for a pool
+	if len(clusterScope) > 0 && len(clusterScope[0]) > 0 {
+		var clusterId = clusterScope[0]
+		if pool, restErr := a.rest.GetClusterNodePools(clusterId); restErr == nil && pool != nil {
+			if spec, pollErr := pool.GetPool(poolName); pollErr == nil && spec != nil {
+				return spec.Id, nil
+			}
+		}
+	}
+
+	// cluster scope not indicated, we get entire cluster.
 	clusters, err := a.rest.GetClusters()
 	if err != nil {
 		glog.Error(err)
 		return "", err
 	}
-
-	// get cluster id for a pool
 	clusterIds, err := clusters.GetClusterIds()
 	if err != nil {
 		return "", err
 	}
 
 	// get all pools
-	p := response.NodePool{}
 	for _, cid := range clusterIds {
-		if pool, err := a.rest.GetClusterNodePools(cid); err != nil && pool != nil {
-			if nodeSpec, err := pool.GetPool(poolName); err != nil && nodeSpec != nil {
+		if pool, restErr := a.rest.GetClusterNodePools(cid); restErr == nil && pool != nil {
+			if nodeSpec, pollErr := pool.GetPool(poolName); pollErr == nil && nodeSpec != nil {
 				return nodeSpec.Id, nil
 			}
-			p.Pools = append(p.Pools, pool.Pools...)
 		}
 	}
 
@@ -1407,10 +1334,10 @@ func (a *TcaApi) SetPassword(password string) {
 
 }
 
-func (a *TcaApi) GetApiKey() interface{} {
+func (a *TcaApi) GetApiKey() string {
 
 	if a != nil && a.rest != nil {
-		return a.rest.ApiKey
+		return a.rest.GetApiKey()
 	}
 
 	return ""

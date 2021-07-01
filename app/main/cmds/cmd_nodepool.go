@@ -185,6 +185,8 @@ func (ctl *TcaCtl) CmdCreatePoolNodes() *cobra.Command {
 		_defaultStyler  = ctl.DefaultStyle
 		_outputFilter   string
 		isDry           bool
+		doBlock         bool
+		showProgress    bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -221,7 +223,7 @@ Command create additional node pool on target kubernetes cluster.
 				CheckErrLogError(err)
 			}
 
-			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry)
+			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry, doBlock, showProgress)
 			CheckErrLogError(err)
 			fmt.Printf("Node Pool task %v created.\n", task.OperationId)
 		},
@@ -230,6 +232,14 @@ Command create additional node pool on target kubernetes cluster.
 	_cmd.Flags().BoolVar(&isDry,
 		"dry", false, "Parses input template spec, "+
 			"validates, outputs spec to the terminal screen. Format based on -o flag.")
+
+	//
+	_cmd.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
+		"Blocks and wait task to finish.")
+
+	//
+	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "p", true,
+		"Show task progress.")
 
 	return _cmd
 }
@@ -244,6 +254,8 @@ func (ctl *TcaCtl) CmdUpdatePoolNodes() *cobra.Command {
 		_defaultStyler  = ctl.DefaultStyle
 		_outputFilter   string
 		isDry           bool
+		doBlock         bool
+		showProgress    bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -280,7 +292,7 @@ Command update node pool for target kubernetes cluster.
 				CheckErrLogError(err)
 			}
 
-			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry)
+			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry, doBlock, showProgress)
 			CheckErrLogError(err)
 			fmt.Printf("Node Pool task %v created.\n", task.OperationId)
 		},
@@ -289,6 +301,14 @@ Command update node pool for target kubernetes cluster.
 	_cmd.Flags().BoolVar(&isDry,
 		"dry", false, "Parses input template spec, "+
 			"validates, outputs spec to the terminal screen. Format based on -o flag.")
+
+	//
+	_cmd.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
+		"Blocks and wait task to finish.")
+
+	//
+	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "p", true,
+		"Show task progress.")
 
 	return _cmd
 }

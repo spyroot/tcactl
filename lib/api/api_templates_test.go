@@ -41,6 +41,8 @@ func specStringReaderHelper(s string) *response.ClusterTemplate {
 	return r
 }
 
+// Create new cluster template
+//
 func TestTcaApi_CreateClusterTemplate(t *testing.T) {
 
 	tests := []struct {
@@ -164,7 +166,7 @@ func TestTcaApi_GetClusterTemplate(t *testing.T) {
 		{
 			name:    "Create cluster and check list",
 			rest:    rest,
-			specs:   specStringReaderHelper(yamlWorkloadTemplate4),
+			specs:   specStringReaderHelper(yamlWorkloadTemplate),
 			repeat:  3,
 			wantErr: false,
 		},
@@ -216,7 +218,7 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 		{
 			name:    "Create cluster and check list",
 			rest:    rest,
-			specs:   specStringReaderHelper(yamlWorkloadTemplate4),
+			specs:   specStringReaderHelper(yamlWorkloadTemplate),
 			repeat:  3,
 			wantErr: false,
 		},
