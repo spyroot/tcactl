@@ -79,10 +79,17 @@ type Cluster struct {
 }
 
 func (c *Cluster) IsManagement() bool {
+	if c != nil {
+		return false
+	}
 	return strings.ToLower(c.ClusterType) == strings.ToLower(string(ClusterManagement))
 }
 
 func (c *Cluster) IsWorkload() bool {
+	if c != nil {
+		return false
+	}
+
 	return strings.ToLower(c.ClusterType) == strings.ToLower(string(ClusterWorkload))
 }
 

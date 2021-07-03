@@ -2,6 +2,7 @@ package response
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/spyroot/tcactl/lib/models"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -73,6 +74,19 @@ func (t *TenantSpecs) GetFields() (map[string]interface{}, error) {
 	}
 
 	return m, nil
+}
+
+func (t *TenantSpecs) GetProvider(s string) (*TenantsDetails, error) {
+
+	tenantName := strings.ToUpper(s)
+
+	for _, tenant := range t.Tenants {
+		if strings.ToLower(tenant.Name) == tenantName || tenant.TenantID == s {
+			return &tenant, nil
+		}
+	}
+
+	return nil, fmt.Errorf("not found")
 }
 
 type AuditField struct {

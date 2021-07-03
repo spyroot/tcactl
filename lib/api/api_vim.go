@@ -118,3 +118,23 @@ func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error)
 
 	return &networks, nil
 }
+
+func (a *TcaApi) DeleteCloudProvider(s string) (*models.TcaTask, error) {
+
+	vims, err := a.GetVims()
+	if err != nil {
+		return nil, err
+	}
+
+	provider, err := vims.FindCloudProvider(s)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := a.rest.DeleteTenant(provider.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}

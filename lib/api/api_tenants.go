@@ -20,6 +20,8 @@ package api
 
 import (
 	"fmt"
+	"github.com/go-playground/validator/v10"
+	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
 )
@@ -82,4 +84,26 @@ func (a *TcaApi) DeleteTenantsProvider(tenantCluster string) (*models.TcaTask, e
 	}
 
 	return a.rest.DeleteTenant(r.TenantID)
+}
+
+// CreateTenantProvider method create, registers new target cloud provider
+// as tenant infrastructure in TCA.
+func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVim) (*models.TcaTask, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	err := a.specValidator.Struct(spec)
+	if err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		return nil, validationErrors
+	}
+
+	// remove kind and encode password as base64
+	specCopy := spec
+	specCopy.SpecType = nil
+	//	spec.Password = b64.StdEncoding.EncodeToString([]byte(spec.Password))
+
+	return a.rest.RegisterCloudProvider(specCopy)
 }

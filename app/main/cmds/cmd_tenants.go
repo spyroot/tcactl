@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
+	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"strings"
 )
@@ -101,7 +102,6 @@ Command retrieves particular cloud provider or list of all providers.`,
 func (ctl *TcaCtl) CmdDeleteTenant() *cobra.Command {
 
 	var (
-		//		_defaultNfType  = "CNF"
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
 		_outputFilter   string
@@ -138,13 +138,14 @@ Command delete cloud provider. Note all entity must be removed.`),
 			ctl.tca.SetTrace(ctl.IsTrace)
 
 			if len(args) > 0 {
-				t, err = ctl.tca.GetTenant(args[0])
+				_, err := ctl.tca.DeleteCloudProvider(args[0])
 				CheckErrLogError(err)
-				if t != nil && len(t.TenantsList) == 0 {
-					fmt.Printf("Tenant %s not found\n", args[0])
-					return
-				}
+
+				fmt.Printf("cloud provider %s delete\n", args[0])
+
 			} else {
+				// if no args
+				fmt.Println("Please provide cloud provider name or id.")
 				t, err = ctl.tca.GetVims()
 				CheckErrLogError(err)
 			}
@@ -156,23 +157,13 @@ Command delete cloud provider. Note all entity must be removed.`),
 		},
 	}
 
-	// output filter , filter specific value from data structure
-	_cmd.Flags().StringVar(&_outputFilter,
-		"ofilter", "",
-		"Output filter.")
-
-	_cmd.Flags().StringVar(&_outputFilter,
-		"--", "",
-		"Output filter.")
 	return _cmd
 }
 
-// CmdCreateTenant - Command deletes tenant
-// TODO
+// CmdCreateTenant - Command create-registers a new tenant
 func (ctl *TcaCtl) CmdCreateTenant() *cobra.Command {
 
 	var (
-		//		_defaultNfType  = "CNF"
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
 		_outputFilter   string
@@ -181,17 +172,12 @@ func (ctl *TcaCtl) CmdCreateTenant() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "tenant [spec file]",
 		Short: "Command attaches cloud provider to TCA.",
-		Long: `
+		Long: templates.LongDesc(`
 
-Command attaches cloud provider to TCA.`,
+Command attaches cloud provider to TCA.`),
 
-		//Args:  cobra.MinimumNArgs(1),
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-
-			var (
-				t   *response.Tenants
-				err error
-			)
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
@@ -203,38 +189,16 @@ Command attaches cloud provider to TCA.`,
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			// global output type, and terminal wide or not
-			_defaultStyler.SetColor(ctl.IsColorTerm)
-			_defaultStyler.SetWide(ctl.IsWideTerm)
-			ctl.tca.SetTrace(ctl.IsTrace)
+			spec, err := request.ProviderSpecsFromFile(args[0])
+			CheckErrLogError(err)
 
-			if len(args) > 0 {
-				t, err = ctl.tca.GetTenant(args[0])
-				CheckErrLogError(err)
-				if t != nil && len(t.TenantsList) == 0 {
-					fmt.Printf("Tenant %s not found\n", args[0])
-					return
-				}
-			} else {
-				t, err = ctl.tca.GetVims()
-				CheckErrLogError(err)
-			}
-			if t != nil {
-				if printer, ok := ctl.TenantQueryPrinter[_defaultPrinter]; ok {
-					printer(t, _defaultStyler)
-				}
-			}
+			_, err = ctl.tca.CreateTenantProvider(spec)
+			CheckErrLogError(err)
+
+			//fmt.Printf("Cloud provider %s registered\n", args[0])
 		},
 	}
 
-	// output filter , filter specific value from data structure
-	_cmd.Flags().StringVar(&_outputFilter,
-		"ofilter", "",
-		"Output filter.")
-
-	_cmd.Flags().StringVar(&_outputFilter,
-		"--", "",
-		"Output filter.")
 	return _cmd
 }
 

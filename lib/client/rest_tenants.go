@@ -112,6 +112,35 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 	return &tenants, nil
 }
 
+// RegisterCloudProvider method register new cloud provider.
+func (c *RestClient) RegisterCloudProvider(r *request.RegisterVim) (*models.TcaTask, error) {
+
+	glog.Infof("Cloud provider registration request %s", r.HcxCloudUrl)
+
+	c.GetClient()
+	resp, err := c.Client.R().SetBody(r).Post(c.BaseURL + apiTenants)
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	if c.isTrace && resp != nil {
+		fmt.Println(string(resp.Body()))
+	}
+
+	if !resp.IsSuccess() {
+		return nil, c.checkErrors(resp)
+	}
+
+	var task models.TcaTask
+	if err := json.Unmarshal(resp.Body(), &task); err != nil {
+		glog.Error("Failed parse server respond.")
+		return nil, err
+	}
+
+	return &task, nil
+}
+
 // DeleteTenant delete tenant cluster
 func (c *RestClient) DeleteTenant(tenantCluster string) (*models.TcaTask, error) {
 
