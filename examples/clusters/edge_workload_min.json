@@ -1,0 +1,95 @@
+{
+  "name": "edge-workload-test03",
+  "clusterType": "WORKLOAD",
+  "clusterTemplateId": "myworkload",
+  "hcxCloudUrl": "edge",
+  "vmTemplate": "photon-3-kube-v1.20.4+vmware.1",
+  "endpointIP": "10.241.7.191",
+  "placementParams": [
+    {
+      "type": "Folder",
+      "name": "tkg"
+    },
+    {
+      "type": "Datastore",
+      "name": "vsanDatastore"
+    },
+    {
+      "type": "ResourcePool",
+      "name": "k8s"
+    },
+    {
+      "type": "ClusterComputeResource",
+      "name": "hubsite"
+    }
+  ],
+  "clusterConfig": {
+    "csi": [
+      {
+        "name": "nfs_client",
+        "properties": {
+          "serverIP": "10.241.0.250",
+          "mountPath": "/w3-nfv-pst-01-mus"
+        }
+      }
+    ]
+  },
+  "managementClusterId": "edge-mgmt-test01",
+  "clusterPassword": "Vk13YXJlMSE=",
+  "masterNodes": [
+    {
+      "name": "master",
+      "placementParams": [
+        {
+          "type": "ClusterComputeResource",
+          "name": "hubsite"
+        },
+        {
+          "type": "Datastore",
+          "name": "vsanDatastore"
+        },
+        {
+          "type": "ResourcePool",
+          "name": "k8s"
+        }
+      ],
+      "networks": [
+        {
+          "label": "MANAGEMENT",
+          "networkName": "tkg-dhcp-vlan1007-10.241.7.0",
+          "nameservers": [
+            "10.246.2.9"
+          ]
+        }
+      ]
+    }
+  ],
+  "workerNodes": [
+    {
+      "name": "default-pool01",
+      "placementParams": [
+        {
+          "type": "ClusterComputeResource",
+          "name": "hubsite"
+        },
+        {
+          "type": "Datastore",
+          "name": "vsanDatastore"
+        },
+        {
+          "type": "ResourcePool",
+          "name": "k8s"
+        }
+      ],
+      "networks": [
+        {
+          "label": "MANAGEMENT",
+          "networkName": "tkg-dhcp-vlan1007-10.241.7.0",
+          "nameservers": [
+            "10.246.2.9"
+          ]
+        }
+      ]
+    }
+  ]
+}
