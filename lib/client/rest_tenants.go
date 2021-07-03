@@ -88,8 +88,7 @@ func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tenants, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().SetBody(f).SetQueryString(apiTenantAction).
-		Post(c.BaseURL + apiTenants)
+	resp, err := c.Client.R().SetBody(f).SetQueryString(apiTenantAction).Post(c.BaseURL + apiTenants)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -113,7 +112,7 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 }
 
 // RegisterCloudProvider method register new cloud provider.
-func (c *RestClient) RegisterCloudProvider(r *request.RegisterVim) (*models.TcaTask, error) {
+func (c *RestClient) RegisterCloudProvider(r *request.RegisterVimSpec) (*models.TcaTask, error) {
 
 	glog.Infof("Cloud provider registration request %s", r.HcxCloudUrl)
 

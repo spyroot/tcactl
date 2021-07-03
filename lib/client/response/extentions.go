@@ -1,6 +1,7 @@
 package response
 
 import (
+	"github.com/spyroot/tcactl/lib/api_errors"
 	errorsconst "github.com/spyroot/tcactl/pkg/errors"
 	"strings"
 )
@@ -71,14 +72,6 @@ type Extensions struct {
 	ExtensionsList []Extension `json:"extensions"`
 }
 
-type ExtensionsNotFound struct {
-	ErrMsg string
-}
-
-func (m *ExtensionsNotFound) Error() string {
-	return "extension '" + m.ErrMsg + "' not found"
-}
-
 // FindRepo find repository Extension
 func (e *Extensions) FindRepo(q string) (*Extension, error) {
 
@@ -92,7 +85,25 @@ func (e *Extensions) FindRepo(q string) (*Extension, error) {
 		}
 	}
 
-	return nil, &ExtensionsNotFound{ErrMsg: q}
+	return nil, api_errors.NewExtensionsNotFound(q)
+}
+
+// FindExtension find repository Extension by name or extension id
+func (e *Extensions) FindExtension(NameOrId string) (*Extension, error) {
+
+	q := strings.ToLower(NameOrId)
+
+	if e == nil {
+		return nil, errorsconst.NilError
+	}
+
+	for _, l := range e.ExtensionsList {
+		if l.Name == q || l.ExtensionId == q {
+			return &l, nil
+		}
+	}
+
+	return nil, api_errors.NewExtensionsNotFound(q)
 }
 
 // GetAllRepositories return all repository Extension
@@ -108,7 +119,7 @@ func (e *Extensions) GetAllRepositories() (*Extension, error) {
 		}
 	}
 
-	return nil, &ExtensionsNotFound{ErrMsg: ExtensionTypeRepository}
+	return nil, api_errors.NewExtensionsNotFound(ExtensionTypeRepository)
 }
 
 // GetRepositoryByUrl return all repository by url
@@ -124,7 +135,7 @@ func (e *Extensions) GetRepositoryByUrl(url string) (*Extension, error) {
 		}
 	}
 
-	return nil, &ExtensionsNotFound{ErrMsg: url}
+	return nil, api_errors.NewExtensionsNotFound(url)
 }
 
 // GetVimAttached return list all vim extension ext

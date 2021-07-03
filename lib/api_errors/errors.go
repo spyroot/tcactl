@@ -61,3 +61,15 @@ func (m *CatalogNotFound) Error() string {
 func NewCatalogNotFound(errMsg string) *CatalogNotFound {
 	return &CatalogNotFound{errMsg: errMsg}
 }
+
+type ExtensionsNotFound struct {
+	errMsg string
+}
+
+func (m *ExtensionsNotFound) Error() string {
+	return "extension '" + m.errMsg + "' not found"
+}
+
+func NewExtensionsNotFound(errMsg string) *ExtensionsNotFound {
+	return &ExtensionsNotFound{errMsg: errMsg}
+}

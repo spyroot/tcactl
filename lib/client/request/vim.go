@@ -11,14 +11,7 @@ import (
 
 type SpecType string
 
-const (
-	// SpecTypeProviderReg provider registration spec
-	SpecTypeProviderReg SpecType = "provider"
-)
-
-type SpecKind string
-
-type RegisterVim struct {
+type RegisterVimSpec struct {
 	SpecType    *SpecKind `json:"kind,omitempty" yaml:"kind,omitempty" validate:"required"`
 	HcxCloudUrl string    `json:"hcxCloudUrl" yaml:"hcxCloudUrl" validate:"required,url"`
 	VimName     string    `json:"vimName" yaml:"vimName" validate:"required"`
@@ -27,9 +20,13 @@ type RegisterVim struct {
 	Password    string    `json:"password" yaml:"password" validate:"required"`
 }
 
+func (p *RegisterVimSpec) GetKind() *SpecKind {
+	return p.SpecType
+}
+
 // ProviderSpecsFromFile - reads tenant spec from file
 // and return TenantSpecs instance
-func ProviderSpecsFromFile(fileName string) (*RegisterVim, error) {
+func ProviderSpecsFromFile(fileName string) (*RegisterVimSpec, error) {
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -41,16 +38,16 @@ func ProviderSpecsFromFile(fileName string) (*RegisterVim, error) {
 
 // ProviderSpecsFromFromString take string that holdw entire spec
 // passed to reader and return TenantSpecs instance
-func ProviderSpecsFromFromString(str string) (*RegisterVim, error) {
+func ProviderSpecsFromFromString(str string) (*RegisterVimSpec, error) {
 	r := strings.NewReader(str)
 	return ReadProviderSpec(r)
 }
 
 // ReadProviderSpec - Read spec from io reader
 // detects format and use either yaml or json parse
-func ReadProviderSpec(b io.Reader) (*RegisterVim, error) {
+func ReadProviderSpec(b io.Reader) (*RegisterVimSpec, error) {
 
-	var spec RegisterVim
+	var spec RegisterVimSpec
 
 	buffer, err := ioutil.ReadAll(b)
 	if err != nil {

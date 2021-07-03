@@ -5,14 +5,21 @@ import (
 )
 
 const (
+	//
 	CpuManagerPolicy = "kubernetes"
 
-	HealthyCheckReady              = "Ready"
-	HealthyCheckMemoryPressure     = "MemoryPressure"
-	HealthyCheckDiskPressure       = "DiskPressure"
-	HealthyCheckPIDPressure        = "PIDPressure"
+	//
+	HealthyCheckReady = "Ready"
+	//
+	HealthyCheckMemoryPressure = "MemoryPressure"
+	//
+	HealthyCheckDiskPressure = "DiskPressure"
+	//
+	HealthyCheckPIDPressure = "PIDPressure"
+	//
 	HealthyCheckNetworkUnavailable = "NetworkUnavailable"
-	DefaultNodeStartupTimeout      = "20m"
+	//
+	DefaultNodeStartupTimeout = "20m"
 
 	FullCloneMode = "fullClone"
 	LinkedClone   = "linkedClone"

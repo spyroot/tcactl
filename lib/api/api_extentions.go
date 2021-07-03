@@ -18,9 +18,93 @@
 package api
 
 import (
+	"github.com/go-playground/validator/v10"
+	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/errors"
 )
+
+// GetExtension return all extension
+func (a *TcaApi) GetExtension() (*response.Extensions, error) {
+
+	if a == nil {
+		return nil, errors.NilError
+	}
+
+	return a.rest.GetExtensions()
+}
+
+// CreateExtension api call create extension in TCA
+func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
+
+	if a == nil {
+		return "", errors.NilError
+	}
+
+	err := a.specValidator.Struct(spec)
+	if err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		return "", validationErrors
+	}
+
+	// remove kind and encode password as base64
+	specCopy := spec
+	specCopy.SpecType = nil
+
+	return a.rest.CreateExtension(spec)
+}
+
+func (a *TcaApi) ResolveExtensionId(NameOrId string) (string, error) {
+
+	extension, err := a.GetExtension()
+	if err != nil {
+		return "", err
+	}
+
+	ext, err := extension.FindExtension(NameOrId)
+	if err != nil {
+		return "", err
+	}
+
+	return ext.ExtensionId, nil
+}
+
+// DeleteExtension api call delete extension from TCA
+func (a *TcaApi) DeleteExtension(NameOrId string) (*models.TcaTask, error) {
+
+	if a == nil {
+		return nil, errors.NilError
+	}
+
+	eid, err := a.ResolveExtensionId(NameOrId)
+	if err != nil {
+		return nil, err
+	}
+
+	// remove kind and encode password as base64
+	return a.rest.DeleteExtension(eid)
+}
+
+// UpdateExtension api call delete extension from TCA
+func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (interface{}, error) {
+
+	if a == nil {
+		return nil, errors.NilError
+	}
+
+	err := a.specValidator.Struct(spec)
+	if err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		return nil, validationErrors
+	}
+
+	// remove kind and encode password as base64
+	specCopy := spec
+	specCopy.SpecType = nil
+
+	return a.rest.UpdateExtension(spec)
+}
 
 // ExtensionQuery - query for all extension api
 func (a *TcaApi) ExtensionQuery() (*response.Extensions, error) {
@@ -29,5 +113,5 @@ func (a *TcaApi) ExtensionQuery() (*response.Extensions, error) {
 		return nil, errors.NilError
 	}
 
-	return a.rest.ExtensionQuery()
+	return a.rest.GetExtensions()
 }

@@ -1074,7 +1074,7 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, err
 	}
 
-	ext, err := a.rest.ExtensionQuery()
+	ext, err := a.rest.GetExtensions()
 	if err != nil {
 		glog.Errorf("Failed acquire extension information for %v", err)
 		return nil, err

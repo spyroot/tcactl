@@ -1,0 +1,24 @@
+{
+  "kind": "extensions",
+  "name": "repo",
+  "version": "v1.x",
+  "type": "Repository",
+  "extensionKey": "",
+  "extensionSubtype": "Harbor",
+  "products": [],
+  "vimInfo": [],
+  "interfaceInfo": {
+    "url": "https://1.1.1.1",
+    "description": "",
+    "trustedCertificate": ""
+  },
+  "additionalParameters": {
+    "trustAllCerts": true
+  },
+  "autoScaleEnabled": true,
+  "autoHealEnabled": true,
+  "accessInfo": {
+    "username": "admin",
+    "password": "Vk13YXJlMSE="
+  }
+}

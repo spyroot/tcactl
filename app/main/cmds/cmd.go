@@ -304,7 +304,8 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdCreateCnf(),
 		ctl.CmdCreateClusterTemplates(),
 		ctl.CmdCreatePackage(),
-		ctl.CmdCreatePoolNodes())
+		ctl.CmdCreatePoolNodes(),
+		ctl.CmdCreateExtension())
 
 	// Delete
 	cmdDelete.AddCommand(
@@ -314,5 +315,6 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdDeleteCatalog(),
 		ctl.CmdDeleteTenantCluster(),
 		ctl.CmdDeleteInstances(),
-		ctl.CmdDeletePoolNodes())
+		ctl.CmdDeletePoolNodes(),
+		ctl.CmdDeleteExtension())
 }

@@ -88,7 +88,7 @@ func (a *TcaApi) DeleteTenantsProvider(tenantCluster string) (*models.TcaTask, e
 
 // CreateTenantProvider method create, registers new target cloud provider
 // as tenant infrastructure in TCA.
-func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVim) (*models.TcaTask, error) {
+func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVimSpec) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -106,4 +106,26 @@ func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVim) (*models.TcaTas
 	//	spec.Password = b64.StdEncoding.EncodeToString([]byte(spec.Password))
 
 	return a.rest.RegisterCloudProvider(specCopy)
+}
+
+// DeleteCloudProvider method delete cloud provider
+// note cloud provider must not contain any active clusters
+func (a *TcaApi) DeleteCloudProvider(s string) (*models.TcaTask, error) {
+
+	vims, err := a.GetVims()
+	if err != nil {
+		return nil, err
+	}
+
+	provider, err := vims.FindCloudProvider(s)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := a.rest.DeleteTenant(provider.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
 }

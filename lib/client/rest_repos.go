@@ -26,7 +26,7 @@ import (
 	"net/http"
 )
 
-// LinkedRepositories - return linked repo to tenant's vim
+// LinkedRepositories - return linked repos to tenant's vim
 // note repo must be linked
 func (c *RestClient) LinkedRepositories(tenantId string, repo string) (string, error) {
 
@@ -106,13 +106,13 @@ func (c *RestClient) GetRepositoriesQuery(query *request.RepoQuery) (*response.R
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
 	var repos response.ReposList
 	if err := json.Unmarshal(resp.Body(), &repos); err != nil {
-		glog.Error("Failed parse server respond.")
+		glog.Error("Failed parse server respond. %v", err)
 		return nil, err
 	}
 
