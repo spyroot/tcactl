@@ -311,6 +311,7 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdDeleteTenant(),
 		ctl.CmdDeleteClusterTemplates(),
 		ctl.CmdDeleteCluster(),
+		ctl.CmdDeleteCatalog(),
 		ctl.CmdDeleteTenantCluster(),
 		ctl.CmdDeleteInstances(),
 		ctl.CmdDeletePoolNodes())

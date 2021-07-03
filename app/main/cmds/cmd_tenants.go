@@ -309,7 +309,7 @@ Command update cloud provider details and trigger re-attach.`,
 	return _cmd
 }
 
-// CmdDeleteTenantCluster - Deletes cluster template.
+// CmdDeleteTenantCluster - Deletes tenant cluster
 func (ctl *TcaCtl) CmdDeleteTenantCluster() *cobra.Command {
 
 	var _cmd = &cobra.Command{
@@ -318,16 +318,18 @@ func (ctl *TcaCtl) CmdDeleteTenantCluster() *cobra.Command {
 		Short:   "Command deletes a tenant cluster.",
 		Long: templates.LongDesc(`
 
-Command deletes a tenant cluster. Note in order to delete cluster all 
-instance must be removed firrst`),
+The command deletes a tenant cluster. Note to delete tenant cluster all 
+active CNF instance must be removed first.
 
-		Example: " - tcactl delete cluster cluster",
+`),
+
+		Example: " - tcactl delete tenant my_tenant_name",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			task, err := ctl.tca.DeleteTenantCluster(args[0])
 			CheckErrLogError(err)
-			fmt.Printf("Template %v deleted. Task id %s\n", args[0], task.OperationId)
+			fmt.Printf("Tenant cluster %v deleted. Task id %s\n", args[0], task.OperationId)
 		},
 	}
 

@@ -429,8 +429,8 @@ Deletes CNF or VNF instance, client must provide ID or Name of the instance.
 Instance must be in current active cluster.
 
 `),
-		Example: "\ttcactl delete cnf testapp\t" +
-			"\ttcactl delete cnf testapp --force",
+		Example: "\t - tcactl delete cnf testapp\t" +
+			"\t - tcactl delete cnf testapp --force",
 		Aliases: []string{"del"},
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

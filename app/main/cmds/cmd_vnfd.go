@@ -22,6 +22,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
@@ -243,7 +244,7 @@ Command allow to overwrite some of CSAR Tosca values. Check flags.
 				substitution[models.PropertyVnfmInfo] = _PropertyVnfmInfo
 			}
 
-			ok, err := ctl.tca.CreateNewPackage(args[0], args[1], substitution)
+			ok, err := ctl.tca.CreateCatalogEntity(args[0], args[1], substitution)
 			if err != nil {
 				glog.Errorf("Failed create new package. Error: %v", err)
 				return
@@ -307,6 +308,53 @@ Command allow to overwrite some of CSAR Tosca values. Check flags.
 	//
 	_cmd.Flags().StringVar(&_PropertyVnfmInfo, "vnfm_info", "",
 		"Overwrite vnfm info.")
+
+	return _cmd
+}
+
+// CmdDeleteCatalog delete catalog entity from TCA
+func (ctl *TcaCtl) CmdDeleteCatalog() *cobra.Command {
+
+	var (
+		packageId       string
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "catalog [catalog name or catalog id]",
+		Aliases: []string{"catalog", "cnfc"},
+		Short:   "Command delete CNF or VNF package from TCA catalog.",
+		Long: templates.LongDesc(`
+
+Command delete a CNF or VNF package.`),
+
+		Example: "\t - tcactl create catalog my_cnf.csar my_cnf\n" +
+			"\t - tcactl delete catalog my_catalog_name",
+		Args: cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			if len(args) > 0 {
+				packageId = args[0]
+			}
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			ok, err := ctl.tca.DeleteCatalogEntity(args[0])
+			if err != nil {
+				glog.Errorf("Failed create new package. Error: %v", err)
+				return
+			}
+
+			if ok {
+				fmt.Println("Package created.")
+			}
+		},
+	}
 
 	return _cmd
 }

@@ -153,6 +153,12 @@ func (a *TcaApi) DeleteCnfInstance(ctx context.Context, instanceName string, vim
 		return fmt.Errorf("instance not found in %v cluster", vimName)
 	}
 
+	// if instance in roll back state just delete it
+	if instance.IsStateRollback() {
+		// for force case we terminate and block.
+		return a.rest.DeleteInstance(ctx, instance.CID)
+	}
+
 	if isForce && !strings.Contains(instance.Meta.LcmOperation, StateTerminate) {
 
 		fmt.Printf("Terminating cnf instance %s state %s status %s\n",
@@ -175,8 +181,8 @@ func (a *TcaApi) DeleteCnfInstance(ctx context.Context, instanceName string, vim
 			terminated.Metadata.LcmOperationState)
 	}
 
-	if strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
-		strings.Contains(instance.Meta.LcmOperationState, StateCompleted) {
+	if (strings.Contains(instance.Meta.LcmOperation, StateTerminate) &&
+		strings.Contains(instance.Meta.LcmOperationState, StateCompleted)) || (instance.IsStateRollback()) {
 		// for force case we terminate and block.
 		return a.rest.DeleteInstance(ctx, instance.CID)
 	}
@@ -304,7 +310,7 @@ func (a *TcaApi) TerminateCnfInstance(ctx context.Context, instanceName string,
 
 	if err = a.rest.TerminateInstance(
 		instance.Links.Terminate.Href,
-		request.TerminateVnfRequest{
+		&request.TerminateVnfRequest{
 			TerminationType:            "GRACEFUL",
 			GracefulTerminationTimeout: 120,
 		}); err != nil {

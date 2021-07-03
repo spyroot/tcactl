@@ -20,6 +20,7 @@ package response
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/models"
 	"reflect"
 	"strings"
@@ -40,16 +41,6 @@ const (
 	OperationalState VnfdFilterType = 2
 )
 
-// CatalogNotFound error raised if tenant cloud not found
-type CatalogNotFound struct {
-	errMsg string
-}
-
-//
-func (m *CatalogNotFound) Error() string {
-	return "Catalog entity '" + m.errMsg + "' not found"
-}
-
 // VnfPackagesError - TCA Error rest API error response format
 type VnfPackagesError struct {
 	Type     string `json:"type" yaml:"type"`
@@ -61,17 +52,17 @@ type VnfPackagesError struct {
 
 // VnfPackage - TCA VNF Package TCA format
 type VnfPackage struct {
-	PID                string                 `json:"id" yaml:"pid"`
-	VnfdID             string                 `json:"vnfdId" yaml:"vnfdId"`
-	VnfProvider        string                 `json:"vnfProvider" yaml:"vnfProvider"`
-	VnfProductName     string                 `json:"vnfProductName" yaml:"vnfProductName"`
-	VnfSoftwareVersion string                 `json:"vnfSoftwareVersion" yaml:"vnfSoftwareVersion"`
-	VnfdVersion        string                 `json:"vnfdVersion" yaml:"vnfdVersion"`
-	OnboardingState    string                 `json:"onboardingState" yaml:"onboardingState"`
-	OperationalState   string                 `json:"operationalState" yaml:"operationalState"`
-	UsageState         string                 `json:"usageState" yaml:"usage_state"`
-	VnfmInfo           []interface{}          `json:"vnfmInfo" yaml:"vnfmInfo"`
-	UserDefinedData    models.UserDefinedData `yaml:"user_defined_data"`
+	PID                string                  `json:"id" yaml:"pid"`
+	VnfdID             string                  `json:"vnfdId" yaml:"vnfdId"`
+	VnfProvider        string                  `json:"vnfProvider" yaml:"vnfProvider"`
+	VnfProductName     string                  `json:"vnfProductName" yaml:"vnfProductName"`
+	VnfSoftwareVersion string                  `json:"vnfSoftwareVersion" yaml:"vnfSoftwareVersion"`
+	VnfdVersion        string                  `json:"vnfdVersion" yaml:"vnfdVersion"`
+	OnboardingState    string                  `json:"onboardingState" yaml:"onboardingState"`
+	OperationalState   string                  `json:"operationalState" yaml:"operationalState"`
+	UsageState         string                  `json:"usageState" yaml:"usage_state"`
+	VnfmInfo           []interface{}           `json:"vnfmInfo" yaml:"vnfmInfo"`
+	UserDefinedData    *models.UserDefinedData `json:"userDefinedData" yaml:"userDefinedData"`
 }
 
 // VnfPackages - array of VNF Packages.
@@ -113,19 +104,45 @@ func (t *VnfPackage) GetFields() (map[string]interface{}, error) {
 // GetVnfdID - find by either VnfdID or ProductName, id
 // the main objective to resolve some name to catalog
 // entity.
-func (v *VnfPackages) GetVnfdID(q string) (*VnfPackage, error) {
+func (v *VnfPackages) GetVnfdID(IdOrName string) (*VnfPackage, error) {
+
+	if v == nil {
+		return nil, fmt.Errorf("nil object")
+	}
+
+	q := strings.ToLower(IdOrName)
+
+	for _, p := range v.Packages {
+		if p.VnfProductName == q || p.VnfdID == q || p.PID == q {
+			return &p, nil
+		}
+
+		if p.UserDefinedData != nil && strings.ToLower(p.UserDefinedData.Name) == q {
+			return &p, nil
+		}
+	}
+
+	return nil, api_errors.NewCatalogNotFound(q)
+}
+
+// FindByCatalogName - find by either VnfdID or ProductName, id
+// the main objective to resolve some name to catalog
+// entity.
+func (v *VnfPackages) FindByCatalogName(q string) (*VnfPackage, error) {
 
 	if v == nil {
 		return nil, fmt.Errorf("nil object")
 	}
 
 	for _, p := range v.Packages {
-		if p.VnfProductName == q || p.VnfdID == q || p.PID == q {
-			return &p, nil
+		if p.UserDefinedData != nil {
+			if strings.ToLower(p.UserDefinedData.Name) == strings.ToLower(q) {
+				return &p, nil
+			}
 		}
 	}
 
-	return nil, &CatalogNotFound{q}
+	return nil, api_errors.NewCatalogNotFound(q)
 }
 
 // Filter filters respond based on filter type and pass to callback

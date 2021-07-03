@@ -215,6 +215,10 @@ func (e *CnfLcmExtended) IsInCluster(vimName string) bool {
 	return false
 }
 
+func (t *CnfLcmExtended) IsStateRollback() bool {
+	return t.Meta.LcmOperationState == "ROLLED_BACK"
+}
+
 // CnfsExtended - list of CNF LCM respond
 type CnfsExtended struct {
 	CnfLcms []CnfLcmExtended

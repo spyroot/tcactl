@@ -8,7 +8,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 APP_NAME=tcactl
 BINARY=tcactl
-VERSION=0.3.0
+VERSION=0.6.0
 PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
 

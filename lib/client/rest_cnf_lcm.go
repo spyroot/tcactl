@@ -137,8 +137,9 @@ func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 }
 
 // TerminateInstance action
-func (c *RestClient) TerminateInstance(terminateUri string, terminateReq request.TerminateVnfRequest) error {
+func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *request.TerminateVnfRequest) error {
 
+	glog.Infof("Terminating instancing %v", terminateUri)
 	c.GetClient()
 
 	resp, err := c.Client.R().
@@ -341,7 +342,9 @@ func (c *RestClient) DeleteInstance(ctx context.Context, id string) error {
 
 	c.GetClient()
 	req := c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmInstance, id)
+
 	glog.Infof("Sending Delete %v", req)
+
 	resp, err := c.Client.R().SetContext(ctx).Delete(req)
 
 	if err != nil {

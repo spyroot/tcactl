@@ -76,7 +76,7 @@ type PackageCreatedSuccess struct {
 }
 
 // GetPackageCatalogId return vnf package id and vnfd id
-func (c *RestClient) GetPackageCatalogId(q string) (string, string, error) {
+func (c *RestClient) GetPackageCatalogId(IdOrName string) (string, string, error) {
 
 	vnfCatalog, err := c.GetVnfPkgm("", "")
 	if err != nil || vnfCatalog == nil {
@@ -84,9 +84,9 @@ func (c *RestClient) GetPackageCatalogId(q string) (string, string, error) {
 		return "", "", err
 	}
 
-	pkgCnf, err := vnfCatalog.GetVnfdID(q)
+	pkgCnf, err := vnfCatalog.GetVnfdID(IdOrName)
 	if err != nil || pkgCnf == nil {
-		glog.Errorf("Failed acquire CNF/VNF package id for %v, err: %v", q, err)
+		glog.Errorf("Failed acquire CNF/VNF package id for %v, err: %v", IdOrName, err)
 		return "", "", err
 	}
 
@@ -277,9 +277,8 @@ func (c *RestClient) UploadVnfPkgmVnfd(pkgId string, csar []byte, name string) (
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return false, c.checkError(resp)
-
 	}
 
 	return true, nil

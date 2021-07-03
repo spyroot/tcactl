@@ -47,3 +47,17 @@ func NewDatastoreNotFound(errMsg string) *DatastoreNotFound {
 func (e *DatastoreNotFound) Error() string {
 	return e.errMsg
 }
+
+// CatalogNotFound error raised if tenant cloud not found
+type CatalogNotFound struct {
+	errMsg string
+}
+
+//
+func (m *CatalogNotFound) Error() string {
+	return "Catalog entity '" + m.errMsg + "' not found"
+}
+
+func NewCatalogNotFound(errMsg string) *CatalogNotFound {
+	return &CatalogNotFound{errMsg: errMsg}
+}
