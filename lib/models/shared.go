@@ -36,7 +36,7 @@ func NewPlacementParams(name string, Type string) *PlacementParams {
 	return &PlacementParams{Name: name, Type: Type}
 }
 
-// TypeNode
+// Networks
 type TypeNode struct {
 	Name            string            `json:"name" yaml:"name"`
 	Networks        []Networks        `json:"networks" yaml:"networks"`

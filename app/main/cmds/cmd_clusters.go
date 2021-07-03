@@ -27,7 +27,8 @@ import (
 	"github.com/spyroot/tcactl/lib/api/kubernetes"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
-	"github.com/spyroot/tcactl/pkg/io"
+	ioutils "github.com/spyroot/tcactl/pkg/io"
+
 	osutil "github.com/spyroot/tcactl/pkg/os"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -44,14 +45,17 @@ func (ctl *TcaCtl) CmdGetClusters() *cobra.Command {
 		Use:   "clusters",
 		Short: "Command retrieves cluster related information.",
 		Long: `
+
 Command retrieves cluster-related information. Each sub-command 
 require either cluster name or cluster id.
+
 `,
-		Example: "- tcactl get clusters info\n - tcactl get clusters pool edge",
+		Example: "\t- tcactl get clusters info mycluster\n" +
+			"\t -tcactl get clusters pool mycluster",
 		Args:    cobra.MinimumNArgs(1),
 		Aliases: []string{"cluster", "cl"},
-		Run: func(cmd *cobra.Command, args []string) {
-			return
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("%s requires a subcommand", cmd.Name())
 		},
 	}
 
@@ -441,16 +445,22 @@ func (ctl *TcaCtl) CmdCreateCluster() *cobra.Command {
 		isDry           = false
 		doBlock         bool
 		showProgress    bool
+		showSpec        bool
 	)
 
 	var _cmd = &cobra.Command{
-		Use:   "clusters [path to file]",
-		Short: "Command create cluster",
+		Use:   "cluster [path to json or yaml file]",
+		Short: "Command creates a management or tenant cluster",
 		Long: `
 
-Command create cluster from input spec. Spec can be in yaml or json format.`,
+The command creates cluster management or tenant cluster from input spec.  
+Spec can be in YAML or JSON format. By default, the task is created asynchronously 
+and doesn't wait for the task to finish.  The client can pass a block flag 
+that will wait for the task to finish.' 
+`,
 
-		Example: "- ./tcactl create cluster examples/edge_mgmt_cluster.yaml --stderrthreshold INFO",
+		Example: "\t - tcactl create cluster examples/edge_mgmt_cluster.yaml --stderrthreshold INFO\n" +
+			"\t - tcactl create cluster examples/edge_mgmt_cluster.yaml --block --progress --stderrthreshold INFO\n",
 		Args:    cobra.MinimumNArgs(1),
 		Aliases: []string{"cluster", "cl"},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -462,7 +472,7 @@ Command create cluster from input spec. Spec can be in yaml or json format.`,
 
 			// spec read from file
 			var spec request.Cluster
-			if io.FileExists(args[0]) {
+			if ioutils.FileExists(args[0]) {
 				buffer, err := ioutil.ReadFile(args[0])
 				CheckErrLogError(err)
 				// first we try yaml if failed try json
@@ -476,11 +486,19 @@ Command create cluster from input spec. Spec can be in yaml or json format.`,
 				CheckErrLogError(fmt.Errorf("%v not found", args[0]))
 			}
 
+			if showSpec {
+				err := ioutils.PrettyPrint(spec)
+				CheckErrLogError(err)
+				return
+			}
+
 			// otherwise create
 			task, err := ctl.tca.CreateClusters(&spec, isDry, doBlock, showProgress)
 			CheckErrLogError(err)
 
-			fmt.Printf("Cluster created task create, task id %s\n", task.Id)
+			if task != nil {
+				fmt.Printf("Cluster created task create, task id %s\n", task.Id)
+			}
 
 			// dry run will output template to screen after parser
 			// resolved all name to id.
@@ -501,41 +519,12 @@ Command create cluster from input spec. Spec can be in yaml or json format.`,
 		"Blocks and wait task to finish.")
 
 	//
-	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "p", true,
+	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "s", false,
 		"Show task progress.")
 
-	return _cmd
-}
-
-// CmdDescribeTask - command return cluster pools list
-func (ctl *TcaCtl) CmdDescribeTask() *cobra.Command {
-
-	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-	)
-
-	var _cmd = &cobra.Command{
-		Use:     "task [task_id]",
-		Short:   "Command return current running task.",
-		Long:    `Command return current running task.`,
-		Example: "- tcactl desc task 9411f70f-d24d-4842-ab56-b7214d",
-		Args:    cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-
-			// global output type, and terminal wide or not
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
-			_defaultStyler.SetColor(ctl.IsColorTerm)
-			_defaultStyler.SetWide(ctl.IsWideTerm)
-
-			task, err := ctl.tca.GetCurrentClusterTask(args[0])
-			CheckErrLogError(err)
-
-			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {
-				_printer(task, _defaultStyler)
-			}
-		},
-	}
+	//
+	_cmd.Flags().BoolVar(&showSpec, CliShow, false,
+		"Show spec only.")
 
 	return _cmd
 }
@@ -546,6 +535,8 @@ func (ctl *TcaCtl) CmdDeleteCluster() *cobra.Command {
 	var (
 		_defaultPrinter = ctl.Printer
 		_defaultStyler  = ctl.DefaultStyle
+		doBlock         bool
+		showProgress    bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -561,15 +552,23 @@ func (ctl *TcaCtl) CmdDeleteCluster() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			ok, err := ctl.tca.DeleteCluster(args[0])
+			task, err := ctl.tca.DeleteCluster(args[0], doBlock, showProgress)
 			if err != nil {
 				return
 			}
-			if ok {
+			if task != nil {
 				fmt.Println("Cluster deleted.")
 			}
 		},
 	}
+
+	//
+	_cmd.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
+		"Blocks and wait task to finish.")
+
+	//
+	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "s", true,
+		"Show task progress.")
 
 	return _cmd
 }
@@ -602,6 +601,39 @@ Command returns currently running task on a particular cluster.`,
 			ctl.tca.SetTrace(ctl.IsTrace)
 
 			task, err := ctl.tca.GetClusterTask(args[0], true)
+			CheckErrLogError(err)
+
+			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {
+				_printer(task, _defaultStyler)
+			}
+		},
+	}
+
+	return _cmd
+}
+
+// CmdDescribeTask - command return cluster pools list
+func (ctl *TcaCtl) CmdDescribeTask() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+	)
+
+	var _cmd = &cobra.Command{
+		Use:     "task [task_id]",
+		Short:   "Command return current running task.",
+		Long:    `Command return current running task.`,
+		Example: "- tcactl desc task 9411f70f-d24d-4842-ab56-b7214d",
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type, and terminal wide or not
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			_defaultStyler.SetColor(ctl.IsColorTerm)
+			_defaultStyler.SetWide(ctl.IsWideTerm)
+
+			task, err := ctl.tca.GetCurrentClusterTask(args[0])
 			CheckErrLogError(err)
 
 			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {

@@ -1,5 +1,7 @@
 package models
 
+import "strings"
+
 const (
 	// NetworkActive is active or not
 	NetworkActive = "ACTIVE"
@@ -97,4 +99,36 @@ func (n *CloudNetworks) GetNetwork(name string) (*NetworkSpec, error) {
 	}
 
 	return nil, &NetworkNotFound{errMsg: name}
+}
+
+//FindFullNetwork return network spec as NetworkSpec
+func (n *CloudNetworks) FindFullNetwork(name string) (*NetworkSpec, error) {
+
+	for _, spec := range n.Network {
+		if spec.FullNetworkPath == name {
+			return &spec, nil
+		}
+	}
+
+	return nil, &NetworkNotFound{errMsg: name}
+}
+func (n *CloudNetworks) NormalizeName(name string) (string, error) {
+
+	// if client provide full path , validate
+	if strings.HasPrefix(name, "/Datacenter/network/") {
+		network, err := n.FindFullNetwork(name)
+		if err != nil {
+			return "", err
+		}
+
+		return network.FullNetworkPath, nil
+	}
+
+	// otherwise name , resolve to full network path
+	network, err := n.GetNetwork(name)
+	if err != nil {
+		return "", err
+	}
+
+	return network.FullNetworkPath, nil
 }

@@ -3,6 +3,7 @@ package response
 import (
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"reflect"
 	"strings"
@@ -203,20 +204,20 @@ func (t *ClusterTemplates) GetTemplateId(q string) (string, error) {
 }
 
 // GetTemplate return cluster template , lookup by name or id
-func (t *ClusterTemplates) GetTemplate(q string) (*ClusterTemplate, error) {
+func (t *ClusterTemplates) GetTemplate(idOrName string) (*ClusterTemplate, error) {
 
 	if t == nil {
 		return nil, fmt.Errorf("uninitialized object")
 	}
 
 	for _, it := range t.ClusterTemplates {
-		if it.Name == q || it.Id == q {
-			glog.Infof("Found template %v cluster id %v", q, it.Id)
+		if it.Name == idOrName || it.Id == idOrName {
+			glog.Infof("Found template %v cluster id %v", idOrName, it.Id)
 			return &it, nil
 		}
 	}
 
-	return nil, &TemplateNotFound{errMsg: q}
+	return nil, api_errors.NewTemplateNotFound(idOrName)
 }
 
 // Filter filters respond based on filter type and pass to callback

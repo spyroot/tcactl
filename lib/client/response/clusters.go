@@ -166,23 +166,23 @@ func (m *ClusterNotFound) Error() string {
 }
 
 // GetClusterId return cluster ID
-func (c *Clusters) GetClusterId(q string) (string, error) {
+func (c *Clusters) GetClusterId(NameOrId string) (string, error) {
 
 	if c == nil {
 		return "", fmt.Errorf("uninitialized object")
 	}
 
 	for _, it := range c.Clusters {
-		if it.ClusterName == q || it.Id == q {
-			glog.Infof("Found cluster '%v' cluster uuid '%v'", q, it.Id)
+		if it.ClusterName == NameOrId || it.Id == NameOrId {
+			glog.Infof("Found cluster '%v' cluster uuid '%v'", NameOrId, it.Id)
 			return it.Id, nil
 		}
 	}
 
-	return "", &ClusterNotFound{ErrMsg: q}
+	return "", &ClusterNotFound{ErrMsg: NameOrId}
 }
 
-// GetClusterSpec return single cluster information,
+// GetClusterSpec return cluster information,
 // loop up up by name or id, if not found return error
 func (c *Clusters) GetClusterSpec(q string) (*ClusterSpec, error) {
 

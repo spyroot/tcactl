@@ -10,7 +10,8 @@ clusterConfig:
             mountPath: w3-nfv-pst-01-mus
         - name: vsphere-csi
           properties:
-            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+            # tcactl get vim compute myvim provide all datastore
+            datastoreUrl: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
     tools:
         - name: harbor
           properties:

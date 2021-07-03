@@ -51,7 +51,8 @@ func ReadNodeSpecFromString(str string) (*request.NewNodePoolSpec, error) {
 	return ReadNodeSpecSpec(r)
 }
 
-// ReadNodeSpecSpec - Read node template spec
+// ReadNodeSpecSpec - Read node pool template spec
+// either from yaml or json
 func ReadNodeSpecSpec(b io.Reader) (*request.NewNodePoolSpec, error) {
 
 	var spec request.NewNodePoolSpec

@@ -20,6 +20,7 @@ package cmds
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"strings"
@@ -107,11 +108,11 @@ func (ctl *TcaCtl) CmdDeleteTenant() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:   "tenant [tenant cloud id, or name]",
+		Use:   "provider [provider id, or name]",
 		Short: "Command deletes cloud provider.",
-		Long: `
+		Long: templates.LongDesc(`
 
-Command delete cloud provider. Note all entity must be removed.`,
+Command delete cloud provider. Note all entity must be removed.`),
 
 		//Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -305,5 +306,30 @@ Command update cloud provider details and trigger re-attach.`,
 	_cmd.Flags().StringVar(&_outputFilter,
 		"--", "",
 		"Output filter.")
+	return _cmd
+}
+
+// CmdDeleteTenantCluster - Deletes cluster template.
+func (ctl *TcaCtl) CmdDeleteTenantCluster() *cobra.Command {
+
+	var _cmd = &cobra.Command{
+		Use:     "tenant [id or name of tenant cluster]",
+		Aliases: []string{"templates"},
+		Short:   "Command deletes a tenant cluster.",
+		Long: templates.LongDesc(`
+
+Command deletes a tenant cluster. Note in order to delete cluster all 
+instance must be removed firrst`),
+
+		Example: " - tcactl delete cluster cluster",
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			task, err := ctl.tca.DeleteTenantCluster(args[0])
+			CheckErrLogError(err)
+			fmt.Printf("Template %v deleted. Task id %s\n", args[0], task.OperationId)
+		},
+	}
+
 	return _cmd
 }

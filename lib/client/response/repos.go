@@ -20,7 +20,6 @@ package response
 
 import (
 	"fmt"
-	"strings"
 )
 
 const (
@@ -59,7 +58,7 @@ func (r *ReposList) GetRepoId(repoUrl string) (string, error) {
 
 	for _, it := range r.Items {
 		for _, repos := range it.Repos {
-			if strings.Contains(repos.Name, repoUrl) {
+			if repos.Name == repoUrl {
 				return it.ID, nil
 			}
 		}

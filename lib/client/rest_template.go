@@ -31,7 +31,7 @@ const (
 	apiClusterTemplate  = "/hybridity/api/infra/cluster-template"
 )
 
-// GetClusterTemplates - return list of cluster templates
+// GetClusterTemplates - return list of all cluster templates
 func (c *RestClient) GetClusterTemplates() (*response.ClusterTemplates, error) {
 
 	c.GetClient()

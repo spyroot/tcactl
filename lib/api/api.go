@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
@@ -382,37 +383,37 @@ func validateKubeSpecCheck(spec []models.TypeNode) error {
 func validateClusterSpec(spec *request.Cluster) error {
 
 	if len(spec.Name) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains name key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains name key:value")
 	}
 	if len(spec.ClusterPassword) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains cluster password key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains cluster password key:value")
 	}
 	if len(spec.ClusterTemplateId) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains ClusterTemplateId key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains ClusterTemplateId key:value")
 	}
 	if len(spec.ClusterType) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains clusterType and value management or workload key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains clusterType and value management or workload key:value")
 	}
 	if len(spec.HcxCloudUrl) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains hcxCloudUrl key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains hcxCloudUrl key:value")
 	}
 	if len(spec.EndpointIP) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains EndpointIP key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains EndpointIP key:value")
 	}
 	if len(spec.VmTemplate) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains vmTemplate key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains vmTemplate key:value")
 	}
 	if len(spec.VmTemplate) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains vmTemplate key:value")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains vmTemplate key:value")
 	}
 	if len(spec.MasterNodes) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains masterNodes section")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains masterNodes section")
 	}
 	if len(spec.WorkerNodes) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains WorkerNodes section")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains WorkerNodes section")
 	}
 	if len(spec.PlacementParams) == 0 {
-		return fmt.Errorf("cluster initialSpec must contains PlacementParams section")
+		return api_errors.NewInvalidSpec("cluster initialSpec must contains PlacementParams section")
 	}
 	if err := validateKubeSpecCheck(spec.MasterNodes); err != nil {
 		return err
@@ -430,10 +431,20 @@ func validateClusterSpec(spec *request.Cluster) error {
 	return nil
 }
 
-// ResolveTypedTemplateId - resolve template name to id
+// NormalizeTemplateId - resolve template name to id
 // for a give template type. Both must match in order
 // method return ture
-func (a *TcaApi) ResolveTypedTemplateId(templateId string, templateType string) (string, error) {
+func (a *TcaApi) NormalizeTemplateId(IdOrName string, templateType string) (string, error) {
+
+	if len(IdOrName) == 0 {
+		return "", api_errors.NewTemplateNotFound(IdOrName)
+	}
+
+	if len(templateType) == 0 {
+		return "", api_errors.NewTemplateInvalidType("template type is empty")
+	}
+
+	glog.Infof("Resolving cluster template '%s' to id", IdOrName)
 
 	// resolve template id, in case client used name instead id
 	clusterTemplates, err := a.rest.GetClusterTemplates()
@@ -441,24 +452,25 @@ func (a *TcaApi) ResolveTypedTemplateId(templateId string, templateType string) 
 		return "", err
 	}
 
-	template, err := clusterTemplates.GetTemplate(templateId)
+	t, err := clusterTemplates.GetTemplate(IdOrName)
 	if err != nil {
 		return "", err
 	}
 
+	glog.Infof("Resolved cluster template '%s' to template id %s", IdOrName, t.Id)
+
 	// check template type
-	if strings.ToLower(template.ClusterType) != strings.ToLower(templateType) {
+	if strings.ToLower(t.ClusterType) != strings.ToLower(templateType) {
 		return "", fmt.Errorf("found template %s but template type mistmatch, "+
-			"template type %v %v", templateId, template.ClusterType, templateType)
+			"template type %v %v", IdOrName, t.ClusterType, templateType)
 	}
 
-	glog.Infof("Resolved template to template id %v", template.Id)
-
-	return template.Id, nil
+	glog.Infof("Resolved template to template id %v", t.Id)
+	return t.Id, nil
 }
 
 // doCheckCloudEndpoint
-func (a *TcaApi) validateCloudEndpoint(cloudUrl string) (*response.TenantsDetails, error) {
+func (a *TcaApi) validateCloudEndpoint(cloud string) (*response.TenantsDetails, error) {
 
 	// resolve template id, in case client used name instead id
 	vimTenants, err := a.rest.GetVimTenants()
@@ -466,12 +478,20 @@ func (a *TcaApi) validateCloudEndpoint(cloudUrl string) (*response.TenantsDetail
 		return nil, err
 	}
 
-	tenant, err := vimTenants.FindCloudLink(cloudUrl)
+	if strings.HasPrefix(cloud, "https://") {
+		tenant, err := vimTenants.FindCloudLink(cloud)
+		if err != nil {
+			return nil, err
+		}
+
+		return tenant, nil
+	}
+
+	t, err := vimTenants.FindCloudProvider(cloud)
 	if err != nil {
 		return nil, err
 	}
-
-	return tenant, nil
+	return t, nil
 }
 
 // Validate cloud tenant state
@@ -486,39 +506,42 @@ func (a *TcaApi) validateTenant(tenant *response.TenantsDetails) error {
 	if strings.ToLower(tenant.VimType) == models.VimTypeKubernetes {
 		return fmt.Errorf("cloud provider already set to kubernetes")
 	}
+
 	return nil
 }
 
-func (a *TcaApi) validatePlacement(
-	vmwareVim *models.VMwareClusters,
-	folders *models.Folders,
-	rps *models.ResourcePool,
+// validatePlacement validate placement cluster placement attributes
+func (a *TcaApi) validatePlacement(vim *VmwareVim,
 	param models.PlacementParams) error {
 
 	if models.VmwareTypeFolder(param.Type) == models.TypeFolder {
-		if folders.IsValidFolder(param.Name) == false {
-			return fmt.Errorf("failed find a target folder")
+		glog.Infof("Validating vm folder '%s'", param.Name)
+		if vim.folders.IsValidFolder(param.Name) == false {
+			return api_errors.NewInvalidSpec("failed find a target folder")
 		} else {
 			glog.Infof("Resolved remote datastore folder.")
 		}
 	}
 	if models.VmwareDatastore(param.Type) == models.TypeDataStore {
-		if vmwareVim.IsValidDatastore(param.Name) == false {
-			return fmt.Errorf("failed find a target datastore")
+		glog.Infof("Validating datastore '%s'", param.Name)
+		if vim.clusters.IsValidDatastore(param.Name) == false {
+			return api_errors.NewInvalidSpec("failed find a target datastore")
 		} else {
 			glog.Infof("Resolved remote datastore name.")
 		}
 	}
 	if models.VmwareResourcePool(param.Type) == models.TypeResourcePool {
-		if rps.IsValidResource(param.Name) == false {
-			return fmt.Errorf("failed find a target resource pool")
+		glog.Infof("Validating resource pool '%s'", param.Name)
+		if vim.resourcePool.IsValidResource(param.Name) == false {
+			return api_errors.NewInvalidSpec("failed find a target resource pool")
 		} else {
 			glog.Infof("Resolved remote resource pool.")
 		}
 	}
 	if models.ClusterComputeResource(param.Type) == models.TypeClusterComputeResource {
-		if vmwareVim.IsValidClusterCompute(param.Name) == false {
-			return fmt.Errorf("failed find a cluster compute resource")
+		glog.Infof("Validating compute cluster '%s'", param.Name)
+		if vim.clusters.IsValidClusterCompute(param.Name) == false {
+			return api_errors.NewInvalidSpec("failed find a cluster compute resource")
 		} else {
 			glog.Infof("Resolved remote cluster name.")
 		}
@@ -527,46 +550,178 @@ func (a *TcaApi) validatePlacement(
 	return nil
 }
 
-// Validate cloud tenant state
-func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.TenantsDetails) error {
+// normalizeDatastoreName adjust store name
+func normalizeDatastoreName(ds string) string {
 
-	if tenant.VimConn.Status != "ok" {
-		return fmt.Errorf("cloud provider currently disconected")
+	fixedUrl := ""
+	if ds == "ds:///" {
+		fixedUrl = ds
+	} else {
+		if strings.HasPrefix(ds, "/vmfs") {
+			fixedUrl = "ds:///" + ds
+		}
+		if strings.HasPrefix(ds, "vmfs") {
+			fixedUrl = "ds:///" + ds
+		}
 	}
 
-	if tenant.IsVMware() {
-		// vc compute
-		vmwareVim, err := a.GetVimComputeClusters(tenant.VimName)
-		if err != nil {
-			return nil
-		}
-		// vc folders
-		folders, err := a.GetVimFolders(tenant.VimName)
-		if err != nil {
-			return nil
-		}
-		// vc resource pools
-		rps, err := a.GetVimResourcePool(tenant.VimName)
-		if err != nil {
-			return nil
-		}
+	// fixed '/' at the end
+	if len(fixedUrl) > 0 && !strings.HasSuffix(fixedUrl, "/") {
+		fixedUrl = fixedUrl + "/"
+	}
 
-		for _, param := range spec.PlacementParams {
-			if err := a.validatePlacement(vmwareVim, folders, rps, param); err != nil {
-				return err
-			}
-		}
-		for _, worker := range spec.WorkerNodes {
-			for _, param := range worker.PlacementParams {
-				if err := a.validatePlacement(vmwareVim, folders, rps, param); err != nil {
+	return fixedUrl
+}
+
+type VmwareVim struct {
+	clusters     *models.VMwareClusters
+	folders      *models.Folders
+	resourcePool *models.ResourcePool
+	networks     *models.CloudNetworks
+}
+
+func (a *TcaApi) getVmwareVimState(vimName string) (*VmwareVim, error) {
+	// vc compute
+
+	var (
+		vimState VmwareVim
+		err      error
+	)
+
+	vimState.clusters, err = a.GetVimComputeClusters(vimName)
+	if err != nil {
+		return nil, err
+	}
+	// vc folders
+	vimState.folders, err = a.GetVimFolders(vimName)
+	if err != nil {
+		return nil, err
+	}
+	// vc resource pools
+	vimState.resourcePool, err = a.GetVimResourcePool(vimName)
+	if err != nil {
+		return nil, err
+	}
+
+	vimState.networks, err = a.GetVimNetworks(vimName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vimState, nil
+}
+
+func (a *TcaApi) validateExtensions(spec *request.Cluster) error {
+
+	repos, err := a.GetRepos()
+	if err != nil {
+		return err
+	}
+
+	if spec.ClusterConfig != nil {
+		for _, tool := range spec.ClusterConfig.Tools {
+			if tool.Name == "harbor" {
+				// adjust
+				if tool.Properties.Type != "extension" {
+					tool.Properties.Type = "extension"
+				}
+				extId, err := repos.GetRepoId(tool.Properties.ExtensionId)
+				if err != nil {
 					return err
 				}
+
+				tool.Properties.ExtensionId = extId
 			}
 		}
-		for _, master := range spec.MasterNodes {
-			for _, param := range master.PlacementParams {
-				if err := a.validatePlacement(vmwareVim, folders, rps, param); err != nil {
-					return err
+	}
+
+	return nil
+}
+
+// validateVmwarePlacement method validate placement for VMware VIM
+func (a *TcaApi) validateVmwarePlacement(spec *request.Cluster, tenant *response.TenantsDetails) error {
+
+	vmwareVim, err := a.getVmwareVimState(tenant.VimName)
+	if err != nil {
+		return err
+	}
+
+	// check for VMware vsphere-csi
+	if spec.ClusterConfig != nil {
+		for _, s := range spec.ClusterConfig.Csi {
+			if s.Name == ClusterCsiVsphere {
+				if s.Properties == nil {
+					return api_errors.NewInvalidSpec("Invalid vsphere-csi property")
+				}
+				if !vmwareVim.clusters.IsValidDatastoreUrl(s.Properties.DatastoreUrl) {
+					return api_errors.NewInvalidSpec("Invalid vsphere-csi property")
+				}
+
+				ds, err := vmwareVim.clusters.GetDatastoreByUrl(s.Properties.DatastoreUrl)
+				if err != nil {
+					return api_errors.NewInvalidSpec(err.Error())
+				}
+				s.Properties.DatastoreName = ds.Name
+			}
+		}
+	}
+
+	// validate global spec
+	glog.Infof("Validating global spec placement parameters")
+	for _, param := range spec.PlacementParams {
+		if err := a.validatePlacement(vmwareVim, param); err != nil {
+			return api_errors.NewInvalidSpec(err.Error())
+		}
+	}
+
+	glog.Infof("Validating master node spec placement parameters")
+	for i, worker := range spec.WorkerNodes {
+		for j, n := range worker.Networks {
+			// normalize port-group name
+			normalized, err := vmwareVim.networks.NormalizeName(n.NetworkName)
+			if err != nil {
+				return api_errors.NewInvalidSpec(err.Error())
+			}
+			spec.WorkerNodes[i].Networks[j].NetworkName = normalized
+		}
+		for _, param := range worker.PlacementParams {
+			if err := a.validatePlacement(vmwareVim, param); err != nil {
+				return api_errors.NewInvalidSpec(err.Error())
+			}
+		}
+	}
+
+	glog.Infof("Validating worker node spec placement parameters")
+	for i, master := range spec.MasterNodes {
+		for j, n := range master.Networks {
+			// normalize port-group name
+			normalized, err := vmwareVim.networks.NormalizeName(n.NetworkName)
+			if err != nil {
+				return api_errors.NewInvalidSpec(err.Error())
+			}
+			spec.MasterNodes[i].Networks[j].NetworkName = normalized
+		}
+
+		for _, param := range master.PlacementParams {
+			if err := a.validatePlacement(vmwareVim, param); err != nil {
+				return api_errors.NewInvalidSpec(err.Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+// validateCsi validate csi spec
+func (a *TcaApi) validateCsi(spec *request.Cluster) error {
+	if spec.ClusterConfig != nil {
+		for _, s := range spec.ClusterConfig.Csi {
+			if s.Name == CLusterCsiNfs {
+				if len(s.Properties.MountPath) == 0 {
+					return api_errors.NewInvalidSpec("Invalid nfs client mount path")
+				}
+				if len(s.Properties.ServerIP) == 0 {
+					return api_errors.NewInvalidSpec("Invalid nfs client server address")
 				}
 			}
 		}
@@ -575,75 +730,75 @@ func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.Tena
 	return nil
 }
 
+// validateCsi validate csi spec
+func (a *TcaApi) validateVim(spec *request.Cluster, tenant *response.TenantsDetails) error {
+
+	if tenant == nil {
+		return fmt.Errorf("tenant vim is nil")
+	}
+
+	if len(tenant.VimType) == 0 {
+		return fmt.Errorf("unknown vim type")
+	}
+
+	if tenant.VimConn.Status != "ok" {
+		return fmt.Errorf("cloud provider currently disconected")
+	}
+
+	if spec.Name == tenant.Name {
+		spec.HcxCloudUrl = tenant.HcxCloudURL
+	} else {
+		return api_errors.NewInvalidSpec("Invalid cloud url, name")
+	}
+
+	return nil
+}
+
+// Validate cloud tenant state
+func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.TenantsDetails) error {
+
+	glog.Infof("Validate placement details.")
+
+	//if err := a.validateVim(spec, tenant); err != nil {
+	//	return err
+	//}
+
+	if err := a.validateCsi(spec); err != nil {
+		return err
+	}
+
+	a.validateExtensions(spec)
+
+	if tenant.IsVMware() {
+		glog.Infof("Target cloud provider is VMware cluster, validating vc placements.")
+		err := a.validateVmwarePlacement(spec, tenant)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // DeleteTenantCluster - deletes tenant cluster
+// it accept just name or id.
 func (a *TcaApi) DeleteTenantCluster(tenantCluster string) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	// TODO add validation and name resolution
-	return a.rest.DeleteTenant(tenantCluster)
-}
-
-// GetVdu retrieve Vdu
-func (a *TcaApi) GetVdu(nfdName string) (*response.VduPackage, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	vnfCatalog, err := a.rest.GetVnfPkgm("", "")
-	if err != nil || vnfCatalog == nil {
-		glog.Errorf("Failed retrieve vnf package information, error %v", err)
-		return nil, err
-	}
-
-	pkgCnf, err := vnfCatalog.GetVnfdID(nfdName)
-	if err != nil || pkgCnf == nil {
-		glog.Errorf("Failed retrieve vnfd information for %v.", nfdName)
-		return nil, err
-	}
-
-	vnfd, err := a.rest.GetVnfPkgmVnfd(pkgCnf.PID)
-	if err != nil || vnfd == nil {
-		glog.Errorf("Failed acquire VDU information for %v.", pkgCnf.PID)
-		return nil, err
-	}
-
-	return vnfd, nil
-}
-
-// GetRepos retrieve repos
-func (a *TcaApi) GetRepos() (*response.ReposList, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	tenants, err := a.rest.GetVimTenants()
+	vims, err := a.GetVims()
 	if err != nil {
-		glog.Error(err)
+		return nil, err
 	}
 
-	var allRepos response.ReposList
-	for _, r := range tenants.TenantsList {
-		repos, err := a.rest.RepositoriesQuery(&request.RepoQuery{
-			QueryFilter: request.Filter{
-				ExtraFilter: request.AdditionalFilters{
-					VimID: r.TenantID,
-				},
-			},
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-		allRepos.Items = append(allRepos.Items, repos.Items...)
+	clouds, err := vims.GetTenantClouds(tenantCluster, models.VimTypeKubernetes)
+	if err != nil {
+		return nil, err
 	}
 
-	return &allRepos, nil
+	return a.rest.DeleteTenant(clouds.TenantID)
 }
 
 // GetVim return vim
@@ -1155,6 +1310,30 @@ func (a *TcaApi) BlockWaitStateChange(ctx context.Context, instanceId string, wa
 	return nil
 }
 
+type TcaTaskFailed struct {
+	ErrMsg string
+}
+
+func (e *TcaTaskFailed) Error() string {
+	return "task failed on phase " + e.ErrMsg
+}
+
+type TaskCanceled struct {
+	ErrMsg string
+}
+
+func (e *TaskCanceled) Error() string {
+	return e.ErrMsg
+}
+
+type TaskNotFound struct {
+	ErrMsg string
+}
+
+func (e *TaskNotFound) Error() string {
+	return e.ErrMsg
+}
+
 // BlockWaitTaskFinish - simple block and pull status
 // instanceId is instance that method will pull and check
 // waitFor is target status method waits.
@@ -1185,9 +1364,12 @@ func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, 
 			default:
 
 				task, err := a.rest.GetClustersTask(req)
-
 				if err != nil {
 					return err
+				}
+
+				if task == nil {
+					return &TaskNotFound{"task not found"}
 				}
 
 				var numTaskWaiting = 0
@@ -1201,6 +1383,11 @@ func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, 
 						glog.Infof("Task still running id=%s type=%s progress=%d status=%s",
 							item.TaskId, item.Type, item.Progress, item.Status)
 						numTaskWaiting++
+					}
+
+					if item.Status == TaskStateFailed {
+						glog.Errorf("Task failed.")
+						return &TcaTaskFailed{item.Type}
 					}
 				}
 
@@ -1289,7 +1476,8 @@ func (a *TcaApi) GetAuthorization() (bool, error) {
 }
 
 // ResolveClusterName - resolve cluster name to cluster id
-// and return a string version.
+// and return a string version. TCA use UUID format
+// for ID.
 func (a *TcaApi) ResolveClusterName(q string) (string, error) {
 
 	clusters, err := a.rest.GetClusters()
@@ -1300,7 +1488,7 @@ func (a *TcaApi) ResolveClusterName(q string) (string, error) {
 	return clusters.GetClusterId(q)
 }
 
-// SetBaseUrl set base url
+// SetBaseUrl set tca base api url
 func (a *TcaApi) SetBaseUrl(url string) {
 	if a != nil && a.rest != nil {
 		a.rest.BaseURL = url
@@ -1334,6 +1522,7 @@ func (a *TcaApi) SetPassword(password string) {
 
 }
 
+// GetApiKey returns API key used to connect to rest interface
 func (a *TcaApi) GetApiKey() string {
 
 	if a != nil && a.rest != nil {
@@ -1343,10 +1532,12 @@ func (a *TcaApi) GetApiKey() string {
 	return ""
 }
 
+// SetTrace set trace that will output to stdout server responds
 func (a *TcaApi) SetTrace(trace bool) {
 	a.rest.SetTrace(trace)
 }
 
+// GetVims return all attached tenant vim
 func (a *TcaApi) GetVims() (*response.Tenants, error) {
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")

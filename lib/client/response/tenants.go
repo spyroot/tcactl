@@ -92,7 +92,7 @@ type Tenants struct {
 
 // IsVMware - return if cloud provider is Vmware
 func (t *TenantsDetails) IsVMware() bool {
-	return t.VimType == models.VimTypeVmware
+	return strings.ToLower(t.VimType) == strings.ToLower(models.VimTypeVmware)
 }
 
 // GetTenantClouds return list of tenant clouds
@@ -103,7 +103,7 @@ func (t *Tenants) GetTenantClouds(s string, vimType string) (*TenantsDetails, er
 	}
 
 	for _, t := range t.TenantsList {
-		if strings.Contains(strings.ToLower(t.VimType), vimType) {
+		if strings.Contains(strings.ToLower(t.VimType), strings.ToLower(vimType)) {
 			if strings.Contains(t.VimName, s) || strings.Contains(t.ID, s) {
 				return &t, nil
 			}
@@ -121,7 +121,7 @@ func (t *Tenants) FindCloudProvider(s string) (*TenantsDetails, error) {
 	}
 
 	for _, t := range t.TenantsList {
-		if t.VimName == s || t.ID == s || t.VimID == s {
+		if strings.ToLower(t.VimName) == strings.ToLower(s) || t.ID == s || t.VimID == s {
 			return &t, nil
 		}
 	}

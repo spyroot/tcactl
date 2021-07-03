@@ -48,6 +48,9 @@ const (
 
 	// CliDryRun dry run flag
 	CliDryRun = "dry"
+
+	// CliShow output spec to stdio
+	CliShow = "show"
 )
 
 // CmdInitConfig - initialize configuration file, for initial

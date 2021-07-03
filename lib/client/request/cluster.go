@@ -23,26 +23,33 @@ const (
 	ClusterWorkload ClusterType = "WORKLOAD"
 )
 
+type ClusterConfigProperties struct {
+	ServerIP      string `json:"serverIP,omitempty" yaml:"serverIP,omitempty"`
+	MountPath     string `json:"mountPath,omitempty" yaml:"mountPath,omitempty"`
+	DatastoreUrl  string `json:"datastoreUrl,omitempty" yaml:"datastoreUrl,omitempty"`
+	DatastoreName string `json:"datastoreName,omitempty" yaml:"datastoreName,omitempty"`
+}
+type CsiConfig struct {
+	Name       string                   `json:"name,omitempty" yaml:"name,omitempty"`
+	Properties *ClusterConfigProperties `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
+type ClusterConfigToolProperties struct {
+	ExtensionId string `json:"extensionId,omitempty" yaml:"extensionId,omitempty"`
+	Password    string `json:"password,omitempty" yaml:"password,omitempty"`
+	Type        string `json:"type,omitempty" yaml:"type,omitempty"`
+	Url         string `json:"url,omitempty" yaml:"url,omitempty"`
+	Username    string `json:"username,omitempty" yaml:"username,omitempty"`
+}
+
+type ClusterConfigTools struct {
+	Name       string                       `json:"name,omitempty" yaml:"name,omitempty"`
+	Properties *ClusterConfigToolProperties `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
 type ClusterConfig struct {
-	Csi []struct {
-		Name       string `json:"name" yaml:"name"`
-		Properties struct {
-			ServerIP      string `json:"serverIP,omitempty" yaml:"serverIP,omitempty"`
-			MountPath     string `json:"mountPath,omitempty" yaml:"mountPath,omitempty"`
-			DatastoreUrl  string `json:"datastoreUrl,omitempty" yaml:"datastoreUrl,omitempty"`
-			DatastoreName string `json:"datastoreName,omitempty" yaml:"datastoreName,omitempty"`
-		} `json:"properties" yaml:"properties"`
-	} `json:"csi" yaml:"csi,omitempty"`
-	Tools []struct {
-		Name       string `json:"name,omitempty" yaml:"name,omitempty"`
-		Properties struct {
-			ExtensionId string `json:"extensionId,omitempty" yaml:"extensionId,omitempty"`
-			Password    string `json:"password,omitempty" yaml:"password,omitempty"`
-			Type        string `json:"type,omitempty" yaml:"type,omitempty"`
-			Url         string `json:"url,omitempty" yaml:"url,omitempty"`
-			Username    string `json:"username,omitempty" yaml:"username,omitempty"`
-		} `json:"properties" yaml:"properties"`
-	} `json:"tools" yaml:"tools"`
+	Csi            []CsiConfig          `json:"csi,omitempty" yaml:"csi,omitempty"`
+	Tools          []ClusterConfigTools `json:"tools,omitempty" yaml:"tools,omitempty"`
 	SystemSettings []struct {
 		Name       string `json:"name,omitempty" yaml:"name,omitempty"`
 		Properties struct {

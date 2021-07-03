@@ -75,17 +75,17 @@ func TestClusterSpecFromString(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Yaml management cluster spec",
+			name:    "Read Yaml management cluster spec",
 			spec:    NewManagementCluster,
 			wantErr: false,
 		},
 		{
-			name:    "Yaml workload cluster spec",
+			name:    "Read Yaml workload cluster spec",
 			spec:    WorkloadCluster,
 			wantErr: false,
 		},
 		{
-			name:    "Yaml broken workload cluster spec",
+			name:    "Read Yaml broken workload cluster spec",
 			spec:    YamlBrokenWorkload,
 			wantErr: true,
 		},
@@ -136,12 +136,12 @@ func TestClusterSpecFromFile(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "Basic yaml management spec file",
+			name:     "Read  yaml management spec file",
 			fileName: testutil.SpecTempFileName(NewManagementCluster),
 			wantErr:  false,
 		},
 		{
-			name:     "Basic yaml workload spec file",
+			name:     "Read yaml workload spec file",
 			fileName: testutil.SpecTempFileName(WorkloadCluster),
 			wantErr:  false,
 		},
@@ -190,12 +190,12 @@ func TestClusterSpecFromReader(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Basic yaml management spec file",
+			name:    "Read yaml management spec from io.reader",
 			reader:  testutil.SpecTempReader(NewManagementCluster),
 			wantErr: false,
 		},
 		{
-			name:    "Basic yaml workload spec file",
+			name:    "Read Basic yaml workload spec from io.reader",
 			reader:  testutil.SpecTempReader(WorkloadCluster),
 			wantErr: false,
 		},
@@ -236,6 +236,8 @@ func TestClusterSpecFromReader(t *testing.T) {
 }
 
 // TestTcaApi_GetClusterTask validate running task list
+// Test uses existing cluster ID and name
+// make sure they adjusted or passed via env variable
 func TestGetCluster(t *testing.T) {
 
 	tests := []struct {
@@ -467,32 +469,145 @@ func TestTcaApi_GetCurrentClusterTask(t *testing.T) {
 func TestTcaApi_CreateClusters(t *testing.T) {
 
 	tests := []struct {
-		name    string
-		rest    *client.RestClient
-		reader  io.Reader
-		wantErr bool
-		dryRun  bool
-		reset   bool
-		trace   bool
-		sec     time.Duration
+		name            string
+		rest            *client.RestClient
+		reader          io.Reader
+		wantErr         bool
+		dryRun          bool
+		reset           bool
+		trace           bool
+		useTestTemplate bool
+		sec             time.Duration
 	}{
 		{
-			name:    "Create mgmt dryRun run.",
-			rest:    rest,
-			reader:  testutil.SpecTempReader(NewManagementCluster),
-			wantErr: false,
-			dryRun:  true,
-			trace:   false,
-			sec:     3,
+			name:            "Create mgmt dryRun run.",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(NewManagementCluster),
+			wantErr:         false,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
 		},
 		{
-			name:    "Create mgmt dryRun run - wrong template01.",
-			rest:    rest,
-			reader:  testutil.SpecTempReader(NewManagementClusterFailCase01),
-			wantErr: true,
-			dryRun:  true,
-			trace:   false,
-			sec:     3,
+			name:            "Create mgmt dryRun run - wrong template01 no template id.",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(NewManagementClusterFailCase01),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: false,
+			sec:             3,
+		},
+		{
+			name:            "Create mgmt dryRun run - wrong template02 no cloud id.",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(NewManagementClusterFailCase02),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong mgmt cluster should fail",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidMgmtCluster),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong template id should fail",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(WrongMgmtTemplateId),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: false,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong datastore",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidDatastoreGlobal),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong datastore",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidDatastoreWorker),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong datastore",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidDatastoreMasterNode),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong folder",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidFolderGlobal),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong master node folder",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidMasterNodeFolder),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong master node folder",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidWorkerNodeFolder),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong master node folder",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidDatastoreUrl),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+		{
+			name:            "Create cluster with wrong master node folder",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(InvalidDatastoreUrl),
+			wantErr:         true,
+			dryRun:          true,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
 		},
 	}
 	for _, tt := range tests {
@@ -514,10 +629,12 @@ func TestTcaApi_CreateClusters(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, spec)
 
-			if spec.IsManagement() {
-				spec.ClusterTemplateId = getTestMgmtTemplateId()
-			} else {
-				spec.ClusterTemplateId = getTestWorkloadTemplateId()
+			if tt.useTestTemplate {
+				if spec.IsManagement() {
+					spec.ClusterTemplateId = getTestMgmtTemplateId()
+				} else {
+					spec.ClusterTemplateId = getTestWorkloadTemplateId()
+				}
 			}
 
 			assert.NoError(t, err)
@@ -526,11 +643,14 @@ func TestTcaApi_CreateClusters(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr {
+			if tt.wantErr && err != nil {
+				t.Log(err)
+			}
 
+			if !tt.wantErr {
 				if tt.dryRun {
 					// fail case in dry run
-					if task != nil {
+					if len(task.Id) > 0 {
 						t.Errorf("CreateClusters() in dry run task must be empty")
 						return
 					}
@@ -542,14 +662,100 @@ func TestTcaApi_CreateClusters(t *testing.T) {
 					t.Logf("task created %s", task.Id)
 					return
 				}
+			}
+		})
+	}
+}
 
+// TestTcaApi_GetClusterTask validate running task list
+func TestTcaApi_CreateBlockDeleteCluster(t *testing.T) {
+
+	tests := []struct {
+		name            string
+		rest            *client.RestClient
+		reader          io.Reader
+		wantErr         bool
+		dryRun          bool
+		reset           bool
+		trace           bool
+		useTestTemplate bool
+		sec             time.Duration
+	}{
+		{
+			name:            "Create and Delete a new tenant cluster.",
+			rest:            rest,
+			reader:          testutil.SpecTempReader(CreateDeleteTest01),
+			wantErr:         false,
+			dryRun:          false,
+			trace:           false,
+			useTestTemplate: true,
+			sec:             3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			var (
+				err        error
+				createTask *models.TcaTask
+				deleteTask *models.TcaTask
+			)
+
+			a, err := NewTcaApi(tt.rest)
+			assert.NoError(t, err)
+
+			a.SetTrace(tt.trace)
+			SetLoggingFlags()
+
+			spec, err := request.ReadClusterSpec(tt.reader)
+			assert.NoError(t, err)
+			assert.NotNil(t, spec)
+
+			// adjust template id
+			if tt.useTestTemplate {
+				if spec.IsManagement() {
+					spec.ClusterTemplateId = getTestMgmtTemplateId()
+				} else {
+					spec.ClusterTemplateId = getTestWorkloadTemplateId()
+				}
+			}
+			assert.NoError(t, err)
+
+			createTask, err = a.CreateClusters(spec, tt.dryRun, true, true)
+
+			// if task failed we still should be able delete cluster.
+			if _, ok := err.(*TcaTaskFailed); ok {
+				t.Log("Create cluster task failed but test will try to delete it")
+				if deleteTask, err = a.DeleteCluster(spec.Name, true, true); (err != nil) != tt.wantErr {
+					t.Errorf("CreateBlockDeleteCluster() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				return
+			} else {
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CreateBlockDeleteCluster() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					assert.NotNil(t, createTask)
+					// wait 2 sec and send delete
+					time.Sleep(2 * time.Second)
+
+					if deleteTask, err = a.DeleteCluster(spec.Name, true, true); (err != nil) != tt.wantErr {
+						t.Errorf("CreateBlockDeleteCluster() error = %v, wantErr %v", err, tt.wantErr)
+						return
+					}
+
+					assert.NotNil(t, deleteTask)
+				}
 			}
 		})
 	}
 }
 
 var NewManagementCluster = `---
-name: edge-mgmt-test01
+name: unit_test
 clusterPassword: VMware1!
 clusterTemplateId: "55e69a3c-d92b-40ca-be51-9c6585b89ad7"
 clusterType: MANAGEMENT
@@ -733,6 +939,73 @@ placementParams:
   - name: hubsite
     type: ClusterComputeResource
 `
+var CreateDeleteTest01 = `
+---
+name: edge-workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
 
 // no template id
 var NewManagementClusterFailCase01 = `---
@@ -783,3 +1056,731 @@ placementParams:
       type: ResourcePool
     - name: hubsite
       type: ClusterComputeResource`
+
+var NewManagementClusterFailCase02 = `---
+name: unit_test
+clusterPassword: VMware1!
+clusterTemplateId: "55e69a3c-d92b-40ca-be51-9c6585b89ad7"
+clusterType: MANAGEMENT
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+workerNodes:
+    - name: default-pool01 
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+    - name: tkg
+      type: Folder
+    - name: vsanDatastore
+      type: Datastore
+    - name: k8s
+      type: ResourcePool
+    - name: hubsite
+      type: ClusterComputeResource`
+
+var InvalidMgmtCluster = `
+---
+name: edge-workload-test01
+managementClusterId: wrong
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var WrongMgmtTemplateId = `
+---
+name: edge-workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+clusterTemplateId: wrongtemplate
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidDatastoreGlobal = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastoreWrong
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidDatastoreWorker = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastoreWrong
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastoreWrong
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidDatastoreMasterNode = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastoreWrong
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidFolderGlobal = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: WrongFolder
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidMasterNodeFolder = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: Wrong
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidWorkerNodeFolder = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: WrongFolder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: Wrong
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidDatastoreUrl = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: WrongFolder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkgIn
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`
+
+var InvalidNetworkPath = `
+---
+name: workload-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 10.241.0.250
+            mountPath: w3-nfv-pst-01-mus
+        - name: vsphere-csi
+          properties:
+            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+    tools:
+        - name: harbor
+          properties:
+            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            type: extension
+hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
+endpointIP: 10.241.7.189
+vmTemplate: photon-3-kube-v1.20.4+vmware.1
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: WrongFolder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 10.246.2.9
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: hubsite
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+`

@@ -37,10 +37,14 @@ const (
 	TaskStateSuccess = "SUCCESS"
 	TaskStateRunning = "SUCCESS"
 	TaskStateQueued  = "QUEUED"
+	TaskStateFailed  = "FAILED"
 
 	TaskTypeNodePoolCreation = "Node Pool Creation"
 	TaskTypeInventoryUpdate  = "Inventory Update"
 	TaskTypeUpdateNodePool   = "Update Node Pool"
+
+	CLusterCsiNfs     = "nfs_client"
+	ClusterCsiVsphere = "vsphere-csi"
 )
 
 type TcaTaskStateType int

@@ -13,15 +13,18 @@ clusterConfig:
             mountPath: w3-nfv-pst-01-mus
         - name: vsphere-csi
           properties:
-            datastoreUrl: ds:///vmfs/volumes/vsan:525abe9561d93fa1-4add35a851137588/
+            # you will need adjust that
+            datastoreUrl: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
+            datastoreName: "vsanDatastore"
     tools:
         - name: harbor
           properties:
-            extensionId: 9d0d4ff4-1963-4d89-ac15-2d856768deeb
+            extensionId: https://repo.cnfdemo.io/chartrepo/library
             type: extension
 hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
-endpointIP: 10.241.7.189
+endpointIP: 10.241.7.190
 vmTemplate: photon-3-kube-v1.20.4+vmware.1
+# you will need adjust all placement
 masterNodes:
     - name: master
       networks:

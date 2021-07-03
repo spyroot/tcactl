@@ -18,7 +18,9 @@
 package models
 
 import (
+	"fmt"
 	"github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"strings"
 )
 
@@ -69,32 +71,34 @@ type VmwareContainerView struct {
 	} `json:"data" yaml:"data"`
 }
 
+type VmwareDatastoreSpec struct {
+	EntityId string `json:"entity_id" yaml:"entity_id"`
+	Name     string `json:"name" yaml:"name"`
+	Summary  struct {
+		Accessible         string `json:"accessible" yaml:"accessible"`
+		Capacity           int64  `json:"capacity" yaml:"capacity"`
+		FreeSpace          int64  `json:"freeSpace" yaml:"free_space"`
+		MaintenanceMode    string `json:"maintenanceMode" yaml:"maintenanceMode"`
+		MultipleHostAccess string `json:"multipleHostAccess" yaml:"multipleHostAccess"`
+		Type               string `json:"type" yaml:"type"`
+		Url                string `json:"url" yaml:"url"`
+		Uncommitted        int64  `json:"uncommitted,omitempty" yaml:"uncommitted"`
+	}
+}
+
 // VMwareClusters Vmware Clusters Container
 type VMwareClusters struct {
 	Items []struct {
-		EntityId   string `json:"entity_id"`
-		Name       string `json:"name"`
-		EntityType string `json:"entityType"`
-		NumOfHosts int    `json:"numOfHosts"`
-		Datastore  []struct {
-			EntityId string `json:"entity_id"`
-			Name     string `json:"name"`
-			Summary  struct {
-				Accessible         string `json:"accessible"`
-				Capacity           int64  `json:"capacity"`
-				FreeSpace          int64  `json:"freeSpace"`
-				MaintenanceMode    string `json:"maintenanceMode"`
-				MultipleHostAccess string `json:"multipleHostAccess"`
-				Type               string `json:"type"`
-				Url                string `json:"url"`
-				Uncommitted        int64  `json:"uncommitted,omitempty"`
-			} `json:"summary"`
-		} `json:"datastore"`
-		Memory                        int64 `json:"memory"`
-		Cpu                           int   `json:"cpu"`
-		K8ClusterDeployed             int   `json:"k8ClusterDeployed"`
-		NumK8SMgmtClusterDeployed     int   `json:"numK8sMgmtClusterDeployed"`
-		NumK8SWorkloadClusterDeployed int   `json:"numK8sWorkloadClusterDeployed"`
+		EntityId                      string                `json:"entity_id" yaml:"entity_id"`
+		Name                          string                `json:"name" yaml:"name"`
+		EntityType                    string                `json:"entityType" yaml:"entity_type"`
+		NumOfHosts                    int                   `json:"numOfHosts" yaml:"num_of_hosts"`
+		Datastore                     []VmwareDatastoreSpec `json:"datastore" yaml:"datastore"`
+		Memory                        int64                 `json:"memory" yaml:"memory"`
+		Cpu                           int                   `json:"cpu" yaml:"cpu"`
+		K8ClusterDeployed             int                   `json:"k8ClusterDeployed" yaml:"k8ClusterDeployed"`
+		NumK8SMgmtClusterDeployed     int                   `json:"numK8sMgmtClusterDeployed" yaml:"numK8sMgmtClusterDeployed"`
+		NumK8SWorkloadClusterDeployed int                   `json:"numK8sWorkloadClusterDeployed" yaml:"numK8sWorkloadClusterDeployed"`
 	} `json:"items"`
 }
 
@@ -139,12 +143,47 @@ func (c *VMwareClusters) IsValidDatastore(name string) bool {
 
 	for _, it := range c.Items {
 		for _, ds := range it.Datastore {
-			if strings.Contains(ds.Name, name) {
-				glog.Infof("Found datastore %v", ds.Name)
+			if ds.Name == name {
+				glog.Infof("Found target ds %s %s", ds.Summary.Url, name)
 				return true
 			}
 		}
 	}
 
 	return false
+}
+
+// GetDatastoreByUrl find datastore VmwareDatastoreSpec based on full datastore ur
+// ds:///vmfs/volumes/60254cec-cb11aa98-a02e-e4434bf999aa/
+func (c *VMwareClusters) GetDatastoreByUrl(url string) (*VmwareDatastoreSpec, error) {
+
+	if c == nil {
+		return nil, fmt.Errorf("nil instance")
+	}
+
+	for _, it := range c.Items {
+		for _, ds := range it.Datastore {
+			if strings.ToLower(ds.Summary.Url) == strings.ToLower(url) {
+				glog.Infof("Found target ds uri %s %s", ds.Summary.Url, url)
+				return &ds, nil
+			}
+		}
+	}
+
+	return nil, api_errors.NewDatastoreNotFound(url)
+}
+
+// IsValidDatastoreUrl return true if datastore exists
+func (c *VMwareClusters) IsValidDatastoreUrl(url string) bool {
+
+	if c == nil {
+		return false
+	}
+
+	ds, err := c.GetDatastoreByUrl(url)
+	if err != nil {
+		return false
+	}
+
+	return len(ds.Name) > 0
 }

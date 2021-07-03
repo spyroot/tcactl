@@ -115,6 +115,8 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 // DeleteTenant delete tenant cluster
 func (c *RestClient) DeleteTenant(tenantCluster string) (*models.TcaTask, error) {
 
+	glog.Infof("Deleting tenant cluster %v", tenantCluster)
+
 	c.GetClient()
 	resp, err := c.Client.R().Delete(c.BaseURL + fmt.Sprintf(TcaDeleteTenant, tenantCluster))
 	if err != nil {
