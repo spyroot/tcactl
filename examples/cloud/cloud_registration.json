@@ -1,0 +1,9 @@
+{
+  "kind": "provider",
+  "hcxCloudUrl": "https://fqdn",
+  "vimName": "core",
+  "tags": [],
+  "tenantName": "",
+  "username": "administrator@vsphere.local",
+  "password": "pass"
+}
