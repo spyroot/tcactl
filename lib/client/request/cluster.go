@@ -99,7 +99,7 @@ type Cluster struct {
 // IsManagement return true if spec if management cluster spec
 func (c *Cluster) IsManagement() bool {
 
-	if c != nil {
+	if c == nil {
 		return false
 	}
 
@@ -109,7 +109,7 @@ func (c *Cluster) IsManagement() bool {
 // IsWorkload return if spec is for workload cluster
 func (c *Cluster) IsWorkload() bool {
 
-	if c != nil {
+	if c == nil {
 		return false
 	}
 

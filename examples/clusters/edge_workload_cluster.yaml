@@ -16,11 +16,6 @@ clusterConfig:
             # you will need adjust that
             datastoreUrl: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
             datastoreName: "vsanDatastore"
-    tools:
-        - name: harbor
-          properties:
-            extensionId: https://repo.cnfdemo.io/chartrepo/library
-            type: extension
 hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
 endpointIP: 10.241.7.190
 vmTemplate: photon-3-kube-v1.20.4+vmware.1
@@ -29,7 +24,7 @@ masterNodes:
     - name: master
       networks:
         - label: MANAGEMENT
-          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
           nameservers:
             - 10.246.2.9
       placementParams:

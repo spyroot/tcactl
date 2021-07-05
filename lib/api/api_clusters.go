@@ -230,6 +230,7 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 		return nil, err
 	}
 
+	identified := false
 	if spec.IsWorkload() {
 		glog.Infof("Validating workload cluster spec")
 
@@ -244,6 +245,8 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 		if err != nil {
 			return nil, err
 		}
+
+		identified = true
 	}
 
 	if spec.IsManagement() {
@@ -254,6 +257,11 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 		if err != nil {
 			return nil, err
 		}
+		identified = true
+	}
+
+	if !identified {
+		return nil, fmt.Errorf("invalid cluster type %s", spec.ClusterType)
 	}
 
 	spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(spec.ClusterPassword))

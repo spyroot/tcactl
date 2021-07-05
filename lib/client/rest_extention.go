@@ -58,7 +58,39 @@ func (c *RestClient) GetExtensions() (*response.Extensions, error) {
 	return &e, nil
 }
 
-//CreateExtension - add new extension
+// GetExtension - api call retrieve extension
+func (c *RestClient) GetExtension(eid string) (*response.Extensions, error) {
+
+	if c == nil {
+		return nil, fmt.Errorf("uninitialized rest client")
+	}
+
+	c.GetClient()
+
+	resp, err := c.Client.R().Get(c.BaseURL + fmt.Sprintf(TcaVmwareGetExtensions, eid))
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	if c.isTrace && resp != nil {
+		fmt.Println(string(resp.Body()))
+	}
+
+	if !resp.IsSuccess() {
+		return nil, c.checkError(resp)
+	}
+
+	var e response.Extensions
+	if err := json.Unmarshal(resp.Body(), &e); err != nil {
+		glog.Error("Failed parse server respond %v.", err)
+		return nil, err
+	}
+
+	return &e, nil
+}
+
+//CreateExtension - method creates new extension
 func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 
 	if c == nil {
@@ -81,6 +113,7 @@ func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error
 	}
 
 	if !resp.IsSuccess() {
+
 		return "", c.checkError(resp)
 	}
 
@@ -135,10 +168,11 @@ func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec) (*response.Rep
 	}
 
 	c.GetClient()
-
 	resp, err := c.Client.R().
 		SetBody(spec).
 		Put(c.BaseURL + TcaVmwareExtensions)
+
+	fmt.Println(string(resp.Body()))
 
 	if err != nil {
 		glog.Error(err)

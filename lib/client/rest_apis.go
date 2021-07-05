@@ -68,6 +68,9 @@ const (
 	// TcaVmwareExtensions extensions api
 	TcaVmwareExtensions = "/hybridity/api/extensions"
 
+	// TcaVmwareGetExtensions  api call deletes extension
+	TcaVmwareGetExtensions = "/hybridity/api/extensions/%s"
+
 	// TcaVmwareDeleteExtensions  api call deletes extension
 	TcaVmwareDeleteExtensions = "/hybridity/api/extensions/%s"
 

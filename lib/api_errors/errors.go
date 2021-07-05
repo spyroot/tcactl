@@ -85,3 +85,15 @@ func NewTenantNotFound(errMsg string) *TenantNotFound {
 func (e *TenantNotFound) Error() string {
 	return " tenant '" + e.errMsg + "' not found."
 }
+
+type VimNotFound struct {
+	errMsg string
+}
+
+func NewVimNotFound(errMsg string) *VimNotFound {
+	return &VimNotFound{errMsg: errMsg}
+}
+
+func (e *VimNotFound) Error() string {
+	return " vim '" + e.errMsg + "' not found."
+}

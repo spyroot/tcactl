@@ -3,9 +3,11 @@ package api
 import (
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
+	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestTcaApiCreateExtension(t *testing.T) {
@@ -16,8 +18,8 @@ func TestTcaApiCreateExtension(t *testing.T) {
 		spec         string
 		wantErr      bool
 		wantDel      bool
-		password     string
 		verifyAttach bool
+		password     string
 	}{
 		{
 			name:    "Create harbor extension from string",
@@ -40,18 +42,26 @@ func TestTcaApiCreateExtension(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:     "Create harbor extension with attach",
-			rest:     rest,
-			spec:     testHarborWithVim,
-			wantErr:  false,
-			wantDel:  false,
-			password: os.Getenv("TCA_REPO_PASSWORD"),
+			name:         "Create harbor extension with vim attach",
+			rest:         rest,
+			spec:         testHarborWithVim,
+			wantErr:      false,
+			wantDel:      true,
+			verifyAttach: true,
+			password:     os.Getenv("TCA_REPO_PASSWORD"),
+		},
+		{
+			name:         "Create harbor extension with wrong vim",
+			rest:         rest,
+			spec:         testHarborWithInvalidVim,
+			wantErr:      true,
+			wantDel:      true,
+			verifyAttach: true,
+			password:     os.Getenv("TCA_REPO_PASSWORD"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			t.Logf(tt.password)
 
 			a, err := NewTcaApi(tt.rest)
 			assert.NoError(t, err)
@@ -65,7 +75,7 @@ func TestTcaApiCreateExtension(t *testing.T) {
 
 			got, err := a.CreateExtension(spec)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("TestTcaApiCreateExtension() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestTcaApiCreateExtension() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -89,10 +99,192 @@ func TestTcaApiCreateExtension(t *testing.T) {
 
 			t.Logf("extension id %s", got)
 
+			if tt.verifyAttach {
+				assert.NotNil(t, spec.VimInfo)
+				for _, info := range spec.VimInfo {
+					t.Log(info.VimId)
+					assert.NotEmpty(t, info.VimId)
+					assert.NotEmpty(t, info.VimSystemUUID)
+					assert.NotEmpty(t, info.VimName)
+				}
+			}
+
+			time.Sleep(1 * time.Second)
+
 			if tt.wantDel {
 				_, err := a.DeleteExtension(got)
 				assert.NoError(t, err)
 			}
+
+		})
+	}
+}
+
+func TestTcaApiGetExtension(t *testing.T) {
+
+	tests := []struct {
+		name         string
+		rest         *client.RestClient
+		spec         string
+		eid          string
+		wantErr      bool
+		wantDel      bool
+		wantAdd      bool
+		verifyAttach bool
+		password     string
+	}{
+		{
+			name:    "Get extension by wrong name",
+			rest:    rest,
+			eid:     "not found",
+			wantErr: true,
+			wantDel: false,
+			wantAdd: false,
+		},
+		{
+			name:    "Get extension by name",
+			rest:    rest,
+			spec:    testGetExtention,
+			eid:     "gettest",
+			wantErr: false,
+			wantDel: true,
+			wantAdd: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			api, err := NewTcaApi(tt.rest)
+			assert.NoError(t, err)
+
+			spec, err := request.ExtensionSpecFromFromString(tt.spec)
+			assert.NoError(t, err)
+
+			var (
+				eid string
+			)
+			if tt.wantAdd {
+				// set password if needed
+				if len(tt.password) > 0 {
+					spec.AccessInfo.Password = tt.password
+				}
+
+				// create extension if needed
+				eid, err := api.CreateExtension(spec)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("TestTcaApiGetExtension() error = %v, vimErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr && !IsValidUUID(eid) {
+					t.Errorf("TestTcaApiGetExtension() failed create extension must return UUID")
+					return
+				}
+			}
+
+			extensions, err := api.GetExtension(tt.eid)
+			assert.NoError(t, err)
+
+			extension, err := extensions.FindExtension(tt.eid)
+			if !tt.wantErr {
+				assert.NoError(t, err)
+				assert.NotNil(t, extension)
+				assert.Equal(t, spec.Name, extension.Name)
+			} else {
+				assert.Error(t, err)
+			}
+
+			if tt.wantAdd && tt.wantDel {
+				_, err := api.DeleteExtension(eid)
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestTcaApiCreateUpdate(t *testing.T) {
+
+	tests := []struct {
+		name         string
+		rest         *client.RestClient
+		spec         string
+		vimName      string
+		wantErr      bool
+		wantDel      bool
+		verifyAttach bool
+		password     string
+	}{
+		{
+			name:    "Create harbor extension from string",
+			rest:    rest,
+			spec:    testHarborCreateUpdate,
+			vimName: getTestClusterName(),
+			wantErr: false,
+			wantDel: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			var (
+				extensions *response.Extensions
+				err        error
+			)
+
+			api, err := NewTcaApi(tt.rest)
+			assert.NoError(t, err)
+
+			spec, err := request.ExtensionSpecFromFromString(tt.spec)
+			assert.NoError(t, err)
+
+			if len(tt.password) > 0 {
+				spec.AccessInfo.Password = tt.password
+			}
+
+			// create extension if needed
+			extensions, err = api.GetExtension(spec.Name)
+			t.Log(err)
+			t.Log(extensions)
+			if err != nil {
+				gotEid, err := api.CreateExtension(spec)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("TestTcaApiCreateUpdate() error = %v, vimErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					if !IsValidUUID(gotEid) {
+						t.Errorf("TestTcaApiCreateUpdate() failed create extension must return UUID")
+						return
+					}
+				}
+				extensions, err = api.GetExtension(gotEid)
+			}
+
+			if !tt.wantErr {
+				// we expect same name
+				assert.NoError(t, err)
+				assert.Equal(t, spec.Name, extensions)
+			} else {
+				assert.Error(t, err)
+			}
+
+			// Update and add vim spec and update
+			time.Sleep(1 * time.Second)
+			spec.AddVim(tt.vimName)
+			_, err = spec.GetVim(tt.vimName)
+			assert.NoError(t, err)
+
+			_, err = api.UpdateExtension(spec)
+			if !tt.wantErr {
+				assert.NoError(t, err)
+			}
+
+			//if tt.wantDel {
+			//	_, err := api.DeleteExtension(got)
+			//	assert.NoError(t, err)
+			//}
+
 		})
 	}
 }
@@ -120,12 +312,12 @@ func TestTcaApiExtensionQuery(t *testing.T) {
 
 			got, err := a.ExtensionQuery()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if (got == nil) && tt.wantErr == false {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -134,7 +326,7 @@ func TestTcaApiExtensionQuery(t *testing.T) {
 			}
 
 			if len(got.ExtensionsList) == 0 && tt.wantErr == false {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 		})
@@ -162,12 +354,12 @@ func TestTcaApi_ExtensionQueryFindRepo(t *testing.T) {
 
 			got, err := a.ExtensionQuery()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if (got == nil) && tt.wantErr == false {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -183,17 +375,17 @@ func TestTcaApi_ExtensionQueryFindRepo(t *testing.T) {
 			}
 
 			if tt.wantErr == false && err != nil {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if len(valid.Name) == 0 && tt.wantErr == false {
-				t.Errorf("ExtensionQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 		})
@@ -271,5 +463,82 @@ var testHarborWithVim = `{
   "accessInfo": {
     "username": "admin",
     "password": ""
+  }
+}`
+
+var testHarborWithInvalidVim = `{
+  "kind": "extensions",
+  "name": "min",
+  "version": "v2.x",
+  "type": "Repository",
+  "extensionKey": "",
+  "extensionSubtype": "Harbor",
+  "products": [],
+  "vimInfo": [
+    {
+      "vimName": "fail"
+    }
+  ],
+  "interfaceInfo": {
+    "url": "https://10.252.80.135",
+    "description": "",
+    "trustedCertificate": ""
+  },
+  "additionalParameters": {
+    "trustAllCerts": true
+  },
+  "autoScaleEnabled": true,
+  "autoHealEnabled": true,
+  "accessInfo": {
+    "username": "admin",
+    "password": ""
+  }
+}`
+
+var testHarborCreateUpdate = `{
+  "kind": "extensions",
+  "name": "min",
+  "version": "v2.x",
+  "type": "Repository",
+  "extensionKey": "",
+  "extensionSubtype": "Harbor",
+  "products": [],
+  "interfaceInfo": {
+    "url": "https://10.252.80.135",
+    "description": "",
+    "trustedCertificate": ""
+  },
+  "additionalParameters": {
+    "trustAllCerts": true
+  },
+  "autoScaleEnabled": true,
+  "autoHealEnabled": true,
+  "accessInfo": {
+    "username": "admin",
+    "password": "test"
+  }
+}`
+
+var testGetExtention = `{
+  "kind": "extensions",
+  "name": "gettest",
+  "version": "v2.x",
+  "type": "Repository",
+  "extensionKey": "",
+  "extensionSubtype": "Harbor",
+  "products": [],
+  "interfaceInfo": {
+    "url": "https://1.1.1.1",
+    "description": "",
+    "trustedCertificate": ""
+  },
+  "additionalParameters": {
+    "trustAllCerts": true
+  },
+  "autoScaleEnabled": true,
+  "autoHealEnabled": true,
+  "accessInfo": {
+    "username": "admin",
+    "password": "test"
   }
 }`

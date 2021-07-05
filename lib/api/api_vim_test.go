@@ -7,72 +7,103 @@ import (
 	"testing"
 )
 
+// TestGetVim tests basic retrieval vim
+//and vims tenant details
 func TestGetVim(t *testing.T) {
 
 	tests := []struct {
 		name        string
 		rest        *client.RestClient
-		wantErr     bool
+		vimErr      bool
+		errTenant   bool // invalid tenant
 		reset       bool
 		dumpJson    bool
 		provideName string
 		tenantName  string
 	}{
 		{
-			name:        "Basic get vim and tenant by id",
+			name:        "Get vim and tenant by id",
 			rest:        rest,
-			wantErr:     false,
+			vimErr:      false,
 			dumpJson:    true,
 			provideName: getTestClusterName(),
 			tenantName:  getTenantId(),
 		},
 		{
-			name:        "Basic get vim and tenant by name provider k8s",
+			name:        "Get vim and tenant by name provider k8s",
 			rest:        rest,
-			wantErr:     false,
+			vimErr:      false,
 			dumpJson:    false,
 			provideName: getTestClusterName(),
 			tenantName:  getTestClusterName(),
 		},
 		{
-			name:        "Basic get vim and tenant by name provider vc",
+			name:        "Get vim and tenant by name provider vc",
 			rest:        rest,
-			wantErr:     false,
+			vimErr:      false,
 			dumpJson:    false,
 			provideName: getTestCloudProvider(),
+		},
+		{
+			name:        "Get invalid vim",
+			rest:        rest,
+			vimErr:      true,
+			dumpJson:    false,
+			provideName: "invalid",
+		},
+		{
+			name:        "Get invalid test",
+			rest:        rest,
+			vimErr:      false,
+			errTenant:   true,
+			dumpJson:    false,
+			provideName: getTestCloudProvider(),
+			tenantName:  "invalid",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			a, err := NewTcaApi(tt.rest)
+			if a == nil {
+				t.Errorf("clinet must not be nil")
+				return
+			}
+
 			if tt.reset {
 				a.rest = nil
 			}
 
 			provider, err := a.GetVim(tt.provideName)
-			if err != nil != tt.wantErr {
-				t.Errorf("GetVimComputeClusters() error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil != tt.vimErr {
+				t.Errorf("GetVimComputeClusters() error = %v, vimErr %v", err, tt.vimErr)
 				return
 			}
 
 			io.PrettyPrint(provider)
 
-			//assert.NoError(t, err)
-			//if tt.dumpJson{
-			//	io.PrettyPrint(tenant)
-			//}
-
-			if !tt.wantErr {
+			if !tt.vimErr {
+				if provider == nil {
+					t.Errorf("provide must not be nil")
+					return
+				}
 				if len(tt.provideName) > 0 {
 					tenant, err := provider.GetTenant(tt.tenantName)
 					if err != nil {
 						return
 					}
 
+					if tt.errTenant {
+						assert.Error(t, err)
+						return
+					}
+
 					assert.NoError(t, err)
 					if tt.dumpJson {
-						io.PrettyPrint(tenant)
+						err := io.PrettyPrint(tenant)
+						if err != nil {
+							return
+						}
 					}
 				}
 			}
@@ -111,24 +142,29 @@ func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			a, err := NewTcaApi(tt.rest)
+			if a == nil {
+				t.Errorf("clinet must not be nil")
+				return
+			}
+
 			if tt.reset {
 				a.rest = nil
 			}
 
 			vimCompute, err := a.GetVimComputeClusters(tt.cloudProviderName)
 			if err != nil != tt.wantErr {
-				t.Errorf("GetVimComputeClusters() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimComputeClusters() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr && vimCompute == nil {
-				t.Errorf("GetVimComputeClusters() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimComputeClusters() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			// we want err and got not nil instance
 			if tt.wantErr && vimCompute != nil {
-				t.Errorf("GetVimComputeClusters() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimComputeClusters() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -137,7 +173,7 @@ func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 			}
 
 			// if we got at least something in list we are ok
-			if !tt.wantErr && len(vimCompute.Items) > 0 {
+			if !tt.wantErr && vimCompute != nil && len(vimCompute.Items) > 0 {
 				return
 			}
 
@@ -153,7 +189,7 @@ func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("CreateClusterTemplate() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("CreateClusterTemplate() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 
@@ -194,24 +230,25 @@ func TestTcaApi_GetVimNetworks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			a, err := NewTcaApi(tt.rest)
+
 			if tt.reset {
 				a.rest = nil
 			}
 
 			got, err := a.GetVimNetworks(tt.cloudProviderName)
 			if err != nil != tt.wantErr {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr && got == nil {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			// we want err and got not nil instance
 			if tt.wantErr && got != nil {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -236,7 +273,7 @@ func TestTcaApi_GetVimNetworks(t *testing.T) {
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("GetVimNetworks() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("GetVimNetworks() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 
@@ -284,18 +321,18 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 			got, err := a.GetVimNetworks(tt.cloudProviderName)
 
 			if err != nil != tt.wantErr {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr && got == nil {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			// we want err and got not nil instance
 			if tt.wantErr && got != nil {
-				t.Errorf("GetVimNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -320,7 +357,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("GetVimNetworks() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("GetVimNetworks() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 

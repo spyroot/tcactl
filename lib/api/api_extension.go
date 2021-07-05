@@ -24,8 +24,40 @@ import (
 	"github.com/spyroot/tcactl/lib/client/response"
 )
 
-// GetRepos retrieve repos
+// GetRepos retrieve repos by tenant id
 func (a *TcaApi) GetRepos() (*response.ReposList, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	tenants, err := a.rest.GetVimTenants()
+	if err != nil {
+		glog.Error(err)
+	}
+
+	var allRepos response.ReposList
+	for _, r := range tenants.TenantsList {
+		repos, err := a.rest.RepositoriesQuery(&request.RepoQuery{
+			QueryFilter: request.Filter{
+				ExtraFilter: request.AdditionalFilters{
+					VimID: r.TenantID,
+				},
+			},
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		allRepos.Items = append(allRepos.Items, repos.Items...)
+	}
+
+	return &allRepos, nil
+}
+
+// GetFilteredExtension retrieve repos by tenant id
+func (a *TcaApi) GetFilteredExtension() (*response.ReposList, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")

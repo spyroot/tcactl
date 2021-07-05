@@ -19,6 +19,7 @@ package request
 
 import (
 	"encoding/json"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
@@ -74,6 +75,23 @@ type ExtensionSpec struct {
 		// Password is base64 encoded string
 		Password string `json:"password" yaml:"password" validate:"required"`
 	} `json:"accessInfo" yaml:"accessInfo"`
+}
+
+// AddVim add target vim
+func (s *ExtensionSpec) AddVim(name string) {
+	s.VimInfo = append(s.VimInfo, VimInfo{VimName: name})
+}
+
+// GetVim return vim spec
+func (s *ExtensionSpec) GetVim(name string) (*VimInfo, error) {
+	n := strings.ToLower(name)
+	for _, info := range s.VimInfo {
+		if info.VimName == n {
+			return &info, nil
+		}
+	}
+
+	return nil, api_errors.NewVimNotFound("name")
 }
 
 // ExtensionSpecsFromFile - reads spec spec from file

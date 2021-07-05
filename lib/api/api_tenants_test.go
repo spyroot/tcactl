@@ -57,18 +57,18 @@ func TestTenantsCloudProvider(t *testing.T) {
 			}
 
 			if err != nil != tt.wantErr {
-				t.Errorf("TenantsCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TenantsCloudProvider() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr && got == nil {
-				t.Errorf("TenantsCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TenantsCloudProvider() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			// we want err and got not nil instance
 			if tt.wantErr && got != nil {
-				t.Errorf("TenantsCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TenantsCloudProvider() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -86,7 +86,7 @@ func TestTenantsCloudProvider(t *testing.T) {
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("GetVimNetworks() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("GetVimNetworks() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 

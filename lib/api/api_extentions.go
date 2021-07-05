@@ -21,21 +21,55 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/glog"
 	_ "github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/errors"
 )
 
-// GetExtension return all extension
-func (a *TcaApi) GetExtension() (*response.Extensions, error) {
+// GetExtensions returns all extension registered in TCA
+// This method useful if we need find Harbor or any other extension
+// for example attached to particular VIM
+func (a *TcaApi) GetExtensions() (*response.Extensions, error) {
 
 	if a == nil {
 		return nil, errors.NilError
 	}
 
 	return a.rest.GetExtensions()
+}
+
+// GetExtension api call return extension register in TCA
+// NameOrId is name of extension or id.  If name provided
+// method need resolve name to id first.
+func (a *TcaApi) GetExtension(NameOrId string) (*response.Extensions, error) {
+
+	if a == nil {
+		return nil, errors.NilError
+	}
+
+	if IsValidUUID(NameOrId) {
+		return a.rest.GetExtension(NameOrId)
+	}
+
+	eid, err := a.ResolveExtensionId(NameOrId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(eid) == 0 {
+		return nil, api_errors.NewExtensionsNotFound(NameOrId)
+	}
+
+	extension, err := a.rest.GetExtension(eid)
+	if err != nil {
+		return nil, err
+	}
+
+	return extension, err
 }
 
 // CreateExtension api call create extension in TCA
@@ -59,7 +93,7 @@ func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 	}
 
 	if spec.VimInfo != nil {
-		for _, vimInfo := range spec.VimInfo {
+		for i, vimInfo := range spec.VimInfo {
 			// if vim name preset resolve all vim ids if needed
 			if len(vimInfo.VimName) > 0 {
 				vim, err := a.GetVim(vimInfo.VimName)
@@ -67,24 +101,36 @@ func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 					return "", err
 				}
 
-				//				glog.Infof("resolved vim id %s %s", vim.VimId, vim.Tenants[0].)
-				if len(vimInfo.VimId) == 0 {
-					vimInfo.VimId = vim.VimId
+				tenant, err := vim.GetTenant(vimInfo.VimName)
+				if err != nil {
+					return "", err
 				}
-				if len(vimInfo.VimSystemUUID) == 0 {
 
+				if len(vimInfo.VimId) == 0 {
+					spec.VimInfo[i].VimId = tenant.ID
 				}
+
+				if len(vimInfo.VimSystemUUID) == 0 {
+					spec.VimInfo[i].VimSystemUUID = vim.VimId
+				}
+
+				glog.Infof("Resolved vim attributes name %s,  vim id %s, vim uuid %s",
+					vimInfo.VimName, vimInfo.VimId, vimInfo.VimSystemUUID)
+
 			} else {
-				return "", fmt.Errorf("Vim name is empty")
+				return "", fmt.Errorf("vim name is empty")
 			}
 		}
 	}
+
 	return a.rest.CreateExtension(spec)
 }
 
+// ResolveExtensionId method resolve Name or Id to extension
+// if extension already valid id it no op
 func (a *TcaApi) ResolveExtensionId(NameOrId string) (string, error) {
 
-	extension, err := a.GetExtension()
+	extension, err := a.GetExtensions()
 	if err != nil {
 		return "", err
 	}

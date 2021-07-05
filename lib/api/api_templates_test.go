@@ -113,12 +113,12 @@ func TestTcaApi_CreateClusterTemplate(t *testing.T) {
 			}
 
 			if name, err = a.CreateClusterTemplate(tt.spec); (err != nil) != tt.wantErr {
-				t.Errorf("CreateClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("CreateClusterTemplate() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("CreateClusterTemplate() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 
@@ -130,7 +130,7 @@ func TestTcaApi_CreateClusterTemplate(t *testing.T) {
 			time.Sleep(3 * time.Second)
 
 			if template, err2 = a.GetClusterTemplate(name); (err2 != nil) != tt.wantErr {
-				t.Errorf("CreateClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -138,13 +138,13 @@ func TestTcaApi_CreateClusterTemplate(t *testing.T) {
 
 			if template == nil {
 				if !tt.wantErr {
-					t.Errorf("CreateClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 			} else {
 				t.Logf("Template retrieved %s", template.Id)
 				if err = a.DeleteTemplate(name); (err != nil) != tt.wantErr {
-					t.Errorf("DeleteTemplate() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("DeleteTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 				t.Logf("Template %s deleted", template.Id)
@@ -191,7 +191,7 @@ func TestTcaApi_GetClusterTemplate(t *testing.T) {
 			for _, n := range names {
 				_, err := a.GetClusterTemplate(n)
 				if tt.wantErr == false && err != nil {
-					t.Errorf("GetClusterTemplates() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("GetClusterTemplates() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 			}
@@ -200,7 +200,7 @@ func TestTcaApi_GetClusterTemplate(t *testing.T) {
 			for _, n := range names {
 				err := a.DeleteTemplate(n)
 				if tt.wantErr == false && err != nil {
-					t.Errorf("GetClusterTemplates() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("GetClusterTemplates() error = %v, vimErr %v", err, tt.wantErr)
 				}
 			}
 		})
@@ -244,14 +244,14 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 			assert.NotNil(t, got)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetClusterTemplates() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetClusterTemplates() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			for _, n := range names {
 				_, err := got.GetTemplateId(n)
 				if tt.wantErr == false && err != nil {
-					t.Errorf("GetClusterTemplates() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("GetClusterTemplates() error = %v, vimErr %v", err, tt.wantErr)
 				}
 			}
 
@@ -259,7 +259,7 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 			for _, n := range names {
 				err = a.DeleteTemplate(n)
 				if tt.wantErr == false && err != nil {
-					t.Errorf("GetClusterTemplates() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("GetClusterTemplates() error = %v, vimErr %v", err, tt.wantErr)
 				}
 			}
 
@@ -378,7 +378,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 
 			var errUpdate error
 			if errUpdate = a.UpdateClusterTemplate(transformed); (errUpdate != nil) != tt.wantErr {
-				t.Errorf("UpdateClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("UpdateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -394,7 +394,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 			var updateTemplate *response.ClusterTemplate
 			// get result and compare
 			if updateTemplate, errUpdate = a.GetClusterTemplate(name); (errUpdate != nil) != tt.wantErr {
-				t.Errorf("GetClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -402,7 +402,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 
 			if tt.checker(updateTemplate) == true && tt.wantErr == false {
 				if err = a.DeleteTemplate(name); (err != nil) != tt.wantErr {
-					t.Errorf("DeleteTemplate() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("DeleteTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 				t.Logf("Template %s deleted", template.Id)
@@ -459,12 +459,12 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 			// if need create initialSpec
 			if tt.spec != nil {
 				if name, err = a.CreateClusterTemplate(tt.spec); (err != nil) != tt.wantErr {
-					t.Errorf("CreateClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 
 				if tt.wantErr && err == nil {
-					t.Errorf("CreateClusterTemplate() error is nil, wantErr %v", tt.wantErr)
+					t.Errorf("CreateClusterTemplate() error is nil, vimErr %v", tt.wantErr)
 					return
 				}
 
@@ -476,7 +476,7 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 				time.Sleep(3 * time.Second)
 
 				if _, err2 = a.GetClusterTemplate(name); (err2 != nil) != tt.wantErr {
-					t.Errorf("CreateClusterTemplate() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 
@@ -484,12 +484,12 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 			}
 
 			if err = a.DeleteTemplate(name); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DeleteTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("DeleteTemplate() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("DeleteTemplate() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 

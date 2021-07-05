@@ -40,12 +40,12 @@ func TestReadNodeSpecFromString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ReadNodeSpecFromString(tt.args)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if err != nil && tt.wantErr == false {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -59,7 +59,7 @@ func TestReadNodeSpecFromString(t *testing.T) {
 			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
 
 			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -180,12 +180,12 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 
 			if task, err = a.CreateNewNodePool(tt.spec, getTestClusterName(),
 				false, true, true); (err != nil) != tt.wantErr {
-				t.Errorf("CreateNewNodePool() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateNewNodePool() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("CreateClusterTemplate() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("CreateClusterTemplate() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 
@@ -293,12 +293,12 @@ func TestTcaUpdateNodePool(t *testing.T) {
 			if task, err = a.UpdateNodePool(tt.spec,
 				getTestClusterName(),
 				getTestNodePoolName(), false, true, true); (err != nil) != tt.wantErr {
-				t.Errorf("TestTcaUpdateNodePool() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestTcaUpdateNodePool() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("TestTcaUpdateNodePool() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("TestTcaUpdateNodePool() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 

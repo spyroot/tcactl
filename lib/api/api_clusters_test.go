@@ -95,14 +95,14 @@ func TestClusterSpecFromString(t *testing.T) {
 
 			got, err := ReadNodeSpecFromString(tt.spec)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			t.Log(err)
 
 			if err != nil && tt.wantErr == false {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -119,7 +119,7 @@ func TestClusterSpecFromString(t *testing.T) {
 			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
 
 			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -152,12 +152,12 @@ func TestClusterSpecFromFile(t *testing.T) {
 
 			got, err := request.ClusterSpecsFromFile(tt.fileName)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("TestClusterSpecFromFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if err != nil && tt.wantErr == false {
-				t.Errorf("TestClusterSpecFromFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -174,7 +174,7 @@ func TestClusterSpecFromFile(t *testing.T) {
 			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
 
 			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -206,12 +206,12 @@ func TestClusterSpecFromReader(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := request.ReadClusterSpec(tt.reader)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("TestClusterSpecFromFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if err != nil && tt.wantErr == false {
-				t.Errorf("TestClusterSpecFromFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -228,7 +228,7 @@ func TestClusterSpecFromReader(t *testing.T) {
 			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
 
 			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -289,7 +289,7 @@ func TestGetCluster(t *testing.T) {
 
 			actual, err := a.GetCluster(tt.cluster)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetCluster() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetCluster() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -379,7 +379,7 @@ func TestGetClusterNodePool(t *testing.T) {
 
 			actual, err := a.GetClusterNodePool(tt.cluster, tt.nodepool)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetClusterNodePool() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetClusterNodePool() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -443,14 +443,14 @@ func TestTcaApi_GetCurrentClusterTask(t *testing.T) {
 
 			assert.NoError(t, err)
 			if task, err = a.CreateClusters(spec, false, false, true); (err != nil) != tt.wantErr {
-				t.Errorf("CreateClusters() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateClusters() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			time.Sleep(tt.sec * time.Second)
 
 			if tt.wantErr && err == nil {
-				t.Errorf("CreateClusters() error is nil, wantErr %v", tt.wantErr)
+				t.Errorf("CreateClusters() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 
@@ -459,7 +459,7 @@ func TestTcaApi_GetCurrentClusterTask(t *testing.T) {
 				clusterCreateTask, err := a.GetCurrentClusterTask(task.Id)
 				assert.NoError(t, err)
 				if _, err := clusterCreateTask.FindEntityByName(spec.Name); (err != nil) != tt.wantErr {
-					t.Errorf("GetCurrentClusterTask() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("GetCurrentClusterTask() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 			}
@@ -641,7 +641,7 @@ func TestTcaApi_CreateClusters(t *testing.T) {
 
 			assert.NoError(t, err)
 			if task, err = a.CreateClusters(spec, tt.dryRun, false, true); (err != nil) != tt.wantErr {
-				t.Errorf("CreateClusters() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateClusters() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -729,13 +729,13 @@ func TestTcaApi_CreateBlockDeleteCluster(t *testing.T) {
 			if _, ok := err.(*TcaTaskFailed); ok {
 				t.Log("Create cluster task failed but test will try to delete it")
 				if deleteTask, err = a.DeleteCluster(spec.Name, true, true); (err != nil) != tt.wantErr {
-					t.Errorf("CreateBlockDeleteCluster() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("CreateBlockDeleteCluster() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 				return
 			} else {
 				if (err != nil) != tt.wantErr {
-					t.Errorf("CreateBlockDeleteCluster() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("CreateBlockDeleteCluster() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
 
@@ -745,7 +745,7 @@ func TestTcaApi_CreateBlockDeleteCluster(t *testing.T) {
 					time.Sleep(2 * time.Second)
 
 					if deleteTask, err = a.DeleteCluster(spec.Name, true, true); (err != nil) != tt.wantErr {
-						t.Errorf("CreateBlockDeleteCluster() error = %v, wantErr %v", err, tt.wantErr)
+						t.Errorf("CreateBlockDeleteCluster() error = %v, vimErr %v", err, tt.wantErr)
 						return
 					}
 

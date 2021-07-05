@@ -91,14 +91,14 @@ func (e *Extensions) FindRepo(q string) (*Extension, error) {
 // FindExtension find repository Extension by name or extension id
 func (e *Extensions) FindExtension(NameOrId string) (*Extension, error) {
 
-	q := strings.ToLower(NameOrId)
-
 	if e == nil {
 		return nil, errorsconst.NilError
 	}
 
+	q := strings.ToLower(NameOrId)
+
 	for _, l := range e.ExtensionsList {
-		if l.Name == q || l.ExtensionId == q {
+		if strings.ToLower(l.Name) == q || l.ExtensionId == q {
 			return &l, nil
 		}
 	}
