@@ -1,5 +1,5 @@
 ---
-name: edge-workload-test01
+name: edge-test01
 managementClusterId: edge-mgmt-test01
 clusterPassword: VMware1!
 # we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3

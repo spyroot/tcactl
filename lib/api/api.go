@@ -53,7 +53,7 @@ type TcaApi struct {
 	// rest client used to interact with tca
 	rest *client.RestClient
 
-	// spec validator.
+	// specString validator.
 	specValidator *validator.Validate
 }
 
@@ -644,15 +644,15 @@ func (a *TcaApi) validateVmwarePlacement(spec *request.Cluster, tenant *response
 		}
 	}
 
-	// validate global spec
-	glog.Infof("Validating global spec placement parameters")
+	// validate global specString
+	glog.Infof("Validating global specString placement parameters")
 	for _, param := range spec.PlacementParams {
 		if err := a.validatePlacement(vmwareVim, param); err != nil {
 			return api_errors.NewInvalidSpec(err.Error())
 		}
 	}
 
-	glog.Infof("Validating master node spec placement parameters")
+	glog.Infof("Validating master node specString placement parameters")
 	for i, worker := range spec.WorkerNodes {
 		for j, n := range worker.Networks {
 			// normalize port-group name
@@ -669,7 +669,7 @@ func (a *TcaApi) validateVmwarePlacement(spec *request.Cluster, tenant *response
 		}
 	}
 
-	glog.Infof("Validating worker node spec placement parameters")
+	glog.Infof("Validating worker node specString placement parameters")
 	for i, master := range spec.MasterNodes {
 		for j, n := range master.Networks {
 			// normalize port-group name
@@ -690,7 +690,7 @@ func (a *TcaApi) validateVmwarePlacement(spec *request.Cluster, tenant *response
 	return nil
 }
 
-// validateCsi validate csi spec
+// validateCsi validate csi specString
 func (a *TcaApi) validateCsi(spec *request.Cluster) error {
 	if spec.ClusterConfig != nil {
 		for _, s := range spec.ClusterConfig.Csi {
@@ -708,7 +708,7 @@ func (a *TcaApi) validateCsi(spec *request.Cluster) error {
 	return nil
 }
 
-// validateCsi validate csi spec
+// validateCsi validate csi specString
 func (a *TcaApi) validateVim(spec *request.Cluster, tenant *response.TenantsDetails) error {
 
 	if tenant == nil {
@@ -737,7 +737,7 @@ func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.Tena
 
 	glog.Infof("Validate placement details.")
 
-	//if err := a.validateVim(spec, tenant); err != nil {
+	//if err := a.validateVim(specString, tenant); err != nil {
 	//	return err
 	//}
 

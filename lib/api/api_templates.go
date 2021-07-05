@@ -54,7 +54,7 @@ func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplate, error
 	return ReadTemplateSpec(file)
 }
 
-// ReadTemplateSpecFromString read spec from reader
+// ReadTemplateSpecFromString read specString from reader
 func ReadTemplateSpecFromString(str string) (*response.ClusterTemplate, error) {
 	r := strings.NewReader(str)
 	return ReadTemplateSpec(r)

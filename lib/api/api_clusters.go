@@ -164,7 +164,7 @@ func specFixup(spec *request.Cluster) {
 }
 
 // CreateClusters - creates new cluster , in Dry Run method only will do
-// spec validation. isBlocking will indicate if caller expects cluster
+// specString validation. isBlocking will indicate if caller expects cluster
 // task to finish. verbose will output status of each task,
 // linked to specific cluster creation.
 func (a *TcaApi) CreateClusters(spec *request.Cluster,
@@ -175,10 +175,10 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 	}
 
 	if spec == nil {
-		return nil, api_errors.NewInvalidSpec("new cluster spec can't be nil")
+		return nil, api_errors.NewInvalidSpec("new cluster specString can't be nil")
 	}
 
-	// fix spec
+	// fix specString
 	specFixup(spec)
 
 	// validate cluster
@@ -232,7 +232,7 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 
 	identified := false
 	if spec.IsWorkload() {
-		glog.Infof("Validating workload cluster spec")
+		glog.Infof("Validating workload cluster specString")
 
 		// resolve template id, in case client used name instead id
 		mspec, err := a.ResolveManagementCluster(spec.ManagementClusterId, tenants)
@@ -250,7 +250,7 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 	}
 
 	if spec.IsManagement() {
-		glog.Infof("Validating management cluster spec")
+		glog.Infof("Validating management cluster specString")
 		// ignoring mgmt cluster id
 		spec.ManagementClusterId = ""
 		err = a.validatePlacements(spec, tenant)
@@ -266,7 +266,7 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 
 	spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(spec.ClusterPassword))
 
-	glog.Infof("Cluster spec validated.")
+	glog.Infof("Cluster specString validated.")
 
 	if isDry {
 		return &models.TcaTask{}, nil

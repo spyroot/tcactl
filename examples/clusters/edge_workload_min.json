@@ -1,5 +1,5 @@
 {
-  "name": "edge-workload-test03",
+  "name": "edge-workload-min",
   "clusterType": "WORKLOAD",
   "clusterTemplateId": "myworkload",
   "hcxCloudUrl": "edge",

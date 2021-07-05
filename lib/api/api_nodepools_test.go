@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-// Reads spec and validate parser
+// Reads specString and validate parser
 func TestReadNodeSpecFromString(t *testing.T) {
 	type args struct {
 		str string
@@ -68,14 +68,14 @@ func TestReadNodeSpecFromString(t *testing.T) {
 	}
 }
 
-// specNodePoolStringReaderHelper test helper return node spec
+// specNodePoolStringReaderHelper test helper return node specString
 func specNodePoolStringReaderHelper(s string) *request.NewNodePoolSpec {
 	r, err := ReadNodeSpecFromString(s)
 	io.CheckErr(err)
 	return r
 }
 
-// specNodePoolStringReaderHelper test helper return node spec
+// specNodePoolStringReaderHelper test helper return node specString
 func specNodePoolFromFile(spec string) *request.NewNodePoolSpec {
 
 	tmpFile, err := ioutil.TempFile("", "tcactltest")
@@ -84,7 +84,7 @@ func specNodePoolFromFile(spec string) *request.NewNodePoolSpec {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	// write to file,close it and read spec
+	// write to file,close it and read specString
 	if _, err = tmpFile.Write([]byte(spec)); err != nil {
 		io.CheckErr(err)
 	}
@@ -124,31 +124,31 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Wrong spec no CPU",
+			name:    "Wrong specString no CPU",
 			rest:    rest,
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoCPU),
 			wantErr: true,
 		},
 		{
-			name:    "Wrong spec no replica",
+			name:    "Wrong specString no replica",
 			rest:    rest,
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoCPU),
 			wantErr: false,
 		},
 		{
-			name:    "Wrong spec no replica",
+			name:    "Wrong specString no replica",
 			rest:    rest,
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoReplica),
 			wantErr: false,
 		},
 		{
-			name:    "Wrong spec no replica",
+			name:    "Wrong specString no replica",
 			rest:    rest,
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoReplica),
 			wantErr: false,
 		},
 		{
-			name:    "Wrong spec no replica",
+			name:    "Wrong specString no replica",
 			rest:    rest,
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoNetwork),
 			wantErr: false,

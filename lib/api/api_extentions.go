@@ -72,6 +72,41 @@ func (a *TcaApi) GetExtension(NameOrId string) (*response.Extensions, error) {
 	return extension, err
 }
 
+func (a *TcaApi) resolveVimInfo(spec *request.ExtensionSpec) error {
+	if spec.VimInfo != nil {
+		for i, vimInfo := range spec.VimInfo {
+			// if vim name preset resolve all vim ids if needed
+			if len(vimInfo.VimName) > 0 {
+				vim, err := a.GetVim(vimInfo.VimName)
+				if err != nil {
+					return err
+				}
+
+				tenant, err := vim.GetTenant(vimInfo.VimName)
+				if err != nil {
+					return err
+				}
+
+				if len(vimInfo.VimId) == 0 {
+					spec.VimInfo[i].VimId = tenant.ID
+				}
+
+				if len(vimInfo.VimSystemUUID) == 0 {
+					spec.VimInfo[i].VimSystemUUID = vim.VimId
+				}
+
+				glog.Infof("Resolved vim attributes name %s,  vim id %s, vim uuid %s",
+					vimInfo.VimName, vimInfo.VimId, vimInfo.VimSystemUUID)
+
+			} else {
+				return fmt.Errorf("vim name is empty")
+			}
+		}
+	}
+
+	return nil
+}
+
 // CreateExtension api call create extension in TCA
 func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 
@@ -92,35 +127,9 @@ func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
 	}
 
-	if spec.VimInfo != nil {
-		for i, vimInfo := range spec.VimInfo {
-			// if vim name preset resolve all vim ids if needed
-			if len(vimInfo.VimName) > 0 {
-				vim, err := a.GetVim(vimInfo.VimName)
-				if err != nil {
-					return "", err
-				}
-
-				tenant, err := vim.GetTenant(vimInfo.VimName)
-				if err != nil {
-					return "", err
-				}
-
-				if len(vimInfo.VimId) == 0 {
-					spec.VimInfo[i].VimId = tenant.ID
-				}
-
-				if len(vimInfo.VimSystemUUID) == 0 {
-					spec.VimInfo[i].VimSystemUUID = vim.VimId
-				}
-
-				glog.Infof("Resolved vim attributes name %s,  vim id %s, vim uuid %s",
-					vimInfo.VimName, vimInfo.VimId, vimInfo.VimSystemUUID)
-
-			} else {
-				return "", fmt.Errorf("vim name is empty")
-			}
-		}
+	err = a.resolveVimInfo(spec)
+	if err != nil {
+		return "", err
 	}
 
 	return a.rest.CreateExtension(spec)
@@ -160,11 +169,13 @@ func (a *TcaApi) DeleteExtension(NameOrId string) (*models.TcaTask, error) {
 }
 
 // UpdateExtension api call delete extension from TCA
-func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (interface{}, error) {
+func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec, eid string) (interface{}, error) {
 
 	if a == nil {
 		return nil, errors.NilError
 	}
+
+	fmt.Println("SPec type", spec.SpecType)
 
 	err := a.specValidator.Struct(spec)
 	if err != nil {
@@ -173,10 +184,19 @@ func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (interface{}, erro
 	}
 
 	// remove kind and encode password as base64
+	if len(spec.AccessInfo.Password) > 0 {
+		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
+	}
+
 	specCopy := spec
 	specCopy.SpecType = nil
 
-	return a.rest.UpdateExtension(spec)
+	err = a.resolveVimInfo(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.rest.UpdateExtension(spec, eid)
 }
 
 // ExtensionQuery - query for all extension api

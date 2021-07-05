@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
@@ -88,10 +89,10 @@ Command attaches cloud provider to TCA.`),
 			spec, err := request.ExtensionSpecsFromFile(args[0])
 			CheckErrLogError(err)
 
-			_, err = ctl.tca.CreateExtension(spec)
+			eid, err := ctl.tca.CreateExtension(spec)
 			CheckErrLogError(err)
 
-			//fmt.Printf("Cloud provider %s registered\n", args[0])
+			fmt.Printf("Extention type %s registered extention id %s\n", spec.Type, eid)
 		},
 	}
 
@@ -108,11 +109,11 @@ func (ctl *TcaCtl) CmdDeleteExtension() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:   "extension [spec file]",
-		Short: "Command create a new extension in TCA.",
+		Use:   "extension [name or id]",
+		Short: "Command deletes an extension in TCA.",
 		Long: templates.LongDesc(`
 
-Command attaches cloud provider to TCA.`),
+Command delete extension from TCA.`),
 
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -130,7 +131,7 @@ Command attaches cloud provider to TCA.`),
 			_, err := ctl.tca.DeleteExtension(args[0])
 			CheckErrLogError(err)
 
-			//fmt.Printf("Cloud provider %s registered\n", args[0])
+			fmt.Printf("Extention %s deleted\n", args[0])
 		},
 	}
 

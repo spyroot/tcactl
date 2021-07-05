@@ -161,7 +161,7 @@ func (c *RestClient) DeleteExtension(extensionId string) (*models.TcaTask, error
 }
 
 //UpdateExtension - update extension.
-func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec) (*response.ReposList, error) {
+func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (*response.ReposList, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("uninitialized rest client")
@@ -170,7 +170,7 @@ func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec) (*response.Rep
 	c.GetClient()
 	resp, err := c.Client.R().
 		SetBody(spec).
-		Put(c.BaseURL + TcaVmwareExtensions)
+		Post(c.BaseURL + fmt.Sprintf(TcaVmwareUpdateExtensions, eid))
 
 	fmt.Println(string(resp.Body()))
 

@@ -103,7 +103,7 @@ func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVimSpec) (*models.Tc
 	// remove kind and encode password as base64
 	specCopy := spec
 	specCopy.SpecType = nil
-	//	spec.Password = b64.StdEncoding.EncodeToString([]byte(spec.Password))
+	//	specString.Password = b64.StdEncoding.EncodeToString([]byte(specString.Password))
 
 	return a.rest.RegisterCloudProvider(specCopy)
 }

@@ -128,27 +128,27 @@ func TestTcaApiGetExtension(t *testing.T) {
 		spec         string
 		eid          string
 		wantErr      bool
-		wantDel      bool
-		wantAdd      bool
+		delAfter     bool
+		addBefore    bool
 		verifyAttach bool
 		password     string
 	}{
 		{
-			name:    "Get extension by wrong name",
-			rest:    rest,
-			eid:     "not found",
-			wantErr: true,
-			wantDel: false,
-			wantAdd: false,
+			name:      "Get extension by wrong name",
+			rest:      rest,
+			eid:       "not found",
+			wantErr:   true,
+			delAfter:  false,
+			addBefore: false,
 		},
 		{
-			name:    "Get extension by name",
-			rest:    rest,
-			spec:    testGetExtention,
-			eid:     "gettest",
-			wantErr: false,
-			wantDel: true,
-			wantAdd: false,
+			name:      "Get extension by name",
+			rest:      rest,
+			spec:      testGetExtention,
+			eid:       "gettest",
+			wantErr:   false,
+			delAfter:  true,
+			addBefore: true,
 		},
 	}
 	for _, tt := range tests {
@@ -160,10 +160,7 @@ func TestTcaApiGetExtension(t *testing.T) {
 			spec, err := request.ExtensionSpecFromFromString(tt.spec)
 			assert.NoError(t, err)
 
-			var (
-				eid string
-			)
-			if tt.wantAdd {
+			if tt.addBefore {
 				// set password if needed
 				if len(tt.password) > 0 {
 					spec.AccessInfo.Password = tt.password
@@ -194,8 +191,8 @@ func TestTcaApiGetExtension(t *testing.T) {
 				assert.Error(t, err)
 			}
 
-			if tt.wantAdd && tt.wantDel {
-				_, err := api.DeleteExtension(eid)
+			if tt.addBefore && tt.delAfter {
+				_, err := api.DeleteExtension(tt.eid)
 				assert.NoError(t, err)
 			}
 		})
@@ -207,20 +204,26 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 	tests := []struct {
 		name         string
 		rest         *client.RestClient
-		spec         string
+		specString   string
 		vimName      string
-		wantErr      bool
-		wantDel      bool
+		extName      string
+		errOnCreate  bool
+		errOnUpdate  bool
+		addBefore    bool
+		delAfter     bool
 		verifyAttach bool
 		password     string
 	}{
 		{
-			name:    "Create harbor extension from string",
-			rest:    rest,
-			spec:    testHarborCreateUpdate,
-			vimName: getTestClusterName(),
-			wantErr: false,
-			wantDel: true,
+			name:        "Create, Attach harbor extension to cluster",
+			rest:        rest,
+			specString:  testHarborCreateUpdate,
+			vimName:     getTestClusterName(),
+			extName:     "min",
+			addBefore:   false,
+			errOnCreate: false,
+			errOnUpdate: false,
+			delAfter:    true,
 		},
 	}
 	for _, tt := range tests {
@@ -234,53 +237,51 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 			api, err := NewTcaApi(tt.rest)
 			assert.NoError(t, err)
 
-			spec, err := request.ExtensionSpecFromFromString(tt.spec)
+			spec, err := request.ExtensionSpecFromFromString(tt.specString)
 			assert.NoError(t, err)
 
 			if len(tt.password) > 0 {
 				spec.AccessInfo.Password = tt.password
 			}
 
-			// create extension if needed
-			extensions, err = api.GetExtension(spec.Name)
-			t.Log(err)
-			t.Log(extensions)
-			if err != nil {
+			gotEid := tt.extName
+			if tt.addBefore {
 				gotEid, err := api.CreateExtension(spec)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("TestTcaApiCreateUpdate() error = %v, vimErr %v", err, tt.wantErr)
+				if (err != nil) != tt.errOnCreate {
+					t.Errorf("TestTcaApiCreateUpdate() error = %v, vimErr %v", err, tt.errOnCreate)
 					return
 				}
-
-				if !tt.wantErr {
-					if !IsValidUUID(gotEid) {
-						t.Errorf("TestTcaApiCreateUpdate() failed create extension must return UUID")
-						return
-					}
+				if !tt.errOnCreate && !IsValidUUID(gotEid) {
+					t.Errorf("TestTcaApiCreateUpdate() failed create extension must return UUID")
+					return
 				}
+			}
+
+			// lookup ext id if needed
+			if !tt.errOnCreate {
 				extensions, err = api.GetExtension(gotEid)
-			}
-
-			if !tt.wantErr {
-				// we expect same name
 				assert.NoError(t, err)
-				assert.Equal(t, spec.Name, extensions)
-			} else {
-				assert.Error(t, err)
+				extension, err := extensions.FindExtension(gotEid)
+				assert.NoError(t, err)
+				assert.NotNil(t, extension)
 			}
 
-			// Update and add vim spec and update
+			// Update and add vim specString and update
 			time.Sleep(1 * time.Second)
 			spec.AddVim(tt.vimName)
 			_, err = spec.GetVim(tt.vimName)
 			assert.NoError(t, err)
 
-			_, err = api.UpdateExtension(spec)
-			if !tt.wantErr {
+			t.Log(spec.VimInfo[0].VimId)
+			t.Log(spec.VimInfo[0].VimName)
+			t.Log(spec.VimInfo[0].VimSystemUUID)
+
+			_, err = api.UpdateExtension(spec, gotEid)
+			if !tt.errOnUpdate {
 				assert.NoError(t, err)
 			}
 
-			//if tt.wantDel {
+			//if tt.delAfter {
 			//	_, err := api.DeleteExtension(got)
 			//	assert.NoError(t, err)
 			//}

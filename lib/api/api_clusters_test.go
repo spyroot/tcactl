@@ -34,14 +34,14 @@ import (
 	"time"
 )
 
-// specNodePoolStringReaderHelper helper return node spec
+// specNodePoolStringReaderHelper helper return node specString
 func specClusterStringReaderHelper(s string) *request.Cluster {
 	r, err := request.ClusterSpecsFromString(s)
 	iotuils.CheckErr(err)
 	return r
 }
 
-// specNodePoolStringReaderHelper helper return node spec
+// specNodePoolStringReaderHelper helper return node specString
 func specClusterFromFile(spec string) *request.NewNodePoolSpec {
 
 	tmpFile, err := ioutil.TempFile("", "tcactltest")
@@ -50,7 +50,7 @@ func specClusterFromFile(spec string) *request.NewNodePoolSpec {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	// write to file,close it and read spec
+	// write to file,close it and read specString
 	if _, err = tmpFile.Write([]byte(spec)); err != nil {
 		iotuils.CheckErr(err)
 	}
@@ -66,7 +66,7 @@ func specClusterFromFile(spec string) *request.NewNodePoolSpec {
 	return r
 }
 
-// TestClusterSpecFromString read spec and validate parser
+// TestClusterSpecFromString read specString and validate parser
 func TestClusterSpecFromString(t *testing.T) {
 
 	tests := []struct {
@@ -75,17 +75,17 @@ func TestClusterSpecFromString(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Read Yaml management cluster spec",
+			name:    "Read Yaml management cluster specString",
 			spec:    NewManagementCluster,
 			wantErr: false,
 		},
 		{
-			name:    "Read Yaml workload cluster spec",
+			name:    "Read Yaml workload cluster specString",
 			spec:    WorkloadCluster,
 			wantErr: false,
 		},
 		{
-			name:    "Read Yaml broken workload cluster spec",
+			name:    "Read Yaml broken workload cluster specString",
 			spec:    YamlBrokenWorkload,
 			wantErr: true,
 		},
@@ -128,7 +128,7 @@ func TestClusterSpecFromString(t *testing.T) {
 	}
 }
 
-// TestClusterSpecFromFile read spec and validate parser
+// TestClusterSpecFromFile read specString and validate parser
 func TestClusterSpecFromFile(t *testing.T) {
 
 	tests := []struct {
@@ -137,12 +137,12 @@ func TestClusterSpecFromFile(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "Read  yaml management spec file",
+			name:     "Read  yaml management specString file",
 			fileName: testutil.SpecTempFileName(NewManagementCluster),
 			wantErr:  false,
 		},
 		{
-			name:     "Read yaml workload spec file",
+			name:     "Read yaml workload specString file",
 			fileName: testutil.SpecTempFileName(WorkloadCluster),
 			wantErr:  false,
 		},
@@ -183,7 +183,7 @@ func TestClusterSpecFromFile(t *testing.T) {
 	}
 }
 
-// Reads spec and validate parser
+// Reads specString and validate parser
 func TestClusterSpecFromReader(t *testing.T) {
 
 	tests := []struct {
@@ -192,12 +192,12 @@ func TestClusterSpecFromReader(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Read yaml management spec from io.reader",
+			name:    "Read yaml management specString from io.reader",
 			reader:  testutil.SpecTempReader(NewManagementCluster),
 			wantErr: false,
 		},
 		{
-			name:    "Read Basic yaml workload spec from io.reader",
+			name:    "Read Basic yaml workload specString from io.reader",
 			reader:  testutil.SpecTempReader(WorkloadCluster),
 			wantErr: false,
 		},

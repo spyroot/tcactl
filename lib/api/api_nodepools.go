@@ -51,7 +51,7 @@ func ReadNodeSpecFromString(str string) (*request.NewNodePoolSpec, error) {
 	return ReadNodeSpecSpec(r)
 }
 
-// ReadNodeSpecSpec - Read node pool template spec
+// ReadNodeSpecSpec - Read node pool template specString
 // either from yaml or json
 func ReadNodeSpecSpec(b io.Reader) (*request.NewNodePoolSpec, error) {
 
@@ -74,7 +74,7 @@ func ReadNodeSpecSpec(b io.Reader) (*request.NewNodePoolSpec, error) {
 		return &spec, nil
 	}
 
-	return nil, &InvalidSpec{"Failed to parse input spec."}
+	return nil, &InvalidSpec{"Failed to parse input specString."}
 }
 
 // GetNodePool return a Node pool for particular cluster
@@ -178,25 +178,25 @@ func (a *TcaApi) DeleteNodePool(cluster string, nodePool string) (*models.TcaTas
 }
 
 // updateNodePoolValidator
-// spec Validator
+// specString Validator
 func (a *TcaApi) nodePoolValidator(spec *request.NewNodePoolSpec) error {
 
 	if len(spec.PlacementParams) == 0 {
-		return errors.New("spec must contain placement params")
+		return errors.New("specString must contain placement params")
 	}
 
 	if len(spec.Networks) == 0 {
-		return errors.New("spec must network list")
+		return errors.New("specString must network list")
 	}
 
 	if spec.Cpu == 0 {
-		return errors.New("spec contain zero cpu. Spec must contain same number of cpu.")
+		return errors.New("specString contain zero cpu. Spec must contain same number of cpu.")
 	}
 	if spec.Memory == 0 {
-		return errors.New("spec contain zero memory. Spec must contain same memory value.")
+		return errors.New("specString contain zero memory. Spec must contain same memory value.")
 	}
 	if spec.Storage == 0 {
-		return errors.New("spec contain zero storage. Spec must contain same storage value")
+		return errors.New("specString contain zero storage. Spec must contain same storage value")
 	}
 
 	err := a.specValidator.Struct(spec)

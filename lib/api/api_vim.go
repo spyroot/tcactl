@@ -55,7 +55,7 @@ func (a *TcaApi) GetVim(NameOrVimId string) (*response.TenantSpecs, error) {
 		}
 	}
 
-	glog.Infof("Retrieving vim spec vim id %s", vimId)
+	glog.Infof("Retrieving vim specString vim id %s", vimId)
 
 	return a.rest.GetVim(vimId)
 }
