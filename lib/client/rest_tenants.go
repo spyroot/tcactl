@@ -59,8 +59,10 @@ func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
 
 	c.GetClient()
 	// format vmware_FB40D3DE2967483FBF9033B451DC7571
-	glog.Info("Sending request to ", c.BaseURL+apiTenants+"/"+vimId+"/tenants")
-	resp, err := c.Client.R().Get(c.BaseURL + apiVim + "/" + vimId + "/tenants")
+	apiReq := fmt.Sprintf(TcaVimTenant, vimId)
+	glog.Info("Sending request to ", apiReq)
+	resp, err := c.Client.R().Get(c.BaseURL + apiReq)
+
 	if err != nil {
 		glog.Error(err)
 		return nil, err

@@ -1,14 +1,17 @@
 {
-  "kind": "extensions",
-  "name": "repo",
-  "version": "v1.x",
+  "name": "min",
+  "version": "v2.x",
   "type": "Repository",
   "extensionKey": "",
   "extensionSubtype": "Harbor",
   "products": [],
-  "vimInfo": [],
+  "vimInfo": [
+    {
+      "vimName": "edge-test01"
+    }
+  ],
   "interfaceInfo": {
-    "url": "https://1.1.1.1",
+    "url": "https://4.53.151.180",
     "description": "",
     "trustedCertificate": ""
   },

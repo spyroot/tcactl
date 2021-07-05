@@ -39,29 +39,40 @@ type RepoQuery struct {
 	QueryFilter Filter `json:"filter"`
 }
 
+type VimInfo struct {
+	VimName       string `json:"vimName" yaml:"vimName"`
+	VimId         string `json:"vimId" yaml:"vimId"`
+	VimSystemUUID string `json:"vimSystemUUID" yaml:"vimSystemUuid"`
+}
+
+// ExtensionSpec extension such as Harbor registered in TCA
 type ExtensionSpec struct {
 	// SpecType indicate a spec type and meet Spec interface requirements.
-	SpecType         *SpecKind     `json:"kind,omitempty" yaml:"kind,omitempty" validate:"required"`
-	Name             string        `json:"name" yaml:"name"`
-	Version          string        `json:"version" yaml:"version"`
-	Type             string        `json:"type" yaml:"type"`
-	ExtensionKey     string        `json:"extensionKey" yaml:"extensionKey"`
-	ExtensionSubtype string        `json:"extensionSubtype" yaml:"extensionSubtype"`
+	SpecType *SpecKind `json:"kind,omitempty" yaml:"kind,omitempty" validate:"required"`
+	Name     string    `json:"name" yaml:"name" validate:"required"`
+	// Version for harbor it 1.x 2.x
+	Version          string        `json:"version" yaml:"version" validate:"required"`
+	Type             string        `json:"type" yaml:"type" validate:"required"`
+	ExtensionKey     string        `json:"extensionKey,omitempty" yaml:"extensionKey,omitempty"`
+	ExtensionSubtype string        `json:"extensionSubtype" yaml:"extensionSubtype" validate:"required"`
 	Products         []interface{} `json:"products" yaml:"products"`
-	VimInfo          []interface{} `json:"vimInfo" yaml:"vim_info"`
+	VimInfo          []VimInfo     `json:"vimInfo" yaml:"vimInfo"`
 	InterfaceInfo    struct {
-		Url                string `json:"url" yaml:"url"`
-		Description        string `json:"description" yaml:"description"`
-		TrustedCertificate string `json:"trustedCertificate" yaml:"trustedCertificate"`
+		Url                string `json:"url" yaml:"url" validate:"required,url"`
+		Description        string `json:"description,omitempty" yaml:"description,omitempty"`
+		TrustedCertificate string `json:"trustedCertificate,omitempty" yaml:"trustedCertificate,omitempty"`
 	} `json:"interfaceInfo" yaml:"interfaceInfo"`
 	AdditionalParameters struct {
 		TrustAllCerts bool `json:"trustAllCerts" yaml:"trustAllCerts"`
 	} `json:"additionalParameters" yaml:"additionalParameters"`
 	AutoScaleEnabled bool `json:"autoScaleEnabled" yaml:"autoScaleEnabled"`
 	AutoHealEnabled  bool `json:"autoHealEnabled" yaml:"autoHealEnabled"`
-	AccessInfo       struct {
-		Username string `json:"username" yaml:"username"`
-		Password string `json:"password" yaml:"password"`
+	//
+	AccessInfo struct {
+		// Username for Harbor it username that has admin access
+		Username string `json:"username" yaml:"username" validate:"required"`
+		// Password is base64 encoded string
+		Password string `json:"password" yaml:"password" validate:"required"`
 	} `json:"accessInfo" yaml:"accessInfo"`
 }
 

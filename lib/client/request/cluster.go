@@ -1,3 +1,20 @@
+// Package request
+// Copyright 2020-2021 Author.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+// Mustafa mbayramo@vmware.com
 package request
 
 import (
@@ -62,6 +79,7 @@ type ClusterConfig struct {
 
 // Cluster new cluster creation request
 type Cluster struct {
+	SpecType            *SpecKind                `json:"kind,omitempty" yaml:"kind,omitempty" validate:"required"`
 	ClusterPassword     string                   `json:"clusterPassword" yaml:"clusterPassword"`
 	ClusterTemplateId   string                   `json:"clusterTemplateId" yaml:"clusterTemplateId"`
 	ClusterType         string                   `json:"clusterType" yaml:"clusterType"`
@@ -78,14 +96,19 @@ type Cluster struct {
 	PlacementParams     []models.PlacementParams `json:"placementParams" yaml:"placementParams"`
 }
 
+// IsManagement return true if spec if management cluster spec
 func (c *Cluster) IsManagement() bool {
+
 	if c != nil {
 		return false
 	}
+
 	return strings.ToLower(c.ClusterType) == strings.ToLower(string(ClusterManagement))
 }
 
+// IsWorkload return if spec is for workload cluster
 func (c *Cluster) IsWorkload() bool {
+
 	if c != nil {
 		return false
 	}

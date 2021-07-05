@@ -18,7 +18,10 @@
 package api
 
 import (
+	b64 "encoding/base64"
+	"fmt"
 	"github.com/go-playground/validator/v10"
+	_ "github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
@@ -51,7 +54,31 @@ func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 	// remove kind and encode password as base64
 	specCopy := spec
 	specCopy.SpecType = nil
+	if len(spec.AccessInfo.Password) > 0 {
+		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
+	}
 
+	if spec.VimInfo != nil {
+		for _, vimInfo := range spec.VimInfo {
+			// if vim name preset resolve all vim ids if needed
+			if len(vimInfo.VimName) > 0 {
+				vim, err := a.GetVim(vimInfo.VimName)
+				if err != nil {
+					return "", err
+				}
+
+				//				glog.Infof("resolved vim id %s %s", vim.VimId, vim.Tenants[0].)
+				if len(vimInfo.VimId) == 0 {
+					vimInfo.VimId = vim.VimId
+				}
+				if len(vimInfo.VimSystemUUID) == 0 {
+
+				}
+			} else {
+				return "", fmt.Errorf("Vim name is empty")
+			}
+		}
+	}
 	return a.rest.CreateExtension(spec)
 }
 

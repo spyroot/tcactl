@@ -92,6 +92,7 @@ func TestClusterSpecFromString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			got, err := ReadNodeSpecFromString(tt.spec)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadNodeSpecFromString() error = %v, wantErr %v", err, tt.wantErr)
@@ -148,6 +149,7 @@ func TestClusterSpecFromFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			got, err := request.ClusterSpecsFromFile(tt.fileName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestClusterSpecFromFile() error = %v, wantErr %v", err, tt.wantErr)

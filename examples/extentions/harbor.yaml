@@ -1,0 +1,19 @@
+kind: extensions
+name: repo
+version: v2.x
+type: Repository
+extensionKey: ""
+extensionSubtype: Harbor
+products: []
+vim_info: []
+interfaceInfo:
+  url: https://1.1.1.1
+  description: ""
+  trustedCertificate: ""
+additionalParameters:
+  trustAllCerts: true
+autoScaleEnabled: true
+autoHealEnabled: true
+accessInfo:
+  username: admin
+  password: test

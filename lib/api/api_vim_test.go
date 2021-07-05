@@ -3,8 +3,84 @@ package api
 import (
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/pkg/io"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestGetVim(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		rest        *client.RestClient
+		wantErr     bool
+		reset       bool
+		dumpJson    bool
+		provideName string
+		tenantName  string
+	}{
+		{
+			name:        "Basic get vim and tenant by id",
+			rest:        rest,
+			wantErr:     false,
+			dumpJson:    true,
+			provideName: getTestClusterName(),
+			tenantName:  getTenantId(),
+		},
+		{
+			name:        "Basic get vim and tenant by name provider k8s",
+			rest:        rest,
+			wantErr:     false,
+			dumpJson:    false,
+			provideName: getTestClusterName(),
+			tenantName:  getTestClusterName(),
+		},
+		{
+			name:        "Basic get vim and tenant by name provider vc",
+			rest:        rest,
+			wantErr:     false,
+			dumpJson:    false,
+			provideName: getTestCloudProvider(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			a, err := NewTcaApi(tt.rest)
+			if tt.reset {
+				a.rest = nil
+			}
+
+			provider, err := a.GetVim(tt.provideName)
+			if err != nil != tt.wantErr {
+				t.Errorf("GetVimComputeClusters() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			io.PrettyPrint(provider)
+
+			//assert.NoError(t, err)
+			//if tt.dumpJson{
+			//	io.PrettyPrint(tenant)
+			//}
+
+			if !tt.wantErr {
+				if len(tt.provideName) > 0 {
+					tenant, err := provider.GetTenant(tt.tenantName)
+					if err != nil {
+						return
+					}
+
+					assert.NoError(t, err)
+					if tt.dumpJson {
+						io.PrettyPrint(tenant)
+					}
+				}
+			}
+
+			//			io.PrettyPrint(provider)
+		})
+	}
+}
 
 func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 

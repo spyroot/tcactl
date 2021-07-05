@@ -15,6 +15,9 @@ const (
 	// test
 	testPoolName = "test-cluster01"
 
+	// testTenantId
+	testTenantId = "BDC07231F50A4536AA6DCF6B8C04BA5C"
+
 	//
 	testClusterID = "868636c9-868f-49fb-a6df-6a0d2d137146"
 
@@ -34,6 +37,14 @@ func getTestClusterId() string {
 		return testClusterID
 	}
 	return testCluster
+}
+
+func getTenantId() string {
+	testTenantId := os.Getenv("TCA_TEST_TENANT_ID")
+	if len(testTenantId) == 0 {
+		return testTenantId
+	}
+	return testTenantId
 }
 
 func getTestClusterName() string {

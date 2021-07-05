@@ -103,6 +103,8 @@ Workload and Tenant cluster must be attached to target provider.
 			tenants, vimErr := ctl.tca.GetVimTenants()
 			CheckErrLogError(vimErr)
 
+			io.PrettyPrint(tenants)
+
 			if len(args) > 0 {
 				r, err := ctl.tca.TenantsCloudProvider(args[0])
 				io.CheckErr(err)

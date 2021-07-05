@@ -779,19 +779,43 @@ func (a *TcaApi) DeleteTenantCluster(tenantCluster string) (*models.TcaTask, err
 	return a.rest.DeleteTenant(clouds.TenantID)
 }
 
-// GetVim return vim
-func (a *TcaApi) GetVim(vimId string) (*response.TenantSpecs, error) {
+func (a *TcaApi) ResolveVim(name string) (*response.TenantsDetails, error) {
 
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
+	vims, err := a.GetVims()
+	if err != nil {
+		return nil, err
 	}
 
-	inputs := strings.Split(vimId, "_")
-	if len(inputs) != 2 {
-		return nil, &InvalidVimFormat{errMsg: vimId}
+	provider, err := vims.FindCloudProvider(name)
+	if err != nil {
+		return nil, err
 	}
 
-	return a.rest.GetVim(vimId)
+	if provider == nil {
+		return nil, fmt.Errorf("nil vim")
+	}
+
+	return provider, nil
+}
+
+func (a *TcaApi) ResolveVimName(name string) (string, error) {
+
+	vim, err := a.ResolveVim(name)
+	if err != nil {
+		return "", err
+	}
+
+	return vim.ID, nil
+}
+
+func (a *TcaApi) ResolveVimId(name string) (string, error) {
+
+	vim, err := a.ResolveVim(name)
+	if err != nil {
+		return "", err
+	}
+
+	return vim.VimID, nil
 }
 
 func (a *TcaApi) CreateSpecExample(

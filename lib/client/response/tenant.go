@@ -2,7 +2,7 @@ package response
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/models"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -76,9 +76,10 @@ func (t *TenantSpecs) GetFields() (map[string]interface{}, error) {
 	return m, nil
 }
 
-func (t *TenantSpecs) GetProvider(s string) (*TenantsDetails, error) {
+// GetTenant return tenant details
+func (t *TenantSpecs) GetTenant(s string) (*TenantsDetails, error) {
 
-	tenantName := strings.ToUpper(s)
+	tenantName := strings.ToLower(s)
 
 	for _, tenant := range t.Tenants {
 		if strings.ToLower(tenant.Name) == tenantName || tenant.TenantID == s {
@@ -86,8 +87,22 @@ func (t *TenantSpecs) GetProvider(s string) (*TenantsDetails, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("not found")
+	return nil, api_errors.NewTemplateNotFound(s)
 }
+
+//
+//func (t *TenantSpecs) GetProvider(s string) (*TenantsDetails, error) {
+//
+//	tenantName := strings.ToLower(s)
+//
+//	for _, tenant := range t.Tenants {
+//		if strings.ToLower(tenant.Name) == tenantName || tenant.TenantID == s {
+//			return &tenant, nil
+//		}
+//	}
+//
+//	return nil, fmt.Errorf("not found")
+//}
 
 type AuditField struct {
 	// CreationUser who created uuid

@@ -23,9 +23,42 @@ import (
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spyroot/tcactl/lib/client/request"
+	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
 	"strings"
 )
+
+// GetVim return vim
+func (a *TcaApi) GetVim(NameOrVimId string) (*response.TenantSpecs, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	var (
+		vimId = NameOrVimId
+		err   error
+	)
+
+	// vim id is format vmware_numeric
+	inputs := strings.Split(NameOrVimId, "_")
+
+	if len(inputs) != 2 {
+		// if we just string it a name
+		if len(inputs) == 1 {
+			vimId, err = a.ResolveVimId(NameOrVimId)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, &InvalidVimFormat{errMsg: NameOrVimId}
+		}
+	}
+
+	glog.Infof("Retrieving vim spec vim id %s", vimId)
+
+	return a.rest.GetVim(vimId)
+}
 
 // GetVimComputeClusters - return compute cluster attached to VIM
 // For example VMware VIM is vCenter.

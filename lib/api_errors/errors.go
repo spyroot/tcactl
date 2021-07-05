@@ -73,3 +73,15 @@ func (m *ExtensionsNotFound) Error() string {
 func NewExtensionsNotFound(errMsg string) *ExtensionsNotFound {
 	return &ExtensionsNotFound{errMsg: errMsg}
 }
+
+type TenantNotFound struct {
+	errMsg string
+}
+
+func NewTenantNotFound(errMsg string) *TenantNotFound {
+	return &TenantNotFound{errMsg: errMsg}
+}
+
+func (e *TenantNotFound) Error() string {
+	return " tenant '" + e.errMsg + "' not found."
+}

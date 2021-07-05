@@ -248,12 +248,30 @@ func TenantsTablePrinter(tenants *response.Tenants, style ui.PrinterStyle) {
 	t.AppendHeader(table.Row{"#", "" +
 		"Tenant ID",
 		"VIM Name", "HCX Cloud",
-		"Vim Type", "Latitude", "Longitude", "Remote Status", "Local Status"})
+		"Vim Type", "City", "Latitude", "Longitude", "Remote Status", "Local Status"})
 
 	for i, r := range tenants.TenantsList {
+		var (
+			la           float64
+			lo           float64
+			remoteStatus = "Disconnected"
+			localStatus  = "Disconnected"
+			city         = ""
+		)
+		if r.Location != nil {
+			la = r.Location.Latitude
+			lo = r.Location.Longitude
+			city = r.Location.City
+		}
+
+		if r.VimConn != nil {
+			remoteStatus = r.VimConn.RemoteStatus
+			localStatus = r.VimConn.Status
+		}
+
 		t.AppendRows([]table.Row{
 			{i, r.TenantID, r.VimName, r.HcxCloudURL,
-				r.VimType, r.Location.Latitude, r.Location.Longitude, r.VimConn.RemoteStatus, r.VimConn.Status},
+				r.VimType, city, la, lo, remoteStatus, localStatus},
 		})
 		t.AppendSeparator()
 	}
