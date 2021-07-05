@@ -19,12 +19,21 @@ package request
 
 import (
 	"encoding/json"
+	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/api_errors"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
+)
+
+type SpecFormat int
+
+const (
+	YamlFile SpecFormat = iota
+	JsonFile
 )
 
 // AdditionalFilters Filter for repo query
@@ -103,6 +112,23 @@ func ExtensionSpecsFromFile(fileName string) (*ExtensionSpec, error) {
 		return nil, err
 	}
 
+	fileName = path.Base(fileName)
+	glog.Infof("Parsing file %s", file)
+	if strings.HasSuffix(fileName, ".yaml") || strings.HasSuffix(fileName, ".yml") {
+		spec, err := ReadExtensionSpec(file, YamlFile)
+		if err != nil {
+			return nil, err
+		}
+		return spec, nil
+	}
+	if strings.HasSuffix(fileName, "json") {
+		spec, err := ReadExtensionSpec(file, YamlFile)
+		if err != nil {
+			return nil, err
+		}
+		return spec, nil
+	}
+
 	return ReadExtensionSpec(file)
 }
 
@@ -114,7 +140,7 @@ func ExtensionSpecFromFromString(str string) (*ExtensionSpec, error) {
 }
 
 // ReadExtensionSpec - Read ReadExtensionSpec from io reader
-func ReadExtensionSpec(b io.Reader) (*ExtensionSpec, error) {
+func ReadExtensionSpec(b io.Reader, f ...SpecFormat) (*ExtensionSpec, error) {
 
 	var spec ExtensionSpec
 
@@ -123,14 +149,36 @@ func ReadExtensionSpec(b io.Reader) (*ExtensionSpec, error) {
 		return nil, err
 	}
 
-	err = json.Unmarshal(buffer, &spec)
-	if err == nil {
-		return &spec, nil
-	}
+	if len(f) == 0 {
+		err = json.Unmarshal(buffer, &spec)
+		if err == nil {
+			return &spec, nil
+		} else {
+			glog.Errorf("Tried json and got error: %v", err)
+		}
 
-	err = yaml.Unmarshal(buffer, &spec)
-	if err == nil {
-		return &spec, nil
+		err = yaml.Unmarshal(buffer, &spec)
+		if err == nil {
+			return &spec, nil
+		} else {
+			glog.Errorf("Tried yaml and got error: %v", err)
+		}
+	} else {
+		glog.Infof("File type provided")
+		if f[0] == YamlFile {
+			err = yaml.Unmarshal(buffer, &spec)
+			if err != nil {
+				glog.Errorf("Error: %v", err)
+			}
+			return &spec, nil
+		}
+		if f[0] == YamlFile {
+			err = yaml.Unmarshal(buffer, &spec)
+			if err != nil {
+				glog.Errorf("Error: %v", err)
+			}
+			return &spec, nil
+		}
 	}
 
 	return nil, &InvalidClusterSpec{"unknown format"}

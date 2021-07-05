@@ -137,3 +137,48 @@ Command delete extension from TCA.`),
 
 	return _cmd
 }
+
+// CmdUpdateExtension - Command update extension
+// for example attach Harbor to cluster
+func (ctl *TcaCtl) CmdUpdateExtension() *cobra.Command {
+
+	var (
+		_defaultPrinter = ctl.Printer
+		_defaultStyler  = ctl.DefaultStyle
+		_outputFilter   string
+	)
+
+	var _cmd = &cobra.Command{
+		Use:   "extension [name or id]",
+		Short: "Command update extension.",
+		Long: templates.LongDesc(`
+
+Command updates extension.  For example update allow attach extension such as Harbor repository 
+to selected workload cluster`),
+
+		Args: cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// global output type
+			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+
+			// swap filter if output filter required
+			if len(_outputFilter) > 0 {
+				outputFields := strings.Split(_outputFilter, ",")
+				_defaultPrinter = FilteredOutFilter
+				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+			}
+
+			spec, err := request.ExtensionSpecsFromFile(args[0])
+			CheckErrLogError(err)
+			ok, err := ctl.tca.UpdateExtension(spec)
+			CheckErrLogError(err)
+
+			if ok {
+				fmt.Printf("Extention %s update\n", args[0])
+			}
+		},
+	}
+
+	return _cmd
+}

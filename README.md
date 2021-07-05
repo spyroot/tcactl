@@ -6,15 +6,18 @@ cloud providers, create and manage tenant clusters, tenant applications.
 
 ## Table of content
 
-Tool provider.
+tcactl tool provider.
+
 * Ability to retrieve any object from Telco Cloud Automation (in short TCA)
   via regular tcactl get semantics.
   
-* Each object cloud provider, cnf, vnf etc can described via yaml, json or tabular format.
+* Each retrieved object cloud provider, cnf, vnf etc can serialize via yaml, json or tabular format.
 
-* Ability on connect, delete or update existing cloud registration.
+* Ability connect, delete or update existing cloud registration.
 
-* Ability to create cluster templates and create tenant cluster.
+* Ability to create, delete, or update cluster templates.
+  
+* Ability to create tenant management and workload cluster.
 
 * Ability onboard and manage VNF and CNF.
 
@@ -96,8 +99,8 @@ Available Commands:
   username    Command sets TCA username and saves config.
 ```
 
-For minimum configuration you need set api endpoint,
-username and password.
+For minimum configuration you need set api endpoint, username and password.
+Harbor detail used to list helm chart and validation CSAR chart name.
 
 ```yaml
 defaultcloud: edge
@@ -115,7 +118,7 @@ useviper: true
 ```
 ## Context sub command.
 
-Get provides capability retrieve object from a system.
+Get provides capability retrieve object from a TCA.
 
 ```shell
 ./tcactl get -h
@@ -239,25 +242,24 @@ Using config file: /Users/spyroot/.tcactl/config.yaml
  2  c3e006c1-e6aa-4591-950b-6f3bedd944d3  myworkload  WORKLOAD    [{multus {}} {calico {}}]  v1.20.4+vmware.1
 ```
 
-If we need update we just apply update command.
+If we need to update the cluster template, we apply the update command.
 
 ## Cluster creation.
 
 To create a Kubernetes cluster in TCA, a client first need to create a management cluster.
-For example examples/edge_mgmt_cluster.yaml contains a sample.
+For example examples/edge_mgmt_cluster.yaml contains a sample spec.
 
 * The tcactl accept both json and yaml specs.
-* Client can use a name or UUID.
+* Spec can use a name or UUID of object. For example template name can be name or id.
+* The id or name of template can be retrieved via tcactl command.
 
-* For example templateId can be a name that already present in TCA or UUID.
-
-* The id of template can be retrieved via tcactl command or you can use a name.
-
-
+For example
 
 ```bash
 tcactl get get templates
 ```
+
+Example of spec
 
 ```yaml
 name: edge-mgmt-test01
@@ -271,7 +273,7 @@ masterNodes:
     - name: master
       networks:
         - label: MANAGEMENT
-          networkName: /Datacenter/network/tkg-dhcp-vlan1000-172.16.1.0
+          networkName: tkg-dhcp-vlan1000-172.16.1.0
           nameservers:
             - 192.168.1.1
       placementParams:
@@ -281,13 +283,13 @@ masterNodes:
           type: Datastore
         - name: k8s
           type: ResourcePool
-        - name: hubsite
+        - name: mycluster
           type: ClusterComputeResource
 workerNodes:
     - name: default-pool01
       networks:
         - label: MANAGEMENT
-          networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
           nameservers:
             - 10.246.2.9
       placementParams:
@@ -306,11 +308,18 @@ this is how we instruct actual placement of cloud provider.
 
 * You need make sure that port-group are correctly mapped to full path as it defined in VC.
 
-* tcactl allows you to get all this via tcactlvi
+* tcactl allows you to get all this via tcactl
 
 For example
 
-![img.png](img.png)
+```bash
+ #  TENANT ID                         VIM NAME     HCX CLOUD                        VIM TYPE    CITY       LATITUDE  LONGITUDE  REMOTE STATUS  LOCAL STATUS
+ 0  995E3654A97849FFB4EFACD411B53EDC  core         https://tca-cp03.cnfdemo.io      VC          Palo Alto   37.3913  -122.1467  ok             ok
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 1  797182432D8E4ED4BA7CDD3345803D17  edge         https://tca-pod03-cp.cnfdemo.io  VC          Palo Alto   37.3913  -122.1467  ok             ok
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 2  2A91240E14FE4E7DA2B860EC41CDE847  edge-test01  https://tca-pod03-cp.cnfdemo.io  KUBERNETES  Palo Alto   37.3913  -122.1467  ok             ok
+```
 
 or you can get a yaml or json version.
 
@@ -628,3 +637,79 @@ items:
       numk8smgmtclusterdeployed: 0
       numk8sworkloadclusterdeployed: 0
 ```
+
+## Workload cluster
+
+Workload cluster creation done via 
+
+```bash
+tcactl create cluster mycluster.yaml
+```
+
+```Yaml
+---
+name: edge-test01
+managementClusterId: edge-mgmt-test01
+clusterPassword: VMware1!
+# we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
+clusterTemplateId: myworkload
+clusterType: workload
+clusterConfig:
+    csi:
+        - name: nfs_client
+          properties:
+            serverIP: 1.1.1.1
+            mountPath: /nfs_mount
+        - name: vsphere-csi
+          properties:
+            # you will need adjust that
+            datastoreUrl: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
+            datastoreName: "vsanDatastore"
+hcxCloudUrl: https://cp_fqdn_or_ip
+endpointIP: 2.2.2.2                             # cluster ip
+vmTemplate: photon-3-kube-v1.20.4+vmware.1      # template vm
+# you will need adjust all placement
+masterNodes:
+    - name: master
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0   # where to connect master node
+          nameservers:
+            - 2.2.2.2
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: mycluster
+          type: ClusterComputeResourcel
+workerNodes:
+    - name: default-pool01
+      networks:
+        - label: MANAGEMENT
+          networkName: tkg-dhcp-vlan1007-10.241.7.0
+          nameservers:
+            - 2.2.2.2
+      placementParams:
+        - name: tkg
+          type: Folder
+        - name: vsanDatastore
+          type: Datastore
+        - name: k8s
+          type: ResourcePool
+        - name: my_cluster
+          type: ClusterComputeResource
+placementParams:
+  - name: tkg
+    type: Folder
+  - name: vsanDatastore
+    type: Datastore
+  - name: k8s
+    type: ResourcePool
+  - name: hubsite
+    type: ClusterComputeResource
+```
+
+

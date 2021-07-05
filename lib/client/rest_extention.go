@@ -23,11 +23,21 @@ import (
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
-	"github.com/spyroot/tcactl/lib/models"
 	"net/http"
 )
 
-// GetExtensions - api call for all extension.
+type ExtensionDeleteReplay struct {
+	ExtensionId string `json:"extensionId" yaml:"extensionId"`
+	Deleted     bool   `json:"deleted" yaml:"deleted"`
+}
+
+type ExtensionUpdateReplay struct {
+	ExtensionId string `json:"extensionId" yaml:"extensionId"`
+	Updated     bool   `json:"updated" yaml:"updated"`
+}
+
+// GetExtensions - api call retrieves all extension.
+// client cna filter on particular field, VIM Id , type etc.
 func (c *RestClient) GetExtensions() (*response.Extensions, error) {
 
 	if c == nil {
@@ -58,7 +68,8 @@ func (c *RestClient) GetExtensions() (*response.Extensions, error) {
 	return &e, nil
 }
 
-// GetExtension - api call retrieve extension
+// GetExtension - api call retrieves extension,
+// eid is internal extension id.
 func (c *RestClient) GetExtension(eid string) (*response.Extensions, error) {
 
 	if c == nil {
@@ -91,6 +102,8 @@ func (c *RestClient) GetExtension(eid string) (*response.Extensions, error) {
 }
 
 //CreateExtension - method creates new extension
+// spec can contain optional VimInfo that indicates
+// cluster or cluster where extension will be attach.
 func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 
 	if c == nil {
@@ -127,10 +140,10 @@ func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error
 }
 
 //DeleteExtension - query repositories linked to vim
-func (c *RestClient) DeleteExtension(extensionId string) (*models.TcaTask, error) {
+func (c *RestClient) DeleteExtension(extensionId string) (bool, error) {
 
 	if c == nil {
-		return nil, fmt.Errorf("uninitialized rest client")
+		return false, fmt.Errorf("uninitialized rest client")
 	}
 
 	glog.Infof("Deleting extension %v", extensionId)
@@ -140,7 +153,7 @@ func (c *RestClient) DeleteExtension(extensionId string) (*models.TcaTask, error
 
 	if err != nil {
 		glog.Error(err)
-		return nil, err
+		return false, err
 	}
 
 	if c.isTrace && resp != nil {
@@ -148,23 +161,23 @@ func (c *RestClient) DeleteExtension(extensionId string) (*models.TcaTask, error
 	}
 
 	if !resp.IsSuccess() {
-		return nil, c.checkError(resp)
+		return false, c.checkError(resp)
 	}
 
-	var task models.TcaTask
-	if err := json.Unmarshal(resp.Body(), &task); err != nil {
+	var r ExtensionDeleteReplay
+	if err := json.Unmarshal(resp.Body(), &r); err != nil {
 		glog.Error("Failed parse server respond. %v", err)
-		return nil, err
+		return false, err
 	}
 
-	return &task, nil
+	return r.Deleted, nil
 }
 
 //UpdateExtension - update extension.
-func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (*response.ReposList, error) {
+func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (bool, error) {
 
 	if c == nil {
-		return nil, fmt.Errorf("uninitialized rest client")
+		return false, fmt.Errorf("uninitialized rest client")
 	}
 
 	c.GetClient()
@@ -172,11 +185,9 @@ func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (*
 		SetBody(spec).
 		Post(c.BaseURL + fmt.Sprintf(TcaVmwareUpdateExtensions, eid))
 
-	fmt.Println(string(resp.Body()))
-
 	if err != nil {
 		glog.Error(err)
-		return nil, err
+		return false, err
 	}
 
 	if c.isTrace && resp != nil {
@@ -184,14 +195,14 @@ func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (*
 	}
 
 	if !resp.IsSuccess() {
-		return nil, c.checkError(resp)
+		return false, c.checkError(resp)
 	}
 
-	var repos response.ReposList
-	if err := json.Unmarshal(resp.Body(), &repos); err != nil {
+	var replay ExtensionUpdateReplay
+	if err := json.Unmarshal(resp.Body(), &replay); err != nil {
 		glog.Error("Failed parse server respond. %v", err)
-		return nil, err
+		return false, err
 	}
 
-	return &repos, nil
+	return replay.Updated, nil
 }

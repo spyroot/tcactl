@@ -4,6 +4,7 @@ import (
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	ioutils "github.com/spyroot/tcactl/pkg/io"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -180,7 +181,9 @@ func TestTcaApiGetExtension(t *testing.T) {
 			}
 
 			extensions, err := api.GetExtension(tt.eid)
-			assert.NoError(t, err)
+			if tt.wantErr && err != nil {
+				return
+			}
 
 			extension, err := extensions.FindExtension(tt.eid)
 			if !tt.wantErr {
@@ -271,16 +274,17 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 			spec.AddVim(tt.vimName)
 			_, err = spec.GetVim(tt.vimName)
 			assert.NoError(t, err)
+			ioutils.YamlPrinter(spec)
 
-			t.Log(spec.VimInfo[0].VimId)
-			t.Log(spec.VimInfo[0].VimName)
-			t.Log(spec.VimInfo[0].VimSystemUUID)
-
-			_, err = api.UpdateExtension(spec, gotEid)
-			if !tt.errOnUpdate {
-				assert.NoError(t, err)
-			}
-
+			//t.Log(spec.VimInfo[0].VimId)
+			//t.Log(spec.VimInfo[0].VimName)
+			//t.Log(spec.VimInfo[0].VimSystemUUID)
+			//
+			//_, err = api.UpdateExtension(spec, gotEid)
+			//if !tt.errOnUpdate {
+			//	assert.NoError(t, err)
+			//}
+			//
 			//if tt.delAfter {
 			//	_, err := api.DeleteExtension(got)
 			//	assert.NoError(t, err)

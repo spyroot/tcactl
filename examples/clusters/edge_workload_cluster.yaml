@@ -17,7 +17,7 @@ clusterConfig:
             datastoreUrl: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
             datastoreName: "vsanDatastore"
 hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
-endpointIP: 10.241.7.190
+endpointIP: 10.241.7.192
 vmTemplate: photon-3-kube-v1.20.4+vmware.1
 # you will need adjust all placement
 masterNodes:

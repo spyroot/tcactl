@@ -1,5 +1,5 @@
 kind: provider
-hcxCloudUrl: https://fqdn
+hcxCloudUrl: https://tca-cp03.cnfdemo.io
 vimName: core
 username: administrator@vsphere.local
-password: pass
+password: VMware1!

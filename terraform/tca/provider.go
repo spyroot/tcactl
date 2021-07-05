@@ -87,10 +87,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	if (username != "") && (password != "") {
 		c, err := api.NewTcaApi(&client.RestClient{
 			BaseURL:  tcaUrl,
-			apiKey:   "",
 			SkipSsl:  true,
 			Client:   nil,
-			isDebug:  true,
 			Username: username,
 			Password: password,
 		},
@@ -105,10 +103,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	c, err := api.NewTcaApi(&client.RestClient{
 		BaseURL:  "",
-		apiKey:   "",
 		SkipSsl:  true,
 		Client:   nil,
-		isDebug:  true,
 		Username: username,
 		Password: password,
 	},

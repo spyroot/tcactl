@@ -269,6 +269,7 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 
 	// Update sub-commands
 	cmdUpdate.AddCommand(
+		ctl.CmdUpdateExtension(),
 		ctl.CmdUpdatePoolNodes(),
 		ctl.CmdUpdateTenant(),
 		ctl.CmdUpdateClusterTemplates(),

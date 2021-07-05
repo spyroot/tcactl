@@ -26,7 +26,6 @@ import (
 	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
-	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/errors"
 )
 
@@ -153,15 +152,15 @@ func (a *TcaApi) ResolveExtensionId(NameOrId string) (string, error) {
 }
 
 // DeleteExtension api call delete extension from TCA
-func (a *TcaApi) DeleteExtension(NameOrId string) (*models.TcaTask, error) {
+func (a *TcaApi) DeleteExtension(NameOrId string) (bool, error) {
 
 	if a == nil {
-		return nil, errors.NilError
+		return false, errors.NilError
 	}
 
 	eid, err := a.ResolveExtensionId(NameOrId)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	// remove kind and encode password as base64
@@ -169,18 +168,16 @@ func (a *TcaApi) DeleteExtension(NameOrId string) (*models.TcaTask, error) {
 }
 
 // UpdateExtension api call delete extension from TCA
-func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec, eid string) (interface{}, error) {
+func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (bool, error) {
 
 	if a == nil {
-		return nil, errors.NilError
+		return false, errors.NilError
 	}
-
-	fmt.Println("SPec type", spec.SpecType)
 
 	err := a.specValidator.Struct(spec)
 	if err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		return nil, validationErrors
+		return false, validationErrors
 	}
 
 	// remove kind and encode password as base64
@@ -188,15 +185,25 @@ func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec, eid string) (inter
 		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
 	}
 
+	extension, err := a.GetExtension(spec.Name)
+	if err != nil {
+		return false, err
+	}
+
+	e, err := extension.FindExtension(spec.Name)
+	if err != nil {
+		return false, err
+	}
+
 	specCopy := spec
 	specCopy.SpecType = nil
 
 	err = a.resolveVimInfo(spec)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return a.rest.UpdateExtension(spec, eid)
+	return a.rest.UpdateExtension(spec, e.ExtensionId)
 }
 
 // ExtensionQuery - query for all extension api
@@ -207,4 +214,36 @@ func (a *TcaApi) ExtensionQuery() (*response.Extensions, error) {
 	}
 
 	return a.rest.GetExtensions()
+}
+
+// GetFilteredExtension retrieve repos by tenant id
+func (a *TcaApi) GetFilteredExtension() (*response.ReposList, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	tenants, err := a.rest.GetVimTenants()
+	if err != nil {
+		glog.Error(err)
+	}
+
+	var allRepos response.ReposList
+	for _, r := range tenants.TenantsList {
+		repos, err := a.rest.RepositoriesQuery(&request.RepoQuery{
+			QueryFilter: request.Filter{
+				ExtraFilter: request.AdditionalFilters{
+					VimID: r.TenantID,
+				},
+			},
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		allRepos.Items = append(allRepos.Items, repos.Items...)
+	}
+
+	return &allRepos, nil
 }
