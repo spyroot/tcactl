@@ -46,8 +46,14 @@ const (
 	//CliDisableAutoRollback flag disables auto rollback during instantiation
 	CliDisableAutoRollback = "disableAutoRollback"
 
+	//CliAutoName flag generate new name upon conflict.
+	CliAutoName = "auto_name"
+
 	// CliForce force delete flag
 	CliForce = "force"
+
+	// CliNamespace change default name space
+	CliNamespace = "namespace"
 
 	// CliProgress show task progress
 	CliProgress = "progress"

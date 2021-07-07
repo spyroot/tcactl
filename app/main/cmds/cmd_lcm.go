@@ -152,14 +152,15 @@ func (ctl *TcaCtl) CmdCreateCnf() *cobra.Command {
 		ignoreGrantFailure  bool
 		isDryRun            bool
 		doBlock             bool
+		doAutoName          bool
 	)
 
 	var cmdCreate = &cobra.Command{
 		Use:   "cnf [catalog name or catalog id, and instance name]",
 		Short: "Command creates a new cnf or vnf instance.",
 		Long: templates.LongDesc(`
-The command creates a new CNF instance.  By default, it uses
-a configuration as default parameter for a cloud provider, cluster name
+The create cnf command creates a new CNF instance.  By default, it uses
+a tcactl configuration as default parameter for a cloud provider, cluster name
 and node pool.
 `),
 		Example: "\t - tca create cnf myapp myapp-instance1\n" +
@@ -194,9 +195,10 @@ and node pool.
 			var newInstanceReq = api.NewInstanceRequestSpec(ctl.DefaultCloudName,
 				ctl.DefaultClusterName, vimType, args[0], ctl.DefaultRepoName, args[1], ctl.DefaultNodePoolName)
 
-			newInstanceReq.SetDisableGrant(disableGrantFlag)
-			newInstanceReq.SetDisableAutoRollback(disableAutoRollback)
-			newInstanceReq.SetIgnoreGrantFailure(ignoreGrantFailure)
+			newInstanceReq.AdditionalParams.DisableAutoRollback = disableAutoRollback
+			newInstanceReq.AdditionalParams.IgnoreGrantFailure = ignoreGrantFailure
+			newInstanceReq.AdditionalParams.DisableGrant = disableGrantFlag
+			newInstanceReq.SetAutoName(doAutoName)
 
 			instance, err := ctl.tca.CreateCnfNewInstance(context.Background(), newInstanceReq, isDryRun, doBlock)
 			CheckErrLogError(err)
@@ -207,27 +209,29 @@ and node pool.
 		},
 	}
 
+	// disables helm validation
 	cmdCreate.Flags().BoolVar(&disableGrantFlag,
-		"disable_grant", false,
+		CliDisableGran, false,
 		"disables grant validation.")
-
+	//
 	cmdCreate.Flags().BoolVar(&disableAutoRollback,
-		"rollback", false,
+		CliDisableAutoRollback, false,
 		"disables auto rollback.")
-
+	//
 	cmdCreate.Flags().BoolVar(&ignoreGrantFailure,
-		"ignore_failure", false,
+		CliIgnoreGrantFailure, false,
 		"disable grant failure check.")
-
 	// namespace
 	cmdCreate.Flags().StringVarP(&namespace,
-		"namespace", "n", "default",
+		CliNamespace, "n", "default",
 		"cnf namespace.")
-
+	// dry run
 	cmdCreate.Flags().BoolVar(&isDryRun,
-		"dry", false, "Flag instructs to run command in dry run.")
-
-	//
+		CliDryRun, false, "Flag instructs to run command in dry run.")
+	// auto name
+	cmdCreate.Flags().BoolVar(&doAutoName,
+		CliAutoName, false, "Flag instructs to generate new name if name is conflicts.")
+	// block
 	cmdCreate.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
 		"Flag instructs to blocks and pools the status of the operation.")
 

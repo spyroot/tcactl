@@ -166,6 +166,7 @@ func normalizeSpec(spec *request.Cluster) {
 
 }
 
+// checkClusterAddrConflict - check for cluster IP conflicts
 func (a *TcaApi) checkClusterAddrConflict(ctx context.Context, spec *request.Cluster) (bool, *response.ClusterEndpoint) {
 
 	clusters, err := a.GetClusters(ctx)
@@ -178,6 +179,8 @@ func (a *TcaApi) checkClusterAddrConflict(ctx context.Context, spec *request.Clu
 	return ok, &v
 }
 
+// allocateNewClusterIp - allocate new IP if spec uses cluster IP
+// that already allocated.
 func (a *TcaApi) allocateNewClusterIp(ctx context.Context, spec *request.Cluster) error {
 
 	clusters, err := a.GetClusters(ctx)
@@ -263,6 +266,10 @@ func (a *TcaApi) CreateClusters(ctx context.Context, req *ClusterCreateApiReq) (
 		req.Spec.Name = req.Spec.Name + "-" + uuid.New().String()
 		req.Spec.Name = req.Spec.Name[0:25]
 		glog.Infof("Duplicate name regenerated new name '%v'", req.Spec.Name)
+	}
+
+	if ok, _ := a.checkClusterAddrConflict(ctx, req.Spec); ok {
+		return nil, fmt.Errorf("cluster IP %s already in use", req.Spec.EndpointIP)
 	}
 
 	// resolve template id, and cluster type

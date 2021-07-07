@@ -49,6 +49,8 @@ func (a *TcaApi) GetCatalogId(catalogId string) (string, string, error) {
 // catalog entity and vdu package.
 func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *response.VduPackage, error) {
 
+	glog.Infof("Acquiring catalog information for entity %s", nfdName)
+
 	vnfCatalog, err := a.rest.GetVnfPkgm("", "")
 	if err != nil || vnfCatalog == nil {
 		glog.Errorf("Failed acquire vnf package information. Error %v", err)

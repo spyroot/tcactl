@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
+	"github.com/google/uuid"
 	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
@@ -68,111 +69,6 @@ type ClusterCreateApiReq struct {
 	IsVerbose bool
 	// isFixConflict resolve IP conflict, by check next IP
 	IsFixConflict bool
-}
-
-// NodePoolCreateApiReq api request issued to create new node pool
-type NodePoolCreateApiReq struct {
-	// Spec is a request.NewNodePoolSpec spec
-	Spec *request.NewNodePoolSpec
-
-	// Cluster is cluster name or cluster id
-	Cluster string
-
-	//
-	IsDryRun bool
-
-	// if node pool creation needs to block
-	IsBlocking bool
-
-	// if blocking request require output progress
-	IsVerbose bool
-}
-
-// CreateInstanceApiReq - api request to create new cnf or vnf instance
-type CreateInstanceApiReq struct {
-
-	//InstanceName instance name
-	InstanceName string
-
-	//PoolName node pool name
-	PoolName string
-
-	//VimName target vim name
-	VimName string
-
-	//ClusterName target cluster name
-	ClusterName string
-
-	//IsBlocking block or async task
-	IsBlocking bool
-
-	// if blocking request require output progress
-	IsVerbose bool
-
-	// additional param
-	AdditionalParam *request.AdditionalParams
-
-	//Namespace  overwrite name
-	Namespace string
-
-	//RepoUsername overwrites repo username
-	RepoUsername string
-
-	//RepoPassword overwrite repo password
-	RepoPassword string
-
-	// RepoUrl overwrite repo url
-	RepoUrl string
-}
-
-// TerminateInstanceApiReq - api request to terminate new cnf or vnf instance
-type TerminateInstanceApiReq struct {
-
-	//InstanceName instance name
-	InstanceName string
-
-	//ClusterName target cluster name
-	ClusterName string
-
-	//IsBlocking block or async task
-	IsBlocking bool
-
-	// if blocking request require output progress
-	IsVerbose bool
-}
-
-type UpdateInstanceApiReq struct {
-	//
-	UpdateReq *request.InstantiateVnfRequest
-
-	//InstanceName instance name
-	InstanceName string
-
-	//PoolName node pool name
-	PoolName string
-
-	//ClusterName target cluster name
-	ClusterName string
-
-	//IsBlocking block or async task
-	IsBlocking bool
-
-	// if blocking request require output progress
-	IsVerbose bool
-}
-
-type ResetInstanceApiReq struct {
-	//InstanceName instance name
-	InstanceName string
-
-	//ClusterName target cluster name
-	ClusterName string
-
-	//IsBlocking block or async task
-	IsBlocking bool
-
-	// if blocking request require output progress
-	IsVerbose bool
 }
 
 // TcaApi - TCA Api interface
@@ -224,16 +120,20 @@ func (m *UnsupportedCloudProvider) Error() string {
 
 func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
 	repo string, instanceName string, nodePoolName string) *InstanceRequestSpec {
-	i := &InstanceRequestSpec{cloudName: cloudName, clusterName: clusterName,
-		vimType: vimType, nfdName: nfdName, repo: repo,
-		instanceName: instanceName, nodePoolName: nodePoolName}
+	i := &InstanceRequestSpec{
+		cloudName:        cloudName,
+		clusterName:      clusterName,
+		vimType:          vimType,
+		nfdName:          nfdName,
+		repo:             repo,
+		instanceName:     instanceName,
+		nodePoolName:     nodePoolName,
+		useLinkedRepo:    true,
+		AdditionalParams: request.AdditionalParams{}}
 
 	i.flavorName = DefaultNamespace
 	i.description = ""
 	i.namespace = DefaultFlavor
-	i.disableAutoRollback = false
-	i.disableGrant = false
-	i.disableAutoRollback = false
 
 	return i
 }
@@ -1158,20 +1058,38 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
+	if n == nil {
+		return nil, fmt.Errorf("nil request")
+	}
+
+	var (
+		repoUsername = n.repoUsername
+		repoPassword = n.repoPassword
+	)
+
+	if n.IsAutoName() {
+		instance, err := a.GetInstance(ctx, n.instanceName)
+		if err != nil {
+			return nil, err
+		}
+		if instance.VnfInstanceName == n.instanceName {
+			n.instanceName = n.instanceName + "-" + uuid.New().String()
+			n.instanceName = n.instanceName[0:16]
+		}
+	}
+
 	tenants, err := a.GetVimTenants(ctx)
 	if err != nil {
 		glog.Errorf("Failed acquire cloud tenant, error: %v", err)
 		return nil, err
 	}
 
-	glog.Infof("Acquiring cloud provider %s details, type %s", n.cloudName, n.vimType)
 	cloud, err := tenants.GetTenantClouds(n.cloudName, n.vimType)
 	if err != nil {
 		glog.Errorf("Failed acquire cloud provider details, error: %v", err)
 		return nil, err
 	}
 
-	glog.Infof("Acquiring catalog information for entity %s", n.nfdName)
 	pkg, vnfd, err := a.GetCatalogAndVdu(n.nfdName)
 	if err != nil || vnfd == nil {
 		glog.Errorf("Failed acquire VDU information for %v", n.nfdName)
@@ -1194,18 +1112,25 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, err
 	}
 
-	linkedRepos, err := ext.FindRepo(reposUuid)
-	if err != nil || linkedRepos == nil {
-		glog.Errorf("Failed acquire extension information for %v", reposUuid)
-		return nil, err
-	}
+	// if linked repo resolve it
+	if n.UseLinked() {
+		linkedRepos, err := ext.FindRepo(reposUuid)
+		if err != nil || linkedRepos == nil {
+			glog.Errorf("Failed acquire extension information for %v", reposUuid)
+			return nil, err
+		}
 
-	if linkedRepos.IsEnabled() == false {
-		glog.Errorf("Repository %v is disabled", linkedRepos.Name)
-		return nil, fmt.Errorf("repository %v is disabled", linkedRepos.Name)
-	}
+		if linkedRepos.IsEnabled() == false {
+			glog.Errorf("Repository %v is disabled", linkedRepos.Name)
+			return nil, fmt.Errorf("repository %v is disabled", linkedRepos.Name)
+		}
 
-	glog.Infof("Found attached repo %v and status %v", n.repo, linkedRepos.State)
+		glog.Infof("Found attached repo %v and status %v", n.repo, linkedRepos.State)
+
+		// overwrite credential from linked repo
+		repoUsername = linkedRepos.AccessInfo.Username
+		repoPassword = linkedRepos.AccessInfo.Password
+	}
 
 	// resolve nodePools
 	nodePool, _, err := a.rest.GetNamedClusterNodePools(ctx, n.clusterName)
@@ -1240,7 +1165,6 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 	}
 
 	for _, vdu := range vnfd.Vdus {
-		glog.Infof("Instantiating vdu %s %s", vdu.VduId, linkedRepos.Name)
 		var req = request.InstantiateVnfRequest{
 			FlavourID: flavorName,
 			VimConnectionInfo: []models.VimConnectionInfo{
@@ -1256,18 +1180,17 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 				VduParams: []request.VduParam{{
 					Namespace: n.namespace,
 					RepoURL:   n.repo,
-					Username:  linkedRepos.AccessInfo.Username,
-					Password:  linkedRepos.AccessInfo.Password,
+					Username:  repoUsername,
+					Password:  repoPassword,
 					VduName:   vdu.VduId,
 				}},
-				DisableGrant:        n.disableGrant,
-				IgnoreGrantFailure:  n.ignoreGrantFailure,
-				DisableAutoRollback: n.disableAutoRollback,
+				DisableGrant:        n.AdditionalParams.DisableGrant,
+				IgnoreGrantFailure:  n.AdditionalParams.IgnoreGrantFailure,
+				DisableAutoRollback: n.AdditionalParams.DisableAutoRollback,
 			},
 		}
 
 		glog.Infof("Instantiating %v", vnfLcm.Id)
-
 		err := a.rest.InstanceInstantiate(ctx, vnfLcm.Id, req)
 		if err != nil {
 			glog.Errorf("Failed create cnf instance information %v", err)

@@ -21,6 +21,7 @@ package response
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/models"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -97,6 +98,8 @@ func (t *TenantsDetails) IsVMware() bool {
 
 // GetTenantClouds return list of tenant clouds
 func (t *Tenants) GetTenantClouds(s string, vimType string) (*TenantsDetails, error) {
+
+	glog.Infof("Acquiring cloud provider %s details, type %s", s, vimType)
 
 	if t == nil {
 		return nil, fmt.Errorf("uninitialized object")

@@ -18,25 +18,147 @@
 
 package api
 
+import "github.com/spyroot/tcactl/lib/client/request"
+
+// NodePoolCreateApiReq api request issued to create new node pool
+type NodePoolCreateApiReq struct {
+	// Spec is a request.NewNodePoolSpec spec
+	Spec *request.NewNodePoolSpec
+
+	// Cluster is cluster name or cluster id
+	Cluster string
+
+	//
+	IsDryRun bool
+
+	// if node pool creation needs to block
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
+// CreateInstanceApiReq - api request to create new cnf or vnf instance
+type CreateInstanceApiReq struct {
+
+	//InstanceName instance name
+	InstanceName string
+
+	//PoolName node pool name
+	PoolName string
+
+	//VimName target vim name
+	VimName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+
+	// additional param
+	AdditionalParam *request.AdditionalParams
+
+	//Namespace  overwrite name
+	Namespace string
+
+	//RepoUsername overwrites repo username
+	RepoUsername string
+
+	//RepoPassword overwrite repo password
+	RepoPassword string
+
+	// RepoUrl overwrite repo url
+	RepoUrl string
+}
+
+// TerminateInstanceApiReq - api request to terminate new cnf or vnf instance
+type TerminateInstanceApiReq struct {
+
+	//InstanceName instance name
+	InstanceName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
+type UpdateInstanceApiReq struct {
+	//
+	UpdateReq *request.InstantiateVnfRequest
+
+	//InstanceName instance name
+	InstanceName string
+
+	//PoolName node pool name
+	PoolName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
+type ResetInstanceApiReq struct {
+	//InstanceName instance name
+	InstanceName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
 // InstanceRequestSpec new instance request
 type InstanceRequestSpec struct {
-	cloudName    string
-	clusterName  string
-	vimType      string
-	nfdName      string
-	repo         string
-	useAttached  bool
+	// target cloud name
+	cloudName string
+	// target cluster name
+	clusterName string
+	// vim name
+	vimType string
+	// catalog name
+	nfdName string
+	//
+	useAttached bool
+	//
+	repo string
+	//
 	repoUsername string
+	//
 	repoPassword string
+	//
 	instanceName string
+	//
 	nodePoolName string
-	namespace    string
-	flavorName   string
-	description  string
-
-	disableGrant        bool
-	ignoreGrantFailure  bool
-	disableAutoRollback bool
+	// user linked repo
+	useLinkedRepo bool
+	// target namespace
+	namespace string
+	// flavor name
+	flavorName string
+	//
+	description string
+	// additional placement details
+	AdditionalParams request.AdditionalParams
+	// fix name conflict
+	doAutoName bool
 }
 
 func (i *InstanceRequestSpec) CloudName() string {
@@ -45,6 +167,14 @@ func (i *InstanceRequestSpec) CloudName() string {
 
 func (i *InstanceRequestSpec) SetCloudName(cloudName string) {
 	i.cloudName = cloudName
+}
+
+func (i *InstanceRequestSpec) SetAutoName(f bool) {
+	i.doAutoName = f
+}
+
+func (i *InstanceRequestSpec) IsAutoName() bool {
+	return i.doAutoName
 }
 
 func (i *InstanceRequestSpec) ClusterName() string {
@@ -119,26 +249,6 @@ func (i *InstanceRequestSpec) SetDescription(description string) {
 	i.description = description
 }
 
-func (i *InstanceRequestSpec) DisableGrant() bool {
-	return i.disableGrant
-}
-
-func (i *InstanceRequestSpec) SetDisableGrant(DisableGrant bool) {
-	i.disableGrant = DisableGrant
-}
-
-func (i *InstanceRequestSpec) IgnoreGrantFailure() bool {
-	return i.ignoreGrantFailure
-}
-
-func (i *InstanceRequestSpec) SetIgnoreGrantFailure(IgnoreGrantFailure bool) {
-	i.ignoreGrantFailure = IgnoreGrantFailure
-}
-
-func (i *InstanceRequestSpec) DisableAutoRollback() bool {
-	return i.disableAutoRollback
-}
-
-func (i *InstanceRequestSpec) SetDisableAutoRollback(DisableAutoRollback bool) {
-	i.disableAutoRollback = DisableAutoRollback
+func (i *InstanceRequestSpec) UseLinked() bool {
+	return i.useLinkedRepo
 }
