@@ -65,16 +65,26 @@ type VnfPackage struct {
 	UserDefinedData    *models.UserDefinedData `json:"userDefinedData" yaml:"userDefinedData"`
 }
 
-// VnfPackages - array of VNF Packages.
-type VnfPackages struct {
-	Packages []VnfPackage
+// IsEnabled return true if catalog entity enabled
+func (p *VnfPackage) IsEnabled() bool {
+	return p != nil && p.OperationalState == "ENABLED"
+}
+
+// IsOnboarded return true if successfully onboarded
+func (p *VnfPackage) IsOnboarded() bool {
+	return p != nil && p.OnboardingState == "ONBOARDED"
+}
+
+// IsCnf return true if catalog entity is CNF
+func (p *VnfPackage) IsCnf() bool {
+	return p != nil && p.UserDefinedData != nil && p.UserDefinedData.NfType == "CNF"
 }
 
 // GetField - return struct field value
-func (t *VnfPackage) GetField(field string) string {
+func (p *VnfPackage) GetField(field string) string {
 
-	r := reflect.ValueOf(t)
-	fields, _ := t.GetFields()
+	r := reflect.ValueOf(p)
+	fields, _ := p.GetFields()
 	if _, ok := fields[field]; ok {
 		f := reflect.Indirect(r).FieldByName(strings.Title(field))
 		return f.String()
@@ -85,11 +95,11 @@ func (t *VnfPackage) GetField(field string) string {
 
 // GetFields return VduPackage fields name as
 // map[string], each key is field name
-func (t *VnfPackage) GetFields() (map[string]interface{}, error) {
+func (p *VnfPackage) GetFields() (map[string]interface{}, error) {
 
 	var m map[string]interface{}
 
-	b, err := json.Marshal(t)
+	b, err := json.Marshal(p)
 	if err != nil {
 		return m, err
 	}
@@ -101,9 +111,14 @@ func (t *VnfPackage) GetFields() (map[string]interface{}, error) {
 	return m, nil
 }
 
+// VnfPackages - list of VnfPackage
+type VnfPackages struct {
+	Packages []VnfPackage
+}
+
 // GetVnfdID - find by either VnfdID or ProductName, id
-// the main objective to resolve some name to catalog
-// entity.
+// or user defined data, the main objective to resolve some name
+// to catalog entity.
 func (v *VnfPackages) GetVnfdID(IdOrName string) (*VnfPackage, error) {
 
 	if v == nil {
@@ -113,10 +128,12 @@ func (v *VnfPackages) GetVnfdID(IdOrName string) (*VnfPackage, error) {
 	q := strings.ToLower(IdOrName)
 
 	for _, p := range v.Packages {
+		// by product name
 		if p.VnfProductName == q || p.VnfdID == q || p.PID == q {
 			return &p, nil
 		}
 
+		// by User define data
 		if p.UserDefinedData != nil && strings.ToLower(p.UserDefinedData.Name) == q {
 			return &p, nil
 		}

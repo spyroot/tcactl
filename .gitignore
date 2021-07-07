@@ -12,3 +12,4 @@
 /terraform/examples/.terraform/providers/
 /examples/extentions/harbor_cnfdemo.yaml
 /examples/extentions/harbor_cnfdemo_attach.yaml
+/lib/api/run_test.sh

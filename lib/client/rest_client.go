@@ -103,6 +103,10 @@ type RestClient struct {
 
 	// set debug mode
 	IsDebug bool
+
+	// this mainly for testing
+	simulateFail bool
+	failureType  map[string]string
 }
 
 func NewRestClient(baseURL string, skipSsl bool, username string, password string) (*RestClient, error) {
@@ -115,7 +119,7 @@ func NewRestClient(baseURL string, skipSsl bool, username string, password strin
 	if len(password) == 0 {
 		return nil, errors.New("password is empty string")
 	}
-	return &RestClient{BaseURL: baseURL, SkipSsl: skipSsl, Username: username, Password: password}, nil
+	return &RestClient{BaseURL: baseURL, SkipSsl: skipSsl, Username: username, Password: password, failureType: map[string]string{}}, nil
 }
 
 // makeDefaultHeaders default headers
@@ -255,10 +259,33 @@ func (c *RestClient) checkErrors(r *resty.Response) error {
 	return fmt.Errorf("unknown error, status code: %v ", r.StatusCode())
 }
 
+// SetTrace enables trace server responds
 func (c *RestClient) SetTrace(trace bool) {
 	c.isTrace = trace
 }
 
+// SetSimulateFailure this method mainly used for unit testing
+// to simulate failure condition
+func (c *RestClient) SetSimulateFailure(fail bool) {
+	c.simulateFail = fail
+}
+
+func (c *RestClient) IsSimulateFailure(f string) bool {
+	if c.simulateFail {
+		_, ok := c.failureType[f]
+		if ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *RestClient) AddFailureCondition(s string) {
+	c.failureType[s] = s
+}
+
+// GetApiKey TCA return api key , it used for authentication.
 func (c *RestClient) GetApiKey() string {
 	return c.apiKey
 }

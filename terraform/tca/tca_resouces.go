@@ -207,7 +207,7 @@ func flattenTemplateItems(templates *response.ClusterTemplates) []interface{} {
 }
 
 //flattenTemplate
-func flattenTemplate(template *response.ClusterTemplate) []interface{} {
+func flattenTemplate(template *response.ClusterTemplateSpec) []interface{} {
 	c := make(map[string]interface{})
 	c["id"] = template.Id
 	c["name"] = template.Name

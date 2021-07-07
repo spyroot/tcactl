@@ -28,9 +28,8 @@ import (
 	"net/http"
 )
 
-// GetVnflcm - Retrieves information about a CNF/VNF instance by reading an "Individual VNF instance" resource.
-// This method shall follow the provisions specified in the tables 5.4.3.3.2-1 and 5.4.3.3.2-2
-// for URI query parameters, request and response data structures, and response codes.
+// GetVnflcm - Retrieves information about a CNF/VNF instance by reading
+// an "Individual VNF instance" resource.
 //
 // Example of filter
 // (eq,id,5c11bd9c-085d-4913-a453-572457ddffe2)
@@ -54,8 +53,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 		glog.Infof("Attaching request filter %v", queryFilter)
 		resp, err = c.Client.R().SetQueryParams(map[string]string{
 			"filter": queryFilter,
-		},
-		).Get(c.BaseURL + TcaApiVnfLcmExtensionVnfInstance)
+		}).Get(c.BaseURL + TcaApiVnfLcmExtensionVnfInstance)
 	}
 	if len(req) == 2 {
 		isArray = false
@@ -71,7 +69,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes response.CnfInstancesError
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
 			return nil, fmt.Errorf(errRes.Detail)
@@ -82,10 +80,12 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 	// for single cnf request, pack return result in array.
 	if isArray == false {
 		var cnflcm response.LcmInfo
-		var cnfslcm response.Cnfs
 		if err := json.Unmarshal(resp.Body(), &cnflcm); err != nil {
+			glog.Errorf("Failed parse servers respond. %v", err)
 			return nil, err
 		}
+
+		var cnfslcm response.Cnfs
 		cnfslcm.CnfLcms = append(cnfslcm.CnfLcms, cnflcm)
 		return &cnfslcm, nil
 	}
@@ -93,6 +93,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 	// default case
 	var cnfs response.CnfsExtended
 	if err := json.Unmarshal(resp.Body(), &cnfs.CnfLcms); err != nil {
+		glog.Errorf("Failed parse servers respond. %v", err)
 		return nil, err
 	}
 	return &cnfs, nil
@@ -117,7 +118,7 @@ func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes response.CnfInstancesError
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("Server return error %v", errRes.Detail)
@@ -167,15 +168,46 @@ func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *reques
 }
 
 // CnfRollback action
-func (c *RestClient) CnfRollback(ctx context.Context, instanceId string) error {
+func (c *RestClient) CnfRollback(ctx context.Context, href string) error {
 
 	if c == nil {
 		return fmt.Errorf("unutilized client")
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().
-		Post(c.BaseURL + "/telco/api/vnflcm/v2/vnf_lcm_op_occs/" + instanceId + "/rollback")
+	resp, err := c.Client.R().SetContext(ctx).Post(href)
+
+	if err != nil {
+		glog.Error(err)
+		return err
+	}
+
+	if c.isTrace && resp != nil {
+		fmt.Println(string(resp.Body()))
+	}
+
+	if !resp.IsSuccess() {
+		var errRes ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
+			glog.Errorf("Server return error %v", errRes.Details)
+			return fmt.Errorf(errRes.Message)
+		}
+		glog.Errorf("Server return unknown error %v", string(resp.Body()))
+		return fmt.Errorf("unknown error, status code: %v", resp.StatusCode())
+	}
+
+	return nil
+}
+
+// CnfResetState action
+func (c *RestClient) CnfResetState(ctx context.Context, href string) error {
+
+	if c == nil {
+		return fmt.Errorf("unutilized client")
+	}
+
+	c.GetClient()
+	resp, err := c.Client.R().SetContext(ctx).SetBody("{}").Post(href)
 
 	if err != nil {
 		glog.Error(err)
@@ -250,41 +282,7 @@ func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string,
 	c.GetClient()
 	resp, err := c.Client.R().SetContext(ctx).
 		SetBody(req).
-		Post(c.BaseURL + TcaVmwareVnflcmInstance + instanceId + "/instantiate")
-
-	if err != nil {
-		glog.Error(err)
-		return err
-	}
-
-	if c.isTrace && resp != nil {
-		fmt.Println(string(resp.Body()))
-	}
-
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err := json.Unmarshal(resp.Body(), &errRes); err == nil {
-			glog.Errorf("Server return error %v", errRes.Details)
-			return fmt.Errorf(errRes.Message)
-		}
-		glog.Errorf("Server return unknown error %v", string(resp.Body()))
-		return fmt.Errorf("unknown error, status code: %v %v", resp.StatusCode(), string(resp.Body()))
-	}
-
-	return nil
-}
-
-// InstanceUpdateState current state of running instance.
-func (c *RestClient) InstanceUpdateState(ctx context.Context, instanceId string, req request.InstantiateVnfRequest) error {
-
-	if c == nil {
-		return fmt.Errorf("unutilized client")
-	}
-
-	c.GetClient()
-	resp, err := c.Client.R().SetContext(ctx).
-		SetBody(req).
-		Post(c.BaseURL + "/hybridity/api/vnflcm/v1/vnf_instances/" + instanceId + "/update_state")
+		Post(c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmInstantiate, instanceId))
 
 	if err != nil {
 		glog.Error(err)
@@ -306,6 +304,49 @@ func (c *RestClient) InstanceUpdateState(ctx context.Context, instanceId string,
 	}
 
 	return nil
+}
+
+// InstanceUpdateState current state of running instance.
+func (c *RestClient) InstanceUpdateState(ctx context.Context,
+	instanceId string, req *request.InstantiateVnfRequest) (*response.InstanceUpdate, error) {
+
+	if c == nil {
+		return nil, fmt.Errorf("unutilized client")
+	}
+
+	var (
+		resp *resty.Response
+		err  error
+	)
+
+	c.GetClient()
+	if req != nil {
+		resp, err = c.Client.R().SetContext(ctx).
+			SetBody(req).Post(c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmUpdate, instanceId))
+	} else {
+		resp, err = c.Client.R().SetContext(ctx).SetBody("{}").Post(c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmUpdate, instanceId))
+	}
+
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	if c.isTrace && resp != nil {
+		fmt.Println(string(resp.Body()))
+	}
+
+	if !resp.IsSuccess() {
+		return nil, c.checkErrors(resp)
+	}
+
+	var updateReplay response.InstanceUpdate
+	if err := json.Unmarshal(resp.Body(), &updateReplay); err != nil {
+		glog.Errorf("Failed parse servers respond. %v", err)
+		return nil, err
+	}
+
+	return &updateReplay, nil
 }
 
 // InstanceReconfigure - reconfigure cnf instance.

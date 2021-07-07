@@ -19,6 +19,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/spyroot/tcactl/lib/client/request"
@@ -41,7 +42,7 @@ func TenantFields() []string {
 }
 
 // TenantsCloudProvider return a tenant attached to cloud provide for lookup query string
-func (a *TcaApi) TenantsCloudProvider(query string) (*response.Tenants, error) {
+func (a *TcaApi) TenantsCloudProvider(ctx context.Context, query string) (*response.Tenants, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -51,7 +52,7 @@ func (a *TcaApi) TenantsCloudProvider(query string) (*response.Tenants, error) {
 		return nil, fmt.Errorf("empty query string")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +68,13 @@ func (a *TcaApi) TenantsCloudProvider(query string) (*response.Tenants, error) {
 }
 
 // DeleteTenantsProvider delete a tenant attached to cloud provide.
-func (a *TcaApi) DeleteTenantsProvider(tenantCluster string) (*models.TcaTask, error) {
+func (a *TcaApi) DeleteTenantsProvider(ctx context.Context, tenantCluster string) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,9 +111,9 @@ func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVimSpec) (*models.Tc
 
 // DeleteCloudProvider method delete cloud provider
 // note cloud provider must not contain any active clusters
-func (a *TcaApi) DeleteCloudProvider(s string) (*models.TcaTask, error) {
+func (a *TcaApi) DeleteCloudProvider(ctx context.Context, s string) (*models.TcaTask, error) {
 
-	vims, err := a.GetVims()
+	vims, err := a.GetVims(ctx)
 	if err != nil {
 		return nil, err
 	}

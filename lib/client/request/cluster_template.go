@@ -18,7 +18,8 @@
 package request
 
 type ClusterTemplate struct {
-	ClusterType   string `json:"clusterType" yaml:"name"`
+	SpecType      *SpecKind `json:"kind,omitempty" yaml:"kind,omitempty" validate:"required"`
+	ClusterType   string    `json:"clusterType" yaml:"name"`
 	ClusterConfig struct {
 		Cni []struct {
 			Name       string `json:"name" yaml:"name"`

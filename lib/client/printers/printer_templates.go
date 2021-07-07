@@ -25,27 +25,27 @@ import (
 )
 
 // TemplateSpecJsonPrinter - json printer for cluster templates
-func TemplateSpecJsonPrinter(spec *response.ClusterTemplate, style ui.PrinterStyle) {
+func TemplateSpecJsonPrinter(spec *response.ClusterTemplateSpec, style ui.PrinterStyle) {
 	DefaultJsonPrinter(spec, style)
 }
 
 // TemplatesJsonPrinter - json printer for cluster templates
-func TemplatesJsonPrinter(specs []response.ClusterTemplate, style ui.PrinterStyle) {
+func TemplatesJsonPrinter(specs []response.ClusterTemplateSpec, style ui.PrinterStyle) {
 	DefaultJsonPrinter(specs, style)
 }
 
 // TemplateSpecYamlPrinter - yaml printer for cluster templates
-func TemplateSpecYamlPrinter(spec *response.ClusterTemplate, style ui.PrinterStyle) {
+func TemplateSpecYamlPrinter(spec *response.ClusterTemplateSpec, style ui.PrinterStyle) {
 	DefaultYamlPrinter(spec, style)
 }
 
 // TemplatesYamlPrinter - yaml printer for cluster templates
-func TemplatesYamlPrinter(specs []response.ClusterTemplate, style ui.PrinterStyle) {
+func TemplatesYamlPrinter(specs []response.ClusterTemplateSpec, style ui.PrinterStyle) {
 	DefaultYamlPrinter(specs, style)
 }
 
 // TemplateSpecTablePrinter - tabular format printer for cluster templates
-func TemplateSpecTablePrinter(spec *response.ClusterTemplate, style ui.PrinterStyle) {
+func TemplateSpecTablePrinter(spec *response.ClusterTemplateSpec, style ui.PrinterStyle) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"ID", "Name", "Type", "CNI", "K8S Ver."})
@@ -63,7 +63,7 @@ func TemplateSpecTablePrinter(spec *response.ClusterTemplate, style ui.PrinterSt
 
 // TemplatesSpecTablePrinter - tabular format printer for
 // TCA Cluster templates.
-func TemplatesSpecTablePrinter(specs []response.ClusterTemplate, style ui.PrinterStyle) {
+func TemplatesSpecTablePrinter(specs []response.ClusterTemplateSpec, style ui.PrinterStyle) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"#", "ID", "Name", "Type", "CNI", "K8S Ver."})

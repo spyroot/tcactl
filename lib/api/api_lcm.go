@@ -26,25 +26,64 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
 	"io/ioutil"
 	"strings"
 )
 
-// CreateCnfInstance - create cnf instance that already
-// in running or termination state.
-// instanceName is instance that state must change
-// poolName is target pool
-// clusterName a cluster that will be used to query and search instance.
-func (a *TcaApi) CreateCnfInstance(ctx context.Context, instanceName string, poolName string,
-	clusterName string, vimName string, doBlock bool, _disableGrant bool, verbose bool) error {
+func (a *TcaApi) GetInstance(ctx context.Context, NameOrId string) (*response.LcmInfo, error) {
+
+	var (
+		iid = NameOrId
+		err error
+	)
+
+	if !IsValidUUID(NameOrId) {
+		iid, err = a.ResolveInstanceName(NameOrId)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return a.rest.GetRunningVnflcm(iid)
+}
+
+//ResolveInstanceName resolve instance name to id
+func (a *TcaApi) ResolveInstanceName(name string) (string, error) {
+
+	_instances, err := a.rest.GetVnflcm()
+	if err != nil {
+		return "", err
+	}
+
+	instances, ok := _instances.(*response.CnfsExtended)
+	if ok {
+		instance, err := instances.ResolveFromName(name)
+		if err != nil {
+			return "", err
+		}
+
+		return instance.CID, nil
+	}
+
+	return "", fmt.Errorf("not found %s", name)
+}
+
+// CreateCnfInstance - create cnf instance that already in running, not instantiated state
+// or termination state.
+// method take req *CreateInstanceApiReq
+//  where   instanceName is instance that state must change
+// 		    poolName is target pool
+// 			clusterName a cluster that will be used to query and search instance.
+func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiReq) error {
 
 	// resolve pool id, if client indicated target pool
 	_targetPool := ""
 	var err error
 
-	if len(poolName) > 0 {
-		_targetPool, _, err = a.ResolvePoolName(poolName, clusterName)
+	if len(req.PoolName) > 0 {
+		_targetPool, _, err = a.ResolvePoolName(ctx, req.PoolName, req.ClusterName)
 		if err != nil {
 			return err
 		}
@@ -55,44 +94,76 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, instanceName string, poo
 		return err
 	}
 
-	// for extension request we route to correct printer
 	instances, ok := _instances.(*response.CnfsExtended)
 	if !ok {
 		return errors.New("wrong instance type")
 	}
 
-	instance, err := instances.ResolveFromName(instanceName)
+	instance, err := instances.ResolveFromName(req.InstanceName)
 	if err != nil {
 		return err
 	}
 
-	if instance.IsInCluster(vimName) == false {
-		return fmt.Errorf("instance not found in %v cluster", vimName)
+	if instance.IsInCluster(req.ClusterName) == false {
+		return fmt.Errorf("instance not found in %v cluster", req.ClusterName)
 	}
 
-	// Check the state
-	glog.Infof("Name %v Instance ID %v State %v", instanceName, instance.CID, instance.LcmOperation)
-	if IsInState(instance.Meta.LcmOperationState, StateStarting) {
-		return fmt.Errorf("instance '%v', uuid '%v' need finish task", instanceName, instance.CID)
+	if instance.IsStarting() {
+		glog.Warning("Instance in starting state.")
+		return nil
 	}
 
-	if IsInState(instance.Meta.LcmOperation, StateInstantiate) &&
-		IsInState(instance.Meta.LcmOperationState, StateCompleted) {
-		return fmt.Errorf("instance '%v', uuid '%v' already instantiated", instanceName, instance.CID)
+	if !instance.IsInstantiated() {
+		// Check the state
+		glog.Infof("Name %v Instance ID %v State %v", req.InstanceName, instance.CID, instance.LcmOperation)
+		if IsInState(instance.Meta.LcmOperationState, StateStarting) {
+			return fmt.Errorf("instance '%v', uuid '%v' need finish task", req.InstanceName, instance.CID)
+		}
+		if IsInState(instance.Meta.LcmOperation, StateInstantiate) &&
+			IsInState(instance.Meta.LcmOperationState, StateCompleted) {
+			return fmt.Errorf("instance '%v', uuid '%v' already instantiated", req.InstanceName, instance.CID)
+		}
 	}
 
-	var additionalVduParams = request.AdditionalParams{
-		DisableGrant:        _disableGrant,
-		IgnoreGrantFailure:  false,
-		DisableAutoRollback: false,
+	var additionalVduParams request.AdditionalParams
+	if req.AdditionalParam != nil {
+		additionalVduParams = *req.AdditionalParam
+	} else {
+		// default if not provided
+		additionalVduParams = request.AdditionalParams{
+			DisableGrant:        false,
+			IgnoreGrantFailure:  false,
+			DisableAutoRollback: false,
+		}
 	}
 
 	for _, entry := range instance.InstantiatedNfInfo {
+
+		var (
+			namespace = entry.Namespace
+			repoUrl   = entry.RepoURL
+			username  = entry.Username
+			password  = entry.Password
+			//	req.Spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
+		)
+		namespace = entry.Namespace
+		if len(req.Namespace) > 0 {
+			namespace = req.Namespace
+		}
+		if len(req.RepoUrl) > 0 {
+			namespace = req.Namespace
+		}
+		if len(req.RepoUsername) > 0 {
+			namespace = req.RepoUsername
+		}
+		if len(req.RepoPassword) > 0 {
+			namespace = b64.StdEncoding.EncodeToString([]byte(req.RepoPassword))
+		}
 		additionalVduParams.VduParams = append(additionalVduParams.VduParams, request.VduParam{
-			Namespace: entry.Namespace,
-			RepoURL:   entry.RepoURL,
-			Username:  entry.Username,
-			Password:  entry.Password,
+			Namespace: namespace,
+			RepoURL:   repoUrl,
+			Username:  username,
+			Password:  password,
 			VduName:   entry.VduID,
 		})
 	}
@@ -103,25 +174,26 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, instanceName string, poo
 		currentNodePoolId = _targetPool
 	}
 
-	var req = request.InstantiateVnfRequest{
+	var instantiateReq = request.InstantiateVnfRequest{
 		FlavourID:           "default",
-		AdditionalVduParams: additionalVduParams,
-		VimConnectionInfo: []request.VimConInfo{
+		AdditionalVduParams: &additionalVduParams,
+		// construct placement from request.
+		VimConnectionInfo: []models.VimConnectionInfo{
 			{
-				ID:      instance.VimConnectionInfo[0].Id,
+				Id:      instance.VimConnectionInfo[0].Id,
 				VimType: "",
-				Extra:   request.PoolExtra{NodePoolId: currentNodePoolId},
+				Extra:   &models.VimExtra{NodePoolId: currentNodePoolId},
 			},
 		},
 	}
 
-	err = a.rest.InstanceInstantiate(ctx, instance.CID, req)
+	err = a.rest.InstanceInstantiate(ctx, instance.CID, instantiateReq)
 	if err != nil {
 		return err
 	}
 
-	if doBlock {
-		err := a.BlockWaitStateChange(ctx, instance.CID, StateInstantiate, DefaultMaxRetry, verbose)
+	if req.IsBlocking {
+		err := a.BlockWaitStateChange(ctx, instance.CID, StateInstantiate, DefaultMaxRetry, req.IsVerbose)
 		if err != nil {
 			return err
 		}
@@ -163,7 +235,13 @@ func (a *TcaApi) DeleteCnfInstance(ctx context.Context, instanceName string, vim
 
 		fmt.Printf("Terminating cnf instance %s state %s status %s\n",
 			instance.CID, instance.Meta.LcmOperation, instance.Meta.LcmOperationState)
-		err := a.TerminateCnfInstance(ctx, instanceName, vimName, true, false)
+
+		err := a.TerminateCnfInstance(ctx, &TerminateInstanceApiReq{
+			InstanceName: instanceName,
+			ClusterName:  vimName,
+			IsBlocking:   true,
+			IsVerbose:    false,
+		})
 		if err != nil {
 			return err
 		}
@@ -274,8 +352,7 @@ func (a *TcaApi) CnfReconfigure(ctx context.Context, instanceName string, valueF
 // caller need provider either name or uuid and vimName
 // doBlock block and wait task to finish
 // verbose output status on screen after each pool timer.
-func (a *TcaApi) TerminateCnfInstance(ctx context.Context, instanceName string,
-	vimName string, doBlock bool, verbose bool) error {
+func (a *TcaApi) TerminateCnfInstance(ctx context.Context, req *TerminateInstanceApiReq) error {
 
 	respond, err := a.rest.GetVnflcm()
 	if err != nil {
@@ -287,25 +364,25 @@ func (a *TcaApi) TerminateCnfInstance(ctx context.Context, instanceName string,
 		return errors.New("Received wrong object type")
 	}
 
-	instance, err := cnfs.ResolveFromName(instanceName)
+	instance, err := cnfs.ResolveFromName(req.InstanceName)
 	if err != nil {
 		return err
 	}
 
-	if instance.IsInCluster(vimName) == false {
-		return fmt.Errorf("instance not found in %v cluster", vimName)
+	if instance.IsInCluster(req.ClusterName) == false {
+		return fmt.Errorf("instance not found in %v cluster", req.ClusterName)
 	}
 
-	glog.Infof("terminating cnfName %v instance ID %v.", instanceName, instance.CID)
+	glog.Infof("terminating cnfName %v instance ID %v.", req.InstanceName, instance.CID)
 	if strings.Contains(instance.Meta.LcmOperationState, "STARTING") {
 		return fmt.Errorf("'%v' instance ID %v "+
-			"need finish current action", instanceName, instance.CID)
+			"need finish current action", req.InstanceName, instance.CID)
 	}
 
 	if strings.Contains(instance.Meta.LcmOperation, "TERMINATE") &&
 		strings.Contains(instance.Meta.LcmOperationState, "COMPLETED") {
 		return fmt.Errorf("'%v' instance ID %v "+
-			"already terminated", instanceName, instance.CID)
+			"already terminated", req.InstanceName, instance.CID)
 	}
 
 	if err = a.rest.TerminateInstance(
@@ -317,8 +394,8 @@ func (a *TcaApi) TerminateCnfInstance(ctx context.Context, instanceName string,
 		return err
 	}
 
-	if doBlock {
-		err := a.BlockWaitStateChange(ctx, instance.CID, "NOT_INSTANTIATED", DefaultMaxRetry, verbose)
+	if req.IsBlocking {
+		err := a.BlockWaitStateChange(ctx, instance.CID, "NOT_INSTANTIATED", DefaultMaxRetry, req.IsVerbose)
 		if err != nil {
 			return err
 		}
@@ -327,23 +404,52 @@ func (a *TcaApi) TerminateCnfInstance(ctx context.Context, instanceName string,
 	return nil
 }
 
+// GetLcmActions return list of available actions
+// in current state
+func (a *TcaApi) GetLcmActions(ctx context.Context, instanceName string) (*models.PolicyLinks, error) {
+
+	lcmState, err := a.rest.GetVnflcm()
+	if err != nil {
+		return nil, err
+	}
+
+	cnfs, ok := lcmState.(*response.CnfsExtended)
+	if !ok {
+		return nil, errors.New("Received wrong object type")
+	}
+
+	instance, err := cnfs.ResolveFromName(instanceName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &instance.Links, nil
+}
+
 // RollbackCnf rollbacks instance
 // if flag delete provide will also delete.
-// TODO add blocking
 func (a *TcaApi) RollbackCnf(ctx context.Context, instanceName string, doBlock bool, verbose bool) error {
 
-	cnfs, err := a.GetAllPackages()
+	lcmState, err := a.rest.GetVnflcm()
 	if err != nil {
 		return err
 	}
 
-	var cnfName = instanceName
-	instance, err := cnfs.ResolveFromName(cnfName)
+	cnfs, ok := lcmState.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("Received wrong object type")
+	}
+
+	instance, err := cnfs.ResolveFromName(instanceName)
 	if err != nil {
 		return err
 	}
 
-	err = a.rest.CnfRollback(ctx, instance.CID)
+	if len(instance.Links.Rollback.Href) == 0 {
+		return fmt.Errorf("rollback action not avaliable in current state")
+	}
+
+	err = a.rest.CnfRollback(ctx, instance.Links.Rollback.Href)
 	if err != nil {
 		glog.Error(err)
 		return err
@@ -357,6 +463,75 @@ func (a *TcaApi) RollbackCnf(ctx context.Context, instanceName string, doBlock b
 	}
 
 	return nil
+}
+
+// ResetState reset instance state.
+func (a *TcaApi) ResetState(ctx context.Context, req *ResetInstanceApiReq) error {
+
+	lcmState, err := a.rest.GetVnflcm()
+	if err != nil {
+		return err
+	}
+
+	cnfs, ok := lcmState.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("Received wrong object type")
+	}
+
+	instance, err := cnfs.ResolveFromName(req.InstanceName)
+	if err != nil {
+		return err
+	}
+
+	if len(instance.Links.UpdateState.Href) == 0 {
+		return fmt.Errorf("update action not avaliable in current state")
+	}
+
+	err = a.rest.CnfResetState(ctx, instance.Links.UpdateState.Href)
+	if err != nil {
+		glog.Error(err)
+		return err
+	}
+
+	if req.IsBlocking {
+		err := a.BlockWaitStateChange(ctx, instance.CID, StateInstantiate, DefaultMaxRetry, req.IsVerbose)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// UpdateCnfState update instance state.
+func (a *TcaApi) UpdateCnfState(ctx context.Context, req *UpdateInstanceApiReq) (*response.InstanceUpdate, error) {
+	var (
+		instanceId = req.InstanceName
+		err        error
+	)
+
+	if !IsValidUUID(req.InstanceName) {
+		instanceId, err = a.ResolveInstanceName(req.InstanceName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	rep, err := a.rest.InstanceUpdateState(ctx, instanceId, req.UpdateReq)
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+
+	if req.IsBlocking {
+		err := a.BlockWaitStateChange(ctx, instanceId, StateInstantiate, DefaultMaxRetry, req.IsVerbose)
+		if err != nil {
+			glog.Error(err)
+			return nil, err
+		}
+	}
+
+	return rep, nil
 }
 
 // DeleteCnf delete CNF or VNF instance

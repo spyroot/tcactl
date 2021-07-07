@@ -7,22 +7,43 @@ import (
 
 const (
 	// test name, if you already have cluster adjust or pass TCA_TEST_CLUSTER env
-	testClusterName = "edge-test01"
+	testWorkloadClusterName = "edge-test01"
+
+	// testMgmtClusterName
+	testMgmtClusterName = "edge-mgmt-test01"
 
 	// test cloud provider name
 	testCloudName = "edge"
 
 	// test
-	testPoolName = "test-cluster01"
+	testPoolName = "default-pool01"
+
+	// testCatalogName
+	testCatalogName = "unit_test"
+
+	// testInstanceName
+	testInstanceName = "unit_test_instance"
+
+	//testRepoName
+	testRepoName = "repo"
+
+	//testRepoUrl
+	testRepoUrl = "repo.cnfdemo.io/chartrepo/library"
+
+	//testRepoUsername
+	testRepoUsername = "admin"
+
+	//testRepoPassword
+	testRepoPassword = ""
 
 	// testTenantId
 	testTenantId = "BDC07231F50A4536AA6DCF6B8C04BA5C"
 
 	//
-	testClusterID = "868636c9-868f-49fb-a6df-6a0d2d137146"
+	testClusterID = "6df10113-3c76-48ce-a742-0869fadd60b4"
 
 	//
-	testNodePoolId = "3acf9b79-f8e5-41d6-997b-58792d3955bb"
+	testNodePoolId = "f532cde9-e574-40b6-856d-78fdfc8be3b9"
 
 	// testMgmtTemplateId test mgmt template
 	testMgmtTemplateId = "55e69a3c-d92b-40ca-be51-9c6585b89ad7"
@@ -47,12 +68,20 @@ func getTenantId() string {
 	return testTenantId
 }
 
-func getTestClusterName() string {
-	testCluster := os.Getenv("TCA_TEST_CLUSTER")
+func getTestWorkloadClusterName() string {
+	testCluster := os.Getenv("TCA_TEST_WORKLOAD_CLUSTER")
 	if len(testCluster) == 0 {
-		return testClusterName
+		return testWorkloadClusterName
 	}
 	return testCluster
+}
+
+func getTestMgmtClusterName() string {
+	e := os.Getenv("TCA_TEST_MGMT_CLUSTER")
+	if len(e) == 0 {
+		return testMgmtClusterName
+	}
+	return e
 }
 
 func getTestNodePoolName() string {
@@ -61,6 +90,30 @@ func getTestNodePoolName() string {
 		return testPoolName
 	}
 	return testCluster
+}
+
+func getTestRepoName() string {
+	v := os.Getenv("TCA_TEST_REPO_NAME")
+	if len(v) == 0 {
+		return testRepoName
+	}
+	return v
+}
+
+func getTestInstanceName() string {
+	v := os.Getenv("TCA_TEST_INSTANCE_NAME")
+	if len(v) == 0 {
+		return testInstanceName
+	}
+	return v
+}
+
+func getTestCatalogName() string {
+	v := os.Getenv("TCA_TEST_CATALOG_NAME")
+	if len(v) == 0 {
+		return testCatalogName
+	}
+	return v
 }
 
 func getTestNodePoolId() string {
@@ -102,7 +155,34 @@ func getTestCloudProvider() string {
 func getTenantCluster() string {
 	e := os.Getenv("TCA_TEST_TENANT")
 	if len(e) == 0 {
-		return testClusterName
+		return testWorkloadClusterName
+	}
+	return e
+}
+
+// getTestRepoUsername return test repo either from env or default
+func getTestRepoUsername() string {
+	e := os.Getenv("TCA_TEST_REPO_USERNAME")
+	if len(e) == 0 {
+		return testRepoUsername
+	}
+	return e
+}
+
+// getTestRepoPassword return test repo password from env or default
+func getTestRepoPassword() string {
+	e := os.Getenv("TCA_REPO_PASSWORD")
+	if len(e) == 0 {
+		return testRepoPassword
+	}
+	return e
+}
+
+//getTestRepoUrl return test repo url from env or default
+func getTestRepoUrl() string {
+	e := os.Getenv("TCA_TEST_REPO_URL")
+	if len(e) == 0 {
+		return testRepoUrl
 	}
 	return e
 }
@@ -299,82 +379,4 @@ workerNodes:
 
 var yamlWorkloadEmpty = `
 
-`
-
-var jsonNodeSpec = `
-{
-    "name": "temp1234",
-    "storage": 50,
-    "cpu": 2,
-    "memory": 16384,
-    "replica": 1,
-    "labels": [
-        "type=hub"
-    ],
-    "networks": [
-        {
-            "label": "MANAGEMENT",
-            "networkName": "/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0",
-            "nameservers": [
-                "10.246.2.9"
-            ]
-        }
-    ],
-    "placementParams": [
-        {
-            "type": "ClusterComputeResource",
-            "name": "hubsite"
-        },
-        {
-            "type": "Datastore",
-            "name": "vsanDatastore"
-        },
-        {
-            "type": "ResourcePool",
-            "name": "k8s"
-        }
-    ],
-    "config": {
-        "cpuManagerPolicy": {
-            "type": "kubernetes",
-            "policy": "default"
-        }
-    }
-}
-`
-
-var yamlNodeSpec = `
-id: ""
-clone_mode: ""
-cpu: 2
-labels:
-    - type=hub
-memory: 16384
-name: temp
-networks:
-    - label: MANAGEMENT
-      network_name: ""
-      nameservers:
-        - 10.246.2.9
-placement_params: []
-replica: 1
-storage: 50
-config:
-    cpu_manager_policy:
-        type: ""
-        policy: ""
-        properties:
-            kube_reserved:
-                cpu: 0
-                memoryInGiB: 0
-            system_reserved:
-                cpu: 0
-                memoryInGiB: 0
-    health_check:
-        nodeStartupTimeout: ""
-        unhealthy_conditions: []
-status: ""
-active_tasks_count: 0
-nodes: []
-is_node_customization_deprecated: false
 `

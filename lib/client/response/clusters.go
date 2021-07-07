@@ -23,9 +23,11 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/models"
+	"github.com/spyroot/tcactl/pkg/netutils"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"reflect"
 	"strings"
@@ -262,6 +264,39 @@ func ReadClustersSpec(b io.Reader) (*Clusters, error) {
 //InstanceSpecsFromString method return instance form string
 func (c Clusters) InstanceSpecsFromString(s string) (interface{}, error) {
 	return ClustersSpecsFromString(s)
+}
+
+type ClusterEndpoint struct {
+	Cluster string
+	IsIP    bool
+}
+
+// GetClusterIPs return all cluster IP
+func (c *Clusters) GetClusterIPs() map[string]ClusterEndpoint {
+
+	m := make(map[string]ClusterEndpoint)
+
+	for _, cluster := range c.Clusters {
+		u := cluster.ClusterUrl
+		if strings.HasPrefix(u, "https://") {
+			u = strings.TrimPrefix(u, "https://")
+		}
+
+		if strings.HasSuffix(u, ":6443") {
+			u = strings.TrimSuffix(u, ":6443")
+		}
+
+		if netutils.IsDNSName(u) {
+			m[u] = ClusterEndpoint{u, false}
+		} else {
+			ip := net.ParseIP(u)
+			if ip != nil {
+				m[u] = ClusterEndpoint{ip.String(), true}
+			}
+		}
+	}
+
+	return m
 }
 
 // NewClustersSpecs create cluster

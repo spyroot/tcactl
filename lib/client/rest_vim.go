@@ -18,6 +18,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
@@ -43,16 +44,17 @@ const (
 	TcaServiceVmwareVmContainers = "/api/service/inventory/containers"
 )
 
-func (c *RestClient) GetVmwareCluster(f *request.ClusterFilterQuery) (*models.VMwareClusters, error) {
+func (c *RestClient) GetVmwareCluster(ctx context.Context, f *request.ClusterFilterQuery) (*models.VMwareClusters, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().SetBody(f).Post(c.BaseURL + TcaVmwareClusters)
+
+	resp, err := c.Client.R().SetContext(ctx).SetBody(f).Post(c.BaseURL + TcaVmwareClusters)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -66,7 +68,7 @@ func (c *RestClient) GetVmwareCluster(f *request.ClusterFilterQuery) (*models.VM
 }
 
 // GetVmwareNetworks - return query for vmware network list
-func (c *RestClient) GetVmwareNetworks(f *request.VMwareNetworkQuery) (*models.CloudNetworks, error) {
+func (c *RestClient) GetVmwareNetworks(ctx context.Context, f *request.VMwareNetworkQuery) (*models.CloudNetworks, error) {
 
 	if f == nil {
 		glog.Error("vmware network filter query is nil")
@@ -74,7 +76,7 @@ func (c *RestClient) GetVmwareNetworks(f *request.VMwareNetworkQuery) (*models.C
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().SetBody(f).Post(c.BaseURL + TcaVmwareNetworks)
+	resp, err := c.Client.R().SetContext(ctx).SetBody(f).Post(c.BaseURL + TcaVmwareNetworks)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -84,7 +86,7 @@ func (c *RestClient) GetVmwareNetworks(f *request.VMwareNetworkQuery) (*models.C
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -99,7 +101,7 @@ func (c *RestClient) GetVmwareNetworks(f *request.VMwareNetworkQuery) (*models.C
 
 // GetVMwareTemplates - return VMware VM templates
 // Typically Query filters based on cloud provider id.
-func (c *RestClient) GetVMwareTemplates(f *request.VMwareTemplateQuery) (*models.VcInventory, error) {
+func (c *RestClient) GetVMwareTemplates(ctx context.Context, f *request.VMwareTemplateQuery) (*models.VcInventory, error) {
 
 	if f == nil {
 		glog.Error("vm template filter query is nil")
@@ -107,7 +109,7 @@ func (c *RestClient) GetVMwareTemplates(f *request.VMwareTemplateQuery) (*models
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().SetBody(f).Post(c.BaseURL + TcaVmwareVmTemplates)
+	resp, err := c.Client.R().SetContext(ctx).SetBody(f).Post(c.BaseURL + TcaVmwareVmTemplates)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -117,7 +119,7 @@ func (c *RestClient) GetVMwareTemplates(f *request.VMwareTemplateQuery) (*models
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -165,10 +167,10 @@ func (c *RestClient) GetVMwareFolders(f *request.VmwareFolderQuery) (*models.Fol
 
 // GetVMwareResourcePool return VMware resource view
 // Typically Query filters based on cloud provider id.
-func (c *RestClient) GetVMwareResourcePool(f *request.VMwareResourcePoolQuery) (*models.ResourcePool, error) {
+func (c *RestClient) GetVMwareResourcePool(ctx context.Context, f *request.VMwareResourcePoolQuery) (*models.ResourcePool, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().SetBody(f).Post(c.BaseURL + TcaVmwareVmContainers)
+	resp, err := c.Client.R().SetContext(ctx).SetBody(f).Post(c.BaseURL + TcaVmwareVmContainers)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -192,16 +194,16 @@ func (c *RestClient) GetVMwareResourcePool(f *request.VMwareResourcePoolQuery) (
 }
 
 // GetVMwareInfraContainers - Call for VC cluster container
-func (c *RestClient) GetVMwareInfraContainers(clusterId string) (*models.VmwareContainerView, error) {
+func (c *RestClient) GetVMwareInfraContainers(ctx context.Context, clusterId string) (*models.VmwareContainerView, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + TcaServiceVmwareVmContainers)
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + TcaServiceVmwareVmContainers)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 

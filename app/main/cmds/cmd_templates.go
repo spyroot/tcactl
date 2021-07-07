@@ -125,7 +125,7 @@ Command creates a cluster template from input spec.
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
-			var spec response.ClusterTemplate
+			var spec response.ClusterTemplateSpec
 			if io.FileExists(args[0]) {
 				buffer, err := ioutil.ReadFile(args[0])
 				CheckErrLogError(err)
@@ -254,7 +254,7 @@ It take input spec and apply to existing cluster template.`),
 
 			// read template.
 			var (
-				spec *response.ClusterTemplate
+				spec *response.ClusterTemplateSpec
 				err  error
 			)
 

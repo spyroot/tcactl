@@ -18,12 +18,12 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
-	"net/http"
 )
 
 type ExtensionDeleteReplay struct {
@@ -38,14 +38,14 @@ type ExtensionUpdateReplay struct {
 
 // GetExtensions - api call retrieves all extension.
 // client cna filter on particular field, VIM Id , type etc.
-func (c *RestClient) GetExtensions() (*response.Extensions, error) {
+func (c *RestClient) GetExtensions(ctx context.Context) (*response.Extensions, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("uninitialized rest client")
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + TcaVmwareExtensions)
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + TcaVmwareExtensions)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -55,7 +55,7 @@ func (c *RestClient) GetExtensions() (*response.Extensions, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkError(resp)
 	}
 
@@ -70,7 +70,7 @@ func (c *RestClient) GetExtensions() (*response.Extensions, error) {
 
 // GetExtension - api call retrieves extension,
 // eid is internal extension id.
-func (c *RestClient) GetExtension(eid string) (*response.Extensions, error) {
+func (c *RestClient) GetExtension(ctx context.Context, eid string) (*response.Extensions, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("uninitialized rest client")
@@ -78,7 +78,7 @@ func (c *RestClient) GetExtension(eid string) (*response.Extensions, error) {
 
 	c.GetClient()
 
-	resp, err := c.Client.R().Get(c.BaseURL + fmt.Sprintf(TcaVmwareGetExtensions, eid))
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + fmt.Sprintf(TcaVmwareGetExtensions, eid))
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -104,7 +104,7 @@ func (c *RestClient) GetExtension(eid string) (*response.Extensions, error) {
 //CreateExtension - method creates new extension
 // spec can contain optional VimInfo that indicates
 // cluster or cluster where extension will be attach.
-func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error) {
+func (c *RestClient) CreateExtension(ctx context.Context, spec *request.ExtensionSpec) (string, error) {
 
 	if c == nil {
 		return "", fmt.Errorf("uninitialized rest client")
@@ -112,7 +112,7 @@ func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error
 
 	c.GetClient()
 
-	resp, err := c.Client.R().
+	resp, err := c.Client.R().SetContext(ctx).
 		SetBody(spec).
 		Post(c.BaseURL + TcaVmwareExtensions)
 
@@ -139,17 +139,19 @@ func (c *RestClient) CreateExtension(spec *request.ExtensionSpec) (string, error
 	return ext.ExtensionId, nil
 }
 
-//DeleteExtension - query repositories linked to vim
-func (c *RestClient) DeleteExtension(extensionId string) (bool, error) {
+//DeleteExtension - api call delete extension
+//method return true if extension deleted.
+func (c *RestClient) DeleteExtension(ctx context.Context, extensionId string) (bool, error) {
 
 	if c == nil {
 		return false, fmt.Errorf("uninitialized rest client")
 	}
 
-	glog.Infof("Deleting extension %v", extensionId)
+	req := fmt.Sprintf(TcaVmwareDeleteExtensions, extensionId)
+	glog.Infof("Deleting extension %v, req", extensionId, req)
 
 	c.GetClient()
-	resp, err := c.Client.R().Delete(c.BaseURL + fmt.Sprintf(TcaVmwareDeleteExtensions, extensionId))
+	resp, err := c.Client.R().SetContext(ctx).Delete(c.BaseURL + req)
 
 	if err != nil {
 		glog.Error(err)
@@ -173,8 +175,9 @@ func (c *RestClient) DeleteExtension(extensionId string) (bool, error) {
 	return r.Deleted, nil
 }
 
-//UpdateExtension - update extension.
-func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (bool, error) {
+//UpdateExtension - update extension
+//Returns true if extension updated
+func (c *RestClient) UpdateExtension(ctx context.Context, spec *request.ExtensionSpec, eid string) (bool, error) {
 
 	if c == nil {
 		return false, fmt.Errorf("uninitialized rest client")
@@ -182,8 +185,7 @@ func (c *RestClient) UpdateExtension(spec *request.ExtensionSpec, eid string) (b
 
 	c.GetClient()
 	resp, err := c.Client.R().
-		SetBody(spec).
-		Post(c.BaseURL + fmt.Sprintf(TcaVmwareUpdateExtensions, eid))
+		SetContext(ctx).SetBody(spec).Post(c.BaseURL + fmt.Sprintf(TcaVmwareUpdateExtensions, eid))
 
 	if err != nil {
 		glog.Error(err)

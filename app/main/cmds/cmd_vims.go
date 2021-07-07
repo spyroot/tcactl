@@ -18,6 +18,7 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
@@ -75,12 +76,14 @@ func (ctl *TcaCtl) CmdDescribeVim() *cobra.Command {
 		Short:   "Command retrieves a vim-cloud provider information.",
 		Long: templates.LongDesc(`
 
-Command retrieves a list of vim templates.
+Command retrieves a list of cloud providers.
 
 `),
 		Example: " - tcactl describe vim vmware_FB40D3DE2967483FBF9033B451DC7571",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -95,7 +98,7 @@ Command retrieves a list of vim templates.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			tenant, err := ctl.tca.GetVim(args[0])
+			tenant, err := ctl.tca.GetVim(ctx, args[0])
 			CheckErrLogError(err)
 			if printer, ok := ctl.TenantsResponsePrinter[_defaultPrinter]; ok {
 				printer(tenant, _defaultStyler)
@@ -135,6 +138,8 @@ func (ctl *TcaCtl) CmdGetVmwareInfra() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
@@ -148,7 +153,7 @@ func (ctl *TcaCtl) CmdGetVmwareInfra() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusterInventory, err := ctl.tca.GetVimComputeClusters(args[0])
+			clusterInventory, err := ctl.tca.GetVimComputeClusters(ctx, args[0])
 			CheckErrLogError(err)
 
 			if printer, ok := ctl.VMwareClusterPrinter[_defaultPrinter]; ok {
@@ -184,12 +189,13 @@ func (ctl *TcaCtl) CmdGetVmwareDatastore() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:     "datastore",
 		Aliases: []string{"datastore"},
-		Short:   "Command retrieves a vim information.",
-		Long: templates.LongDesc(`
-									Command retrieves a list of vim templates.`),
+		Short:   "Command retrieves a vim datastore.",
+		Long:    templates.LongDesc(`Command retrieves a list of vim datastores.`),
 		Example: " - tcactl get vim datastore vmware_FB40D3DE2967483FBF9033B451DC7571",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -203,7 +209,7 @@ func (ctl *TcaCtl) CmdGetVmwareDatastore() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusterInventory, err := ctl.tca.GetVimComputeClusters(args[0])
+			clusterInventory, err := ctl.tca.GetVimComputeClusters(ctx, args[0])
 			CheckErrLogError(err)
 
 			if printer, ok := ctl.VMwareDatastorePrinter[_defaultPrinter]; ok {
@@ -239,6 +245,8 @@ func (ctl *TcaCtl) CmdGetVmwareNetworks() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
@@ -252,7 +260,7 @@ func (ctl *TcaCtl) CmdGetVmwareNetworks() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusterInventory, err := ctl.tca.GetVimNetworks(args[0])
+			clusterInventory, err := ctl.tca.GetVimNetworks(ctx, args[0])
 			CheckErrLogError(err)
 
 			if printer, ok := ctl.VmwareNetworkPrinter[_defaultPrinter]; ok {
@@ -294,6 +302,8 @@ By default it search for template v1.20.4+vmware.1.`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
@@ -307,7 +317,7 @@ By default it search for template v1.20.4+vmware.1.`),
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			vmTemplate, err := ctl.tca.GetVimVMTemplates(args[0], api.VmwareTemplateK8s, _templateName)
+			vmTemplate, err := ctl.tca.GetVimVMTemplates(ctx, args[0], api.VmwareTemplateK8s, _templateName)
 			CheckErrLogError(err)
 
 			if printer, ok := ctl.VmwareVmTemplatePrinter[_defaultPrinter]; ok {
@@ -351,6 +361,8 @@ it is a mandatory requirement for correct placement.`),
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
@@ -364,7 +376,7 @@ it is a mandatory requirement for correct placement.`),
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			folders, err := ctl.tca.GetVimFolders(args[0])
+			folders, err := ctl.tca.GetVimFolders(ctx, args[0])
 			CheckErrLogError(err)
 
 			io.PrettyPrint(folders)
@@ -408,6 +420,8 @@ for correct placement.`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
@@ -421,7 +435,7 @@ for correct placement.`),
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			rps, err := ctl.tca.GetVimResourcePool(args[0])
+			rps, err := ctl.tca.GetVimResourcePool(ctx, args[0])
 			CheckErrLogError(err)
 
 			if printer, ok := ctl.VmwareResourcePrinter[_defaultPrinter]; ok {

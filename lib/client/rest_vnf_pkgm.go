@@ -28,8 +28,6 @@ import (
 )
 
 const (
-	apiVnfpkgm = "/telco/api/vnfpkgm/v2/vnf_packages"
-
 	UploadMultipartContentType = "application/zip"
 
 	MultipartFilePart = "file"
@@ -75,7 +73,7 @@ type PackageCreatedSuccess struct {
 	} `json:"_links" yaml:"links"`
 }
 
-// GetPackageCatalogId return vnf package id and vnfd id
+// GetPackageCatalogId api return vnf package id and vnfd id
 func (c *RestClient) GetPackageCatalogId(IdOrName string) (string, string, error) {
 
 	vnfCatalog, err := c.GetVnfPkgm("", "")
@@ -93,17 +91,30 @@ func (c *RestClient) GetPackageCatalogId(IdOrName string) (string, string, error
 	return pkgCnf.PID, pkgCnf.VnfdID, nil
 }
 
+// GetAllCatalog TCA api call return entire catalog
+func (c *RestClient) GetAllCatalog() (*response.VnfPackages, error) {
+	return c.GetVnfPkgm("", "")
+}
+
 // GetVnfPkgm gets VNF/CNF catalog entity
 // pkgId is catalog id and filter is optional argument
 // is filter query
 func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPackages, error) {
 
+	if c == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
 	c.GetClient()
 	r := c.Client.R()
 
-	var restReq = c.BaseURL + apiVnfpkgm
+	if c.IsSimulateFailure(TcaVmwareTelcoPackages) {
+		return nil, fmt.Errorf("simulated failure in %s req", TcaVmwareTelcoPackages)
+	}
+
+	var restReq = c.BaseURL + TcaVmwareTelcoPackages
 	if len(pkgId) != 0 {
-		restReq = c.BaseURL + apiVnfpkgm + "/" + pkgId
+		restReq = c.BaseURL + TcaVmwareTelcoPackages + "/" + pkgId
 	}
 
 	// attach query filter
@@ -124,7 +135,7 @@ func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPacka
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes response.VnfPackagesError
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
 			return nil, fmt.Errorf(errRes.Detail)
@@ -136,11 +147,13 @@ func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPacka
 	if len(pkgId) != 0 {
 		var pkg response.VnfPackage
 		if err := json.Unmarshal(resp.Body(), &pkg); err != nil {
+			glog.Errorf("failed unmarshal %v", err)
 			return nil, err
 		}
 		pkgs.Packages = append(pkgs.Packages, pkg)
 	} else {
 		if err := json.Unmarshal(resp.Body(), &pkgs.Packages); err != nil {
+			glog.Errorf("failed unmarshal %v", err)
 			return nil, err
 		}
 	}
@@ -152,10 +165,17 @@ func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPacka
 func (c *RestClient) GetVnfPkgmVnfd(pkgId string) (*response.VduPackage, error) {
 
 	c.GetClient()
+
 	var restReq string
 	if len(pkgId) == 0 {
+		if c.IsSimulateFailure(TcaVmwareTelcoPackages) {
+			return nil, fmt.Errorf("simulated failure")
+		}
 		restReq = c.BaseURL + TcaVmwareTelcoPackages
 	} else {
+		if c.IsSimulateFailure(TcaVmwareTelcoPackages + "/") {
+			return nil, fmt.Errorf("simulated failure")
+		}
 		restReq = c.BaseURL + "/telco/api/vnfpkgm/v2/vnf_packages/" + pkgId + "/vnfd"
 	}
 
@@ -170,7 +190,7 @@ func (c *RestClient) GetVnfPkgmVnfd(pkgId string) (*response.VduPackage, error) 
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes response.VnfPackagesError
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
 			return nil, fmt.Errorf(errRes.Detail)

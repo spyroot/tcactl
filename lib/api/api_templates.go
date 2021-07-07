@@ -44,7 +44,7 @@ func TemplateFields() []string {
 	return keys
 }
 
-func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplate, error) {
+func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplateSpec, error) {
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -55,15 +55,15 @@ func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplate, error
 }
 
 // ReadTemplateSpecFromString read specString from reader
-func ReadTemplateSpecFromString(str string) (*response.ClusterTemplate, error) {
+func ReadTemplateSpecFromString(str string) (*response.ClusterTemplateSpec, error) {
 	r := strings.NewReader(str)
 	return ReadTemplateSpec(r)
 }
 
 // ReadTemplateSpec - Read Template Spec
-func ReadTemplateSpec(b io.Reader) (*response.ClusterTemplate, error) {
+func ReadTemplateSpec(b io.Reader) (*response.ClusterTemplateSpec, error) {
 
-	var spec response.ClusterTemplate
+	var spec response.ClusterTemplateSpec
 
 	buffer, err := ioutil.ReadAll(b)
 	if err != nil {
@@ -96,7 +96,7 @@ func (a *TcaApi) GetClusterTemplates() (*response.ClusterTemplates, error) {
 }
 
 // CreateClusterTemplate - create cluster template from initialSpec
-func (a *TcaApi) CreateClusterTemplate(spec *response.ClusterTemplate) (string, error) {
+func (a *TcaApi) CreateClusterTemplate(spec *response.ClusterTemplateSpec) (string, error) {
 
 	glog.Infof("Retrieving vnf packages.")
 
@@ -132,7 +132,7 @@ func (a *TcaApi) CreateClusterTemplate(spec *response.ClusterTemplate) (string, 
 }
 
 // GetClusterTemplate return cluster template
-func (a *TcaApi) GetClusterTemplate(templateId string) (*response.ClusterTemplate, error) {
+func (a *TcaApi) GetClusterTemplate(templateId string) (*response.ClusterTemplateSpec, error) {
 
 	glog.Infof("Retrieving vnf packages.")
 
@@ -157,7 +157,7 @@ func (a *TcaApi) GetClusterTemplate(templateId string) (*response.ClusterTemplat
 
 // UpdateClusterTemplate - updates cluster template based
 // on input initialSpec
-func (a *TcaApi) UpdateClusterTemplate(spec *response.ClusterTemplate) error {
+func (a *TcaApi) UpdateClusterTemplate(spec *response.ClusterTemplateSpec) error {
 
 	glog.Infof("Updating cluster template. %v", spec)
 

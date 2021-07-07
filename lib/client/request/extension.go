@@ -113,7 +113,8 @@ func ExtensionSpecsFromFile(fileName string) (*ExtensionSpec, error) {
 	}
 
 	fileName = path.Base(fileName)
-	glog.Infof("Parsing file %s", file)
+	glog.Infof("Parsing file %s", fileName)
+
 	if strings.HasSuffix(fileName, ".yaml") || strings.HasSuffix(fileName, ".yml") {
 		spec, err := ReadExtensionSpec(file, YamlFile)
 		if err != nil {
@@ -121,6 +122,7 @@ func ExtensionSpecsFromFile(fileName string) (*ExtensionSpec, error) {
 		}
 		return spec, nil
 	}
+
 	if strings.HasSuffix(fileName, "json") {
 		spec, err := ReadExtensionSpec(file, YamlFile)
 		if err != nil {

@@ -122,7 +122,6 @@ func (a *TcaApi) CreateCatalogEntity(
 	if len(respond.Id) == 0 {
 		glog.Error("Something is wrong, server must contain package id in respond")
 		return false, fmt.Errorf("respond doesn't contain package id")
-
 	}
 
 	// upload csar to a catalog

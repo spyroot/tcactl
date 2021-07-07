@@ -18,6 +18,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
@@ -30,12 +31,12 @@ import (
 )
 
 // GetClusters returns infrastructure k8s clusters
-func (c *RestClient) GetClusters() (*response.Clusters, error) {
+func (c *RestClient) GetClusters(ctx context.Context) (*response.Clusters, error) {
 
 	glog.Infof("Retrieving cluster list.")
 
 	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + TcaInfraClusters)
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + TcaInfraClusters)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -45,7 +46,7 @@ func (c *RestClient) GetClusters() (*response.Clusters, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
 			glog.Errorf("server return error %v", errRes.Message)
@@ -68,10 +69,10 @@ func (c *RestClient) GetClusters() (*response.Clusters, error) {
 }
 
 // GetCluster returns infrastructure k8s clusters
-func (c *RestClient) GetCluster(clusterId string) (*response.ClusterSpec, error) {
+func (c *RestClient) GetCluster(ctx context.Context, clusterId string) (*response.ClusterSpec, error) {
 
 	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + TcaInfraClusters + "/" + clusterId)
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + TcaInfraClusters + "/" + clusterId)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -87,6 +88,7 @@ func (c *RestClient) GetCluster(clusterId string) (*response.ClusterSpec, error)
 
 	var clusters response.ClusterSpec
 	if err := json.Unmarshal(resp.Body(), &clusters); err != nil {
+		glog.Errorf("Failed parse servers respond. %v", err)
 		return nil, err
 	}
 
@@ -128,6 +130,7 @@ func (c *RestClient) GetClusterNodePools(clusterId string) (*response.NodePool, 
 
 	var pools response.NodePool
 	if err := json.Unmarshal(resp.Body(), &pools); err != nil {
+		glog.Errorf("Failed parse servers respond. %v", err)
 		return nil, err
 	}
 
@@ -137,10 +140,10 @@ func (c *RestClient) GetClusterNodePools(clusterId string) (*response.NodePool, 
 
 // GetNamedClusterNodePools method first resolves cluster name
 // and than look up node pool list attached to a given cluster.
-func (c *RestClient) GetNamedClusterNodePools(clusterName string) (*response.NodePool, string, error) {
+func (c *RestClient) GetNamedClusterNodePools(ctx context.Context, clusterName string) (*response.NodePool, string, error) {
 
 	// cluster list.
-	cluster, err := c.GetClusters()
+	cluster, err := c.GetClusters(ctx)
 	if err != nil || cluster == nil {
 		glog.Errorf("Failed acquire cluster information for %v", clusterName)
 		return nil, "", err
@@ -171,11 +174,11 @@ func (m *TaskNotFound) Error() string {
 // GetClustersTask - returns infrastructure k8s clusters task list
 // Before adjusting cluster task , caller must first check existing task list.
 // each task can fail.
-func (c *RestClient) GetClustersTask(f *request.ClusterTaskQuery) (*models.ClusterTask, error) {
+func (c *RestClient) GetClustersTask(ctx context.Context, f *request.ClusterTaskQuery) (*models.ClusterTask, error) {
 
 	c.GetClient()
 
-	resp, err := c.Client.R().SetBody(f).Post(c.BaseURL + TcaInfraClusterTask)
+	resp, err := c.Client.R().SetContext(ctx).SetBody(f).Post(c.BaseURL + TcaInfraClusterTask)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -199,14 +202,14 @@ func (c *RestClient) GetClustersTask(f *request.ClusterTaskQuery) (*models.Clust
 }
 
 // GetClusterTask returns k8s execution current task.
-func (c *RestClient) GetClusterTask(clusterId string) (*models.ClusterTask, error) {
+func (c *RestClient) GetClusterTask(ctx context.Context, clusterId string) (*models.ClusterTask, error) {
 
 	if len(clusterId) == 0 {
 		return nil, fmt.Errorf("cluster id is empty string")
 	}
 
 	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + fmt.Sprintf(TcaClusterTask, clusterId))
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + fmt.Sprintf(TcaClusterTask, clusterId))
 
 	if err != nil {
 		glog.Error(err)
@@ -235,118 +238,6 @@ func (c *RestClient) GetClusterTask(clusterId string) (*models.ClusterTask, erro
 
 	return &task, nil
 }
-
-var testSpec = `{
-  "name": "edge-workload-test02",
-  "clusterType": "WORKLOAD",
-  "clusterTemplateId": "c3e006c1-e6aa-4591-950b-6f3bedd944d3",
-  "hcxCloudUrl": "https://tca-pod03-cp.cnfdemo.io",
-  "vmTemplate": "photon-3-kube-v1.20.4+vmware.1",
-  "endpointIP": "10.241.7.190",
-  "placementParams": [
-    {
-      "type": "Folder",
-      "name": "tkg"
-    },
-    {
-      "type": "Datastore",
-      "name": "vsanDatastore"
-    },
-    {
-      "type": "ResourcePool",
-      "name": "k8s"
-    },
-    {
-      "type": "ClusterComputeResource",
-      "name": "hubsite"
-    }
-  ],
-  "clusterConfig": {
-    "csi": [
-      {
-        "name": "nfs_client",
-        "properties": {
-          "serverIP": "10.241.0.250",
-          "mountPath": "/w3-nfv-pst-01-mus"
-        }
-      },
-      {
-        "name": "vsphere-csi",
-        "properties": {
-          "datastoreUrl": "ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/",
-          "datastoreName": "vsanDatastore"
-        }
-      }
-    ],
-    "tools": [
-      {
-        "name": "harbor",
-        "properties": {
-          "type": "extension",
-          "extensionId": "9d0d4ff4-1963-4d89-ac15-2d856768deeb"
-        }
-      }
-    ]
-  },
-  "managementClusterId": "9ceb62ef-c48d-4504-86c5-cc9ce6ae1aae",
-  "clusterPassword": "Vk13YXJlMSE=",
-  "masterNodes": [
-    {
-      "name": "master",
-      "placementParams": [
-        {
-          "type": "ClusterComputeResource",
-          "name": "hubsite"
-        },
-        {
-          "type": "Datastore",
-          "name": "vsanDatastore"
-        },
-        {
-          "type": "ResourcePool",
-          "name": "k8s"
-        }
-      ],
-      "networks": [
-        {
-          "label": "MANAGEMENT",
-          "networkName": "/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0",
-          "nameservers": [
-            "10.246.2.9"
-          ]
-        }
-      ]
-    }
-  ],
-  "workerNodes": [
-    {
-      "name": "default-pool01",
-      "placementParams": [
-        {
-          "type": "ClusterComputeResource",
-          "name": "hubsite"
-        },
-        {
-          "type": "Datastore",
-          "name": "vsanDatastore"
-        },
-        {
-          "type": "ResourcePool",
-          "name": "k8s"
-        }
-      ],
-      "networks": [
-        {
-          "label": "MANAGEMENT",
-          "networkName": "/Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0",
-          "nameservers": [
-            "10.246.2.9"
-          ]
-        }
-      ]
-    }
-  ]
-}`
 
 // CreateCluster - create new management and or tenant cluster
 // TCA require first create management cluster before any tenant cluster created.
@@ -393,12 +284,12 @@ func (c *RestClient) CreateCluster(spec *request.Cluster) (*models.TcaTask, erro
 // DeleteCluster - delete  k8s clusters. ( Management and tenant workload)
 // note Management cluster can't deleted if there are workload clusters
 // already attached.  Method return models.TcaTask that can monitored.
-func (c *RestClient) DeleteCluster(clusterId string) (*models.TcaTask, error) {
+func (c *RestClient) DeleteCluster(ctx context.Context, clusterId string) (*models.TcaTask, error) {
 
 	c.GetClient()
 	glog.Infof("Deleting cluster %v", clusterId)
 
-	resp, err := c.Client.R().Delete(c.BaseURL + TcaInfraClusters + "/" + clusterId)
+	resp, err := c.Client.R().SetContext(ctx).Delete(c.BaseURL + TcaInfraClusters + "/" + clusterId)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -408,7 +299,7 @@ func (c *RestClient) DeleteCluster(clusterId string) (*models.TcaTask, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		return nil, c.checkErrors(resp)
 	}
 

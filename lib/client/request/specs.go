@@ -20,6 +20,12 @@ package request
 const (
 	// SpecTypeProviderReg provider registration spec
 	SpecTypeProviderReg SpecType = "provider"
+
+	SpecTypeExtensionsReg SpecType = "extensions"
+
+	SpecTypeNodePoolReg SpecType = "node_pool"
+
+	SpecTypeClusterTemplateReg SpecType = "template"
 )
 
 type SpecKind string

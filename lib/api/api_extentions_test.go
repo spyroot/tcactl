@@ -1,17 +1,18 @@
 package api
 
 import (
+	"context"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
-	ioutils "github.com/spyroot/tcactl/pkg/io"
+	"github.com/spyroot/tcactl/lib/testutil"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"time"
 )
 
-func TestTcaApiCreateExtension(t *testing.T) {
+func TestCreateExtension(t *testing.T) {
 
 	tests := []struct {
 		name         string
@@ -21,20 +22,17 @@ func TestTcaApiCreateExtension(t *testing.T) {
 		wantDel      bool
 		verifyAttach bool
 		password     string
+		randRepoName bool
+		randUser     bool
 	}{
 		{
-			name:    "Create harbor extension from string",
-			rest:    rest,
-			spec:    testHarborExt,
-			wantErr: false,
-			wantDel: true,
-		},
-		{
-			name:    "Create harbor extension from string no delete",
-			rest:    rest,
-			spec:    testHarborExt,
-			wantErr: false,
-			wantDel: false,
+			name:         "Create harbor extension from string",
+			rest:         rest,
+			spec:         testHarborExt,
+			wantErr:      false,
+			wantDel:      true,
+			randRepoName: true,
+			randUser:     true,
 		},
 		{
 			name:    "Create duplicate extension must fail",
@@ -64,30 +62,35 @@ func TestTcaApiCreateExtension(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a, err := NewTcaApi(tt.rest)
-			assert.NoError(t, err)
-
+			a := getTcaApi(t, rest, false)
 			spec, err := request.ExtensionSpecFromFromString(tt.spec)
 			assert.NoError(t, err)
+			ctx := context.Background()
 
+			if tt.randUser {
+				spec.AccessInfo.Username = testutil.RandString(8)
+			}
+			if tt.randRepoName {
+				spec.Name = testutil.RandString(8)
+			}
 			if len(tt.password) > 0 {
 				spec.AccessInfo.Password = tt.password
 			}
 
-			got, err := a.CreateExtension(spec)
+			got, err := a.CreateExtension(ctx, spec)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("TestTcaApiCreateExtension() error = %v, vimErr %v", err, tt.wantErr)
+				t.Errorf("TestCreateExtension() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr {
 				if !IsValidUUID(got) {
-					t.Errorf("TestTcaApiCreateExtension() failed create extension must return UUID")
+					t.Errorf("TestCreateExtension() failed create extension must return UUID")
 					return
 				}
 			}
 
-			extId, err := a.ResolveExtensionId(spec.Name)
+			extId, err := a.ResolveExtensionId(ctx, spec.Name)
 			if err != nil {
 				return
 			}
@@ -98,12 +101,9 @@ func TestTcaApiCreateExtension(t *testing.T) {
 				assert.Equal(t, "", got)
 			}
 
-			t.Logf("extension id %s", got)
-
 			if tt.verifyAttach {
 				assert.NotNil(t, spec.VimInfo)
 				for _, info := range spec.VimInfo {
-					t.Log(info.VimId)
 					assert.NotEmpty(t, info.VimId)
 					assert.NotEmpty(t, info.VimSystemUUID)
 					assert.NotEmpty(t, info.VimName)
@@ -113,7 +113,7 @@ func TestTcaApiCreateExtension(t *testing.T) {
 			time.Sleep(1 * time.Second)
 
 			if tt.wantDel {
-				_, err := a.DeleteExtension(got)
+				_, err := a.DeleteExtension(ctx, got)
 				assert.NoError(t, err)
 			}
 
@@ -121,7 +121,7 @@ func TestTcaApiCreateExtension(t *testing.T) {
 	}
 }
 
-func TestTcaApiGetExtension(t *testing.T) {
+func TestGetExtension(t *testing.T) {
 
 	tests := []struct {
 		name         string
@@ -133,6 +133,8 @@ func TestTcaApiGetExtension(t *testing.T) {
 		addBefore    bool
 		verifyAttach bool
 		password     string
+		randRepoName bool
+		randUser     bool
 	}{
 		{
 			name:      "Get extension by wrong name",
@@ -143,21 +145,22 @@ func TestTcaApiGetExtension(t *testing.T) {
 			addBefore: false,
 		},
 		{
-			name:      "Get extension by name",
-			rest:      rest,
-			spec:      testGetExtention,
-			eid:       "gettest",
-			wantErr:   false,
-			delAfter:  true,
-			addBefore: true,
+			name:         "Get extension by name",
+			rest:         rest,
+			spec:         testGetExtention,
+			eid:          "gettest",
+			wantErr:      false,
+			delAfter:     true,
+			addBefore:    true,
+			randUser:     true,
+			randRepoName: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			api, err := NewTcaApi(tt.rest)
-			assert.NoError(t, err)
-
+			ctx := context.Background()
+			api := getTcaApi(t, rest, false)
 			spec, err := request.ExtensionSpecFromFromString(tt.spec)
 			assert.NoError(t, err)
 
@@ -166,25 +169,41 @@ func TestTcaApiGetExtension(t *testing.T) {
 				if len(tt.password) > 0 {
 					spec.AccessInfo.Password = tt.password
 				}
+				if tt.randUser {
+					spec.AccessInfo.Username = testutil.RandString(8)
+				}
+				if tt.randRepoName {
+					spec.Name = testutil.RandString(8)
+				}
 
 				// create extension if needed
-				eid, err := api.CreateExtension(spec)
+				eid, err := api.CreateExtension(ctx, spec)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("TestTcaApiGetExtension() error = %v, vimErr %v", err, tt.wantErr)
+					t.Errorf("TestGetExtension() error = %v, vimErr %v", err, tt.wantErr)
+					return
+				}
+				if !tt.wantErr && !IsValidUUID(eid) {
+					t.Errorf("TestGetExtension() failed create extension must return UUID")
 					return
 				}
 
-				if !tt.wantErr && !IsValidUUID(eid) {
-					t.Errorf("TestTcaApiGetExtension() failed create extension must return UUID")
-					return
-				}
+				tt.eid = eid
 			}
 
-			extensions, err := api.GetExtension(tt.eid)
+			extensions, err := api.GetExtension(ctx, tt.eid)
 			if tt.wantErr && err != nil {
 				return
 			}
 
+			if tt.wantErr && err == nil {
+				t.Errorf("TestGetExtension() must return not nil error")
+				return
+			}
+
+			if extensions == nil {
+				t.Errorf("TestGetExtension() failed create must not be nil")
+				return
+			}
 			extension, err := extensions.FindExtension(tt.eid)
 			if !tt.wantErr {
 				assert.NoError(t, err)
@@ -195,7 +214,7 @@ func TestTcaApiGetExtension(t *testing.T) {
 			}
 
 			if tt.addBefore && tt.delAfter {
-				_, err := api.DeleteExtension(tt.eid)
+				_, err := api.DeleteExtension(ctx, tt.eid)
 				assert.NoError(t, err)
 			}
 		})
@@ -218,28 +237,25 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 		password     string
 	}{
 		{
-			name:        "Create, Attach harbor extension to cluster",
-			rest:        rest,
-			specString:  testHarborCreateUpdate,
-			vimName:     getTestClusterName(),
-			extName:     "min",
-			addBefore:   false,
-			errOnCreate: false,
-			errOnUpdate: false,
-			delAfter:    true,
+			name:       "Create and attach harbor extension to cluster",
+			rest:       rest,
+			specString: testHarborCreateUpdate,
+			vimName:    getTestWorkloadClusterName(),
+			extName:    getTestRepoName(),
+			password:   os.Getenv("TCA_REPO_PASSWORD"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var (
+				ctx        = context.Background()
 				extensions *response.Extensions
 				err        error
 			)
 
-			api, err := NewTcaApi(tt.rest)
-			assert.NoError(t, err)
-
+			ctx = context.Background()
+			api := getTcaApi(t, rest, false)
 			spec, err := request.ExtensionSpecFromFromString(tt.specString)
 			assert.NoError(t, err)
 
@@ -247,9 +263,9 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 				spec.AccessInfo.Password = tt.password
 			}
 
-			gotEid := tt.extName
+			extensionId := tt.extName
 			if tt.addBefore {
-				gotEid, err := api.CreateExtension(spec)
+				gotEid, err := api.CreateExtension(ctx, spec)
 				if (err != nil) != tt.errOnCreate {
 					t.Errorf("TestTcaApiCreateUpdate() error = %v, vimErr %v", err, tt.errOnCreate)
 					return
@@ -261,41 +277,32 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 			}
 
 			// lookup ext id if needed
-			if !tt.errOnCreate {
-				extensions, err = api.GetExtension(gotEid)
-				assert.NoError(t, err)
-				extension, err := extensions.FindExtension(gotEid)
-				assert.NoError(t, err)
-				assert.NotNil(t, extension)
-			}
+			extensions, err = api.GetExtension(ctx, extensionId)
+			assert.NoError(t, err)
+			extension, err := extensions.FindExtension(extensionId)
+			assert.NoError(t, err)
+			assert.NotNil(t, extension)
 
-			// Update and add vim specString and update
-			time.Sleep(1 * time.Second)
+			// add vim details
 			spec.AddVim(tt.vimName)
 			_, err = spec.GetVim(tt.vimName)
 			assert.NoError(t, err)
-			ioutils.YamlPrinter(spec)
 
-			//t.Log(spec.VimInfo[0].VimId)
-			//t.Log(spec.VimInfo[0].VimName)
-			//t.Log(spec.VimInfo[0].VimSystemUUID)
-			//
-			//_, err = api.UpdateExtension(spec, gotEid)
-			//if !tt.errOnUpdate {
-			//	assert.NoError(t, err)
-			//}
-			//
-			//if tt.delAfter {
-			//	_, err := api.DeleteExtension(got)
-			//	assert.NoError(t, err)
-			//}
+			_, err = api.UpdateExtension(ctx, spec)
+			if !tt.errOnUpdate {
+				assert.NoError(t, err)
+			}
 
+			if tt.delAfter {
+				_, err := api.DeleteExtension(ctx, spec.Name)
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
 
 // TestTcaApiExtensionQuery
-func TestTcaApiExtensionQuery(t *testing.T) {
+func TestExtensionQuery(t *testing.T) {
 
 	tests := []struct {
 		name    string
@@ -311,11 +318,10 @@ func TestTcaApiExtensionQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a := &TcaApi{
-				rest: tt.rest,
-			}
+			ctx := context.Background()
+			a := getTcaApi(t, rest, false)
+			got, err := a.ExtensionQuery(ctx)
 
-			got, err := a.ExtensionQuery()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
@@ -338,43 +344,37 @@ func TestTcaApiExtensionQuery(t *testing.T) {
 	}
 }
 
-func TestTcaApi_ExtensionQueryFindRepo(t *testing.T) {
+func TestExtensionQueryFindRepo(t *testing.T) {
 
 	tests := []struct {
-		name    string
-		rest    *client.RestClient
-		wantErr bool
+		name     string
+		rest     *client.RestClient
+		wantErr  bool
+		repoName string
 	}{
 		{
-			name:    "Basic Find",
-			rest:    rest,
-			wantErr: false,
+			name:     "Basic Find must return ok",
+			rest:     rest,
+			wantErr:  false,
+			repoName: getTestRepoName(),
+		},
+		{
+			name:     "Basic Find must return error",
+			rest:     rest,
+			wantErr:  true,
+			repoName: "notfound",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a, err := NewTcaApi(tt.rest)
+			ctx := context.Background()
+			a := getTcaApi(t, rest, false)
+
+			got, err := a.ExtensionQuery(ctx)
 			assert.NoError(t, err)
 
-			got, err := a.ExtensionQuery()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			if (got == nil) && tt.wantErr == false {
-				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			if (got == nil) && tt.wantErr == true {
-				return
-			}
-
-			assert.NotNil(t, got)
-
-			valid, err := got.FindRepo("9d0d4ff4-1963-4d89-ac15-2d856768deeb")
+			valid, err := got.FindRepo(tt.repoName)
 			if tt.wantErr && err != nil {
 				return
 			}
@@ -399,7 +399,7 @@ func TestTcaApi_ExtensionQueryFindRepo(t *testing.T) {
 
 var testHarborExt = `{
   "kind": "extensions",
-  "name": "repo",
+  "name": "test_repo",
   "version": "v2.x",
   "type": "Repository",
   "extensionKey": "",
@@ -444,7 +444,7 @@ var testHarborMinSpec = `{
 
 var testHarborWithVim = `{
   "kind": "extensions",
-  "name": "min",
+  "name": "unit_test",
   "version": "v2.x",
   "type": "Repository",
   "extensionKey": "",
@@ -502,7 +502,7 @@ var testHarborWithInvalidVim = `{
 
 var testHarborCreateUpdate = `{
   "kind": "extensions",
-  "name": "min",
+  "name": "repo",
   "version": "v2.x",
   "type": "Repository",
   "extensionKey": "",

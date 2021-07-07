@@ -46,6 +46,135 @@ const (
 	DefaultFlavor = "default"
 )
 
+// ClusterDeleteApiReq api request to delete cluster
+type ClusterDeleteApiReq struct {
+	//
+	Cluster string
+	//
+	IsBlocking bool
+	//
+	IsVerbose bool
+}
+
+// ClusterCreateApiReq api request to create cluster
+type ClusterCreateApiReq struct {
+	//
+	Spec *request.Cluster
+	//
+	IsDryRun bool
+	//
+	IsBlocking bool
+	//
+	IsVerbose bool
+	// isFixConflict resolve IP conflict, by check next IP
+	IsFixConflict bool
+}
+
+// NodePoolCreateApiReq api request issued to create new node pool
+type NodePoolCreateApiReq struct {
+	// Spec is a request.NewNodePoolSpec spec
+	Spec *request.NewNodePoolSpec
+
+	// Cluster is cluster name or cluster id
+	Cluster string
+
+	//
+	IsDryRun bool
+
+	// if node pool creation needs to block
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
+// CreateInstanceApiReq - api request to create new cnf or vnf instance
+type CreateInstanceApiReq struct {
+
+	//InstanceName instance name
+	InstanceName string
+
+	//PoolName node pool name
+	PoolName string
+
+	//VimName target vim name
+	VimName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+
+	// additional param
+	AdditionalParam *request.AdditionalParams
+
+	//Namespace  overwrite name
+	Namespace string
+
+	//RepoUsername overwrites repo username
+	RepoUsername string
+
+	//RepoPassword overwrite repo password
+	RepoPassword string
+
+	// RepoUrl overwrite repo url
+	RepoUrl string
+}
+
+// TerminateInstanceApiReq - api request to terminate new cnf or vnf instance
+type TerminateInstanceApiReq struct {
+
+	//InstanceName instance name
+	InstanceName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
+type UpdateInstanceApiReq struct {
+	//
+	UpdateReq *request.InstantiateVnfRequest
+
+	//InstanceName instance name
+	InstanceName string
+
+	//PoolName node pool name
+	PoolName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
+type ResetInstanceApiReq struct {
+	//InstanceName instance name
+	InstanceName string
+
+	//ClusterName target cluster name
+	ClusterName string
+
+	//IsBlocking block or async task
+	IsBlocking bool
+
+	// if blocking request require output progress
+	IsVerbose bool
+}
+
 // TcaApi - TCA Api interface
 // Called need to use NewTcaApi to get instance before
 type TcaApi struct {
@@ -59,18 +188,17 @@ type TcaApi struct {
 
 // NewTcaApi - return instance for API.
 //
-func NewTcaApi(rest *client.RestClient) (*TcaApi, error) {
+func NewTcaApi(r *client.RestClient) (*TcaApi, error) {
 
-	if rest == nil {
+	if r == nil {
 		return nil, fmt.Errorf("rest client is nil, initilize rest client first")
 	}
 
 	a := &TcaApi{
-		rest: rest,
+		rest: r,
 	}
 
 	a.specValidator = validator.New()
-
 	return a, nil
 }
 
@@ -113,13 +241,13 @@ func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string
 // GetAllNodePool return a Node pool for particular cluster
 // It generally useful to get list only if we need to display all
 // in all other cases it efficient to use direct call for cluster.
-func (a *TcaApi) GetAllNodePool() (*response.NodePool, error) {
+func (a *TcaApi) GetAllNodePool(ctx context.Context) (*response.NodePool, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	clusters, err := a.rest.GetClusters()
+	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -157,18 +285,18 @@ func (a *TcaApi) GetAllNodePool() (*response.NodePool, error) {
 
 // GetVimTenants method return vim tenants as response.Tenants
 // collection.
-func (a *TcaApi) GetVimTenants() (*response.Tenants, error) {
+func (a *TcaApi) GetVimTenants(ctx context.Context) (*response.Tenants, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	return a.rest.GetVimTenants()
+	return a.rest.GetVimTenants(ctx)
 }
 
 // GetCurrentClusterTask get current cluster task
 // taskId is operationId field.
-func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, error) {
+func (a *TcaApi) GetCurrentClusterTask(ctx context.Context, taskId string) (*models.ClusterTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -178,7 +306,7 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 		return nil, &InvalidTaskId{taskId}
 	}
 
-	clusters, err := a.rest.GetClusters()
+	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +317,7 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 	}
 
 	glog.Infof("Retrieving current task task list for cluster '%v'", cid)
-	task, err := a.rest.GetClustersTask(request.NewClusterTaskQuery(taskId))
+	task, err := a.rest.GetClustersTask(ctx, request.NewClusterTaskQuery(taskId))
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +327,7 @@ func (a *TcaApi) GetCurrentClusterTask(taskId string) (*models.ClusterTask, erro
 
 // GetVimVMTemplates - return compute cluster attached to cloud provider.
 // caller need indicate template type and version.
-func (a *TcaApi) GetVimVMTemplates(cloudName string,
+func (a *TcaApi) GetVimVMTemplates(ctx context.Context, cloudName string,
 	templateType VmTemplateFilterType, ver string) (*models.VcInventory, error) {
 
 	if a.rest == nil {
@@ -210,7 +338,7 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 		return nil, fmt.Errorf("empty cloud provider name")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +361,7 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 	}
 
 	_filter := request.NewVMwareTemplateQuery(tenant.HcxUUID, string(templateType), ver)
-	t, err := a.rest.GetVMwareTemplates(_filter)
+	t, err := a.rest.GetVMwareTemplates(ctx, _filter)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +371,7 @@ func (a *TcaApi) GetVimVMTemplates(cloudName string,
 
 // GetVimFolders - return folders in target cloud provider.
 // for VMware VC it list of VM Folders, models.Folders
-func (a *TcaApi) GetVimFolders(cloudName string) (*models.Folders, error) {
+func (a *TcaApi) GetVimFolders(ctx context.Context, cloudName string) (*models.Folders, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -253,7 +381,7 @@ func (a *TcaApi) GetVimFolders(cloudName string) (*models.Folders, error) {
 		return nil, fmt.Errorf("empty cloud provider name")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -289,13 +417,13 @@ func (a *TcaApi) GetVimFolders(cloudName string) (*models.Folders, error) {
 
 // GetVimResourcePool - return resource pool in target VIM.
 // caller need indicate template type and version.
-func (a *TcaApi) GetVimResourcePool(cloudName string) (*models.ResourcePool, error) {
+func (a *TcaApi) GetVimResourcePool(ctx context.Context, cloudName string) (*models.ResourcePool, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +447,7 @@ func (a *TcaApi) GetVimResourcePool(cloudName string) (*models.ResourcePool, err
 		return nil, fmt.Errorf("failed create folder filter")
 	}
 
-	t, err := a.rest.GetVMwareResourcePool(f)
+	t, err := a.rest.GetVMwareResourcePool(ctx, f)
 	if err != nil {
 		return nil, err
 	}
@@ -448,10 +576,10 @@ func (a *TcaApi) NormalizeTemplateId(IdOrName string, templateType string) (stri
 }
 
 // doCheckCloudEndpoint
-func (a *TcaApi) validateCloudEndpoint(cloud string) (*response.TenantsDetails, error) {
+func (a *TcaApi) validateCloudEndpoint(ctx context.Context, cloud string) (*response.TenantsDetails, error) {
 
 	// resolve template id, in case client used name instead id
-	vimTenants, err := a.rest.GetVimTenants()
+	vimTenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -469,6 +597,7 @@ func (a *TcaApi) validateCloudEndpoint(cloud string) (*response.TenantsDetails, 
 	if err != nil {
 		return nil, err
 	}
+
 	return t, nil
 }
 
@@ -558,7 +687,7 @@ type VmwareVim struct {
 	networks     *models.CloudNetworks
 }
 
-func (a *TcaApi) getVmwareVimState(vimName string) (*VmwareVim, error) {
+func (a *TcaApi) getVmwareVimState(ctx context.Context, vimName string) (*VmwareVim, error) {
 	// vc compute
 
 	var (
@@ -566,22 +695,22 @@ func (a *TcaApi) getVmwareVimState(vimName string) (*VmwareVim, error) {
 		err      error
 	)
 
-	vimState.clusters, err = a.GetVimComputeClusters(vimName)
+	vimState.clusters, err = a.GetVimComputeClusters(ctx, vimName)
 	if err != nil {
 		return nil, err
 	}
 	// vc folders
-	vimState.folders, err = a.GetVimFolders(vimName)
+	vimState.folders, err = a.GetVimFolders(ctx, vimName)
 	if err != nil {
 		return nil, err
 	}
 	// vc resource pools
-	vimState.resourcePool, err = a.GetVimResourcePool(vimName)
+	vimState.resourcePool, err = a.GetVimResourcePool(ctx, vimName)
 	if err != nil {
 		return nil, err
 	}
 
-	vimState.networks, err = a.GetVimNetworks(vimName)
+	vimState.networks, err = a.GetVimNetworks(ctx, vimName)
 	if err != nil {
 		return nil, err
 	}
@@ -589,9 +718,9 @@ func (a *TcaApi) getVmwareVimState(vimName string) (*VmwareVim, error) {
 	return &vimState, nil
 }
 
-func (a *TcaApi) validateExtensions(spec *request.Cluster) error {
+func (a *TcaApi) validateExtensions(ctx context.Context, spec *request.Cluster) error {
 
-	repos, err := a.GetRepos()
+	repos, err := a.GetRepos(ctx)
 	if err != nil {
 		return err
 	}
@@ -617,9 +746,9 @@ func (a *TcaApi) validateExtensions(spec *request.Cluster) error {
 }
 
 // validateVmwarePlacement method validate placement for VMware VIM
-func (a *TcaApi) validateVmwarePlacement(spec *request.Cluster, tenant *response.TenantsDetails) error {
+func (a *TcaApi) validateVmwarePlacement(ctx context.Context, spec *request.Cluster, tenant *response.TenantsDetails) error {
 
-	vmwareVim, err := a.getVmwareVimState(tenant.VimName)
+	vmwareVim, err := a.getVmwareVimState(ctx, tenant.VimName)
 	if err != nil {
 		return err
 	}
@@ -733,7 +862,7 @@ func (a *TcaApi) validateVim(spec *request.Cluster, tenant *response.TenantsDeta
 }
 
 // Validate cloud tenant state
-func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.TenantsDetails) error {
+func (a *TcaApi) validatePlacements(ctx context.Context, spec *request.Cluster, tenant *response.TenantsDetails) error {
 
 	glog.Infof("Validate placement details.")
 
@@ -745,11 +874,14 @@ func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.Tena
 		return err
 	}
 
-	a.validateExtensions(spec)
+	err := a.validateExtensions(ctx, spec)
+	if err != nil {
+		return err
+	}
 
 	if tenant.IsVMware() {
 		glog.Infof("Target cloud provider is VMware cluster, validating vc placements.")
-		err := a.validateVmwarePlacement(spec, tenant)
+		err := a.validateVmwarePlacement(ctx, spec, tenant)
 		if err != nil {
 			return err
 		}
@@ -760,13 +892,13 @@ func (a *TcaApi) validatePlacements(spec *request.Cluster, tenant *response.Tena
 
 // DeleteTenantCluster - deletes tenant cluster
 // it accept just name or id.
-func (a *TcaApi) DeleteTenantCluster(tenantCluster string) (*models.TcaTask, error) {
+func (a *TcaApi) DeleteTenantCluster(ctx context.Context, tenantCluster string) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	vims, err := a.GetVims()
+	vims, err := a.GetVims(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -779,9 +911,10 @@ func (a *TcaApi) DeleteTenantCluster(tenantCluster string) (*models.TcaTask, err
 	return a.rest.DeleteTenant(clouds.TenantID)
 }
 
-func (a *TcaApi) ResolveVim(name string) (*response.TenantsDetails, error) {
+// ResolveVim resolve vim name to id
+func (a *TcaApi) ResolveVim(ctx context.Context, name string) (*response.TenantsDetails, error) {
 
-	vims, err := a.GetVims()
+	vims, err := a.GetVims(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -798,9 +931,10 @@ func (a *TcaApi) ResolveVim(name string) (*response.TenantsDetails, error) {
 	return provider, nil
 }
 
-func (a *TcaApi) ResolveVimName(name string) (string, error) {
+// ResolveVimName resolve name to id
+func (a *TcaApi) ResolveVimName(ctx context.Context, name string) (string, error) {
 
-	vim, err := a.ResolveVim(name)
+	vim, err := a.ResolveVim(ctx, name)
 	if err != nil {
 		return "", err
 	}
@@ -808,9 +942,9 @@ func (a *TcaApi) ResolveVimName(name string) (string, error) {
 	return vim.ID, nil
 }
 
-func (a *TcaApi) ResolveVimId(name string) (string, error) {
+func (a *TcaApi) ResolveVimId(ctx context.Context, name string) (string, error) {
 
-	vim, err := a.ResolveVim(name)
+	vim, err := a.ResolveVim(ctx, name)
 	if err != nil {
 		return "", err
 	}
@@ -869,14 +1003,14 @@ func (a *TcaApi) CreateSpecExample(
 	return &spec
 }
 
-func (a *TcaApi) GetClusters() (*response.Clusters, error) {
+func (a *TcaApi) GetClusters(ctx context.Context) (*response.Clusters, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
 	glog.Infof("Retrieving cluster list.")
-	return a.rest.GetClusters()
+	return a.rest.GetClusters(ctx)
 }
 
 func (a *TcaApi) GetClusterNodePools(Id string) (*response.NodePool, error) {
@@ -891,7 +1025,7 @@ func (a *TcaApi) GetClusterNodePools(Id string) (*response.NodePool, error) {
 }
 
 // GetAllNodePools - return all node pool for clusterId
-func (a *TcaApi) GetAllNodePools() ([]response.NodesSpecs, error) {
+func (a *TcaApi) GetAllNodePools(ctx context.Context) ([]response.NodesSpecs, error) {
 
 	glog.Infof("Retrieving node pools.")
 
@@ -900,7 +1034,7 @@ func (a *TcaApi) GetAllNodePools() ([]response.NodesSpecs, error) {
 		return allSpecs, fmt.Errorf("rest interface is nil")
 	}
 
-	clusters, err := a.GetClusters()
+	clusters, err := a.GetClusters(ctx)
 	if err != nil {
 		return allSpecs, err
 	}
@@ -922,35 +1056,11 @@ func (a *TcaApi) GetAllNodePools() ([]response.NodesSpecs, error) {
 	return allSpecs, nil
 }
 
-// GetVnfPkgm - return packages
-func (a *TcaApi) GetVnfPkgm(filter string, id string) (*response.VnfPackages, error) {
-
-	glog.Infof("Retrieving vnf packages.")
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
-	return a.rest.GetVnfPkgm(filter, id)
-}
-
-// GetCatalogId return vnf Package ID and VNFD ID
-func (a *TcaApi) GetCatalogId(catalogId string) (string, string, error) {
-
-	glog.Infof("Retrieving vnf packages.")
-
-	if a.rest == nil {
-		return "", "", fmt.Errorf("rest interface is nil")
-	}
-
-	return a.rest.GetPackageCatalogId(catalogId)
-}
-
 // GetTenant method return tenant as response.Tenants
 // if tenant is name, method will lookup by name.
 // if tenant is UUID it will lookup by id
 // if it has prefix vmware it will lookup by VIM id.
-func (a *TcaApi) GetTenant(tenant string) (*response.Tenants, error) {
+func (a *TcaApi) GetTenant(ctx context.Context, tenant string) (*response.Tenants, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -960,7 +1070,7 @@ func (a *TcaApi) GetTenant(tenant string) (*response.Tenants, error) {
 		return nil, fmt.Errorf("empty tenant")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1016,7 +1126,7 @@ func (a *TcaApi) GetTenantsQuery(tenantId string, nfType string) (*response.Tena
 
 // GetNamedClusterTemplate - return template
 // if name is string first resolve template
-func (a *TcaApi) GetNamedClusterTemplate(name string) (*response.ClusterTemplate, error) {
+func (a *TcaApi) GetNamedClusterTemplate(name string) (*response.ClusterTemplateSpec, error) {
 
 	glog.Infof("Retrieving vnf packages.")
 
@@ -1040,26 +1150,6 @@ func (a *TcaApi) GetNamedClusterTemplate(name string) (*response.ClusterTemplate
 	return a.rest.GetClusterTemplate(templateId)
 }
 
-// GetCatalogAndVdu return catalog entity and vdu package.
-func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *response.VduPackage, error) {
-
-	vnfCatalog, err := a.rest.GetVnfPkgm("", "")
-	if err != nil || vnfCatalog == nil {
-		glog.Errorf("Failed acquire vnf package information. Error %v", err)
-		return nil, nil, err
-	}
-
-	catalogEntity, err := vnfCatalog.GetVnfdID(nfdName)
-	if err != nil || catalogEntity == nil {
-		glog.Errorf("Failed acquire catalog information for catalog name %v", nfdName)
-		return nil, nil, err
-	}
-
-	v, err := a.rest.GetVnfPkgmVnfd(catalogEntity.PID)
-
-	return catalogEntity, v, err
-}
-
 // CreateCnfNewInstance create a new instance of VNF or CNF.
 // Dry run will validate request but will not create any CNF.
 func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpec, isDry bool, isBlocked bool) (*response.LcmInfo, error) {
@@ -1068,7 +1158,7 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	tenants, err := a.GetVimTenants()
+	tenants, err := a.GetVimTenants(ctx)
 	if err != nil {
 		glog.Errorf("Failed acquire cloud tenant, error: %v", err)
 		return nil, err
@@ -1098,7 +1188,7 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, err
 	}
 
-	ext, err := a.rest.GetExtensions()
+	ext, err := a.rest.GetExtensions(ctx)
 	if err != nil {
 		glog.Errorf("Failed acquire extension information for %v", err)
 		return nil, err
@@ -1118,7 +1208,7 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 	glog.Infof("Found attached repo %v and status %v", n.repo, linkedRepos.State)
 
 	// resolve nodePools
-	nodePool, _, err := a.rest.GetNamedClusterNodePools(n.clusterName)
+	nodePool, _, err := a.rest.GetNamedClusterNodePools(ctx, n.clusterName)
 	if err != nil || nodePool == nil {
 		glog.Errorf("Failed acquire clusters node information for cluster %v, error %v", n.clusterName, err)
 		return nil, err
@@ -1153,16 +1243,16 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		glog.Infof("Instantiating vdu %s %s", vdu.VduId, linkedRepos.Name)
 		var req = request.InstantiateVnfRequest{
 			FlavourID: flavorName,
-			VimConnectionInfo: []request.VimConInfo{
+			VimConnectionInfo: []models.VimConnectionInfo{
 				{
-					ID:      cloud.VimID,
+					Id:      cloud.VimID,
 					VimType: "",
-					Extra: request.PoolExtra{
+					Extra: &models.VimExtra{
 						NodePoolId: pool.Id,
 					},
 				},
 			},
-			AdditionalVduParams: request.AdditionalParams{
+			AdditionalVduParams: &request.AdditionalParams{
 				VduParams: []request.VduParam{{
 					Namespace: n.namespace,
 					RepoURL:   n.repo,
@@ -1233,6 +1323,10 @@ func (a *TcaApi) BlockWaitStateChange(ctx context.Context, instanceId string, wa
 						instance.Metadata.LcmOperation)
 				}
 
+				if instance.Metadata.LcmOperationState == "FAILED_TEMP" {
+					break
+				}
+
 				if strings.HasPrefix(instance.InstantiationState, waitFor) {
 					break
 				}
@@ -1298,7 +1392,7 @@ func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, 
 				return nil
 			default:
 
-				task, err := a.rest.GetClustersTask(req)
+				task, err := a.rest.GetClustersTask(ctx, req)
 				if err != nil {
 					return err
 				}
@@ -1341,7 +1435,7 @@ func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, 
 }
 
 // ResolvePoolId method resolves pool name to pool id
-func (a *TcaApi) ResolvePoolId(poolName string, clusterScope ...string) (string, error) {
+func (a *TcaApi) ResolvePoolId(ctx context.Context, poolName string, clusterScope ...string) (string, error) {
 
 	// get cluster id for a pool
 	if len(clusterScope) > 0 && len(clusterScope[0]) > 0 {
@@ -1354,7 +1448,7 @@ func (a *TcaApi) ResolvePoolId(poolName string, clusterScope ...string) (string,
 	}
 
 	// cluster scope not indicated, we get entire cluster.
-	clusters, err := a.rest.GetClusters()
+	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		glog.Error(err)
 		return "", err
@@ -1378,7 +1472,7 @@ func (a *TcaApi) ResolvePoolId(poolName string, clusterScope ...string) (string,
 
 // ResolvePoolName -  method resolves pool name to id  for a requested cluster.
 // pool name is named pool and cluster is name or uuid
-func (a *TcaApi) ResolvePoolName(poolName string, clusterName string) (string, string, error) {
+func (a *TcaApi) ResolvePoolName(ctx context.Context, poolName string, clusterName string) (string, string, error) {
 
 	// empty name no ops
 	if len(poolName) == 0 {
@@ -1389,7 +1483,7 @@ func (a *TcaApi) ResolvePoolName(poolName string, clusterName string) (string, s
 		return "", "", fmt.Errorf("provide cluster name to resolve pool name")
 	}
 
-	nodePool, clusterId, err := a.rest.GetNamedClusterNodePools(clusterName)
+	nodePool, clusterId, err := a.rest.GetNamedClusterNodePools(ctx, clusterName)
 	if err != nil || nodePool == nil {
 		glog.Errorf("Failed acquire clusters node information %v", err)
 		return poolName, "", err
@@ -1413,9 +1507,9 @@ func (a *TcaApi) GetAuthorization() (bool, error) {
 // ResolveClusterName - resolve cluster name to cluster id
 // and return a string version. TCA use UUID format
 // for ID.
-func (a *TcaApi) ResolveClusterName(q string) (string, error) {
+func (a *TcaApi) ResolveClusterName(ctx context.Context, q string) (string, error) {
 
-	clusters, err := a.rest.GetClusters()
+	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		return "", nil
 	}
@@ -1473,10 +1567,10 @@ func (a *TcaApi) SetTrace(trace bool) {
 }
 
 // GetVims return all attached tenant vim
-func (a *TcaApi) GetVims() (*response.Tenants, error) {
+func (a *TcaApi) GetVims(ctx context.Context) (*response.Tenants, error) {
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	return a.rest.GetVimTenants()
+	return a.rest.GetVimTenants(ctx)
 }

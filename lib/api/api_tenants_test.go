@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/pkg/io"
 	"github.com/stretchr/testify/assert"
@@ -38,12 +39,13 @@ func TestTenantsCloudProvider(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a, err := NewTcaApi(tt.rest)
+			ctx := context.Background()
+			a := getTcaApi(t, rest, false)
 			if tt.reset {
 				a.rest = nil
 			}
 
-			got, err := a.TenantsCloudProvider(tt.cloudProviderName)
+			got, err := a.TenantsCloudProvider(ctx, tt.cloudProviderName)
 			if got != nil && tt.dumpJson {
 				err := io.PrettyPrint(got)
 				if err != nil {

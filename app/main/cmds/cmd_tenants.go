@@ -18,6 +18,7 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
@@ -48,6 +49,7 @@ Command retrieves particular cloud provider or list of all providers.`,
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
+				ctx = context.Background()
 				t   *response.Tenants
 				err error
 			)
@@ -68,14 +70,14 @@ Command retrieves particular cloud provider or list of all providers.`,
 			ctl.tca.SetTrace(ctl.IsTrace)
 
 			if len(args) > 0 {
-				t, err = ctl.tca.GetTenant(args[0])
+				t, err = ctl.tca.GetTenant(ctx, args[0])
 				CheckErrLogError(err)
 				if t != nil && len(t.TenantsList) == 0 {
 					fmt.Printf("Tenant %s not found\n", args[0])
 					return
 				}
 			} else {
-				t, err = ctl.tca.GetVims()
+				t, err = ctl.tca.GetVims(ctx)
 				CheckErrLogError(err)
 			}
 			if t != nil {
@@ -118,6 +120,7 @@ Command delete cloud provider. Note all entity must be removed.`),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
+				ctx = context.Background()
 				t   *response.Tenants
 				err error
 			)
@@ -138,7 +141,7 @@ Command delete cloud provider. Note all entity must be removed.`),
 			ctl.tca.SetTrace(ctl.IsTrace)
 
 			if len(args) > 0 {
-				_, err := ctl.tca.DeleteCloudProvider(args[0])
+				_, err := ctl.tca.DeleteCloudProvider(ctx, args[0])
 				CheckErrLogError(err)
 
 				fmt.Printf("cloud provider %s delete\n", args[0])
@@ -146,7 +149,7 @@ Command delete cloud provider. Note all entity must be removed.`),
 			} else {
 				// if no args
 				fmt.Println("Please provide cloud provider name or id.")
-				t, err = ctl.tca.GetVims()
+				t, err = ctl.tca.GetVims(ctx)
 				CheckErrLogError(err)
 			}
 			if t != nil {
@@ -224,6 +227,7 @@ Command update cloud provider details and trigger re-attach.`,
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
+				ctx = context.Background()
 				t   *response.Tenants
 				err error
 			)
@@ -244,14 +248,14 @@ Command update cloud provider details and trigger re-attach.`,
 			ctl.tca.SetTrace(ctl.IsTrace)
 
 			if len(args) > 0 {
-				t, err = ctl.tca.GetTenant(args[0])
+				t, err = ctl.tca.GetTenant(ctx, args[0])
 				CheckErrLogError(err)
 				if t != nil && len(t.TenantsList) == 0 {
 					fmt.Printf("Tenant %s not found\n", args[0])
 					return
 				}
 			} else {
-				t, err = ctl.tca.GetVims()
+				t, err = ctl.tca.GetVims(ctx)
 				CheckErrLogError(err)
 			}
 			if t != nil {
@@ -291,7 +295,9 @@ active CNF instance must be removed first.
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
-			task, err := ctl.tca.DeleteTenantCluster(args[0])
+			ctx := context.Background()
+
+			task, err := ctl.tca.DeleteTenantCluster(ctx, args[0])
 			CheckErrLogError(err)
 			fmt.Printf("Tenant cluster %v deleted. Task id %s\n", args[0], task.OperationId)
 		},

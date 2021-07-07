@@ -40,6 +40,12 @@ const (
 	// CliDisableGran disable grand validation flag
 	CliDisableGran = "grant"
 
+	//
+	CliIgnoreGrantFailure = "ignoreGrantFailure"
+
+	//
+	CliDisableAutoRollback = "disableAutoRollback"
+
 	// CliForce force delete flag
 	CliForce = "force"
 
@@ -53,14 +59,44 @@ const (
 	CliShow = "show"
 )
 
+// Chunks splits string to chunks,
+// it uses sep to split near chunkSize limit.
+// Each chunk is variable size. Method used to partition
+// flags usage.
+func Chunks(s string, chunkSize int, sep byte) []string {
+
+	if len(s) == 0 {
+		return nil
+	}
+
+	if chunkSize >= len(s) {
+		return []string{s}
+	}
+
+	var chunks []string = make([]string, 0, (len(s)-1)/chunkSize+1)
+	currentLen := 0
+	currentStart := 0
+	for i := range s {
+		if currentLen >= chunkSize && s[i-1] == sep {
+			chunks = append(chunks, s[currentStart:i])
+			currentLen = 0
+			currentStart = i
+		}
+		currentLen++
+	}
+	chunks = append(chunks, s[currentStart:])
+	return chunks
+}
+
 // CmdInitConfig - initialize configuration file, for initial
 // setup TCA and other defaults
 func (ctl *TcaCtl) CmdInitConfig() *cobra.Command {
 
 	var _cmd = &cobra.Command{
 		Use:   "init",
-		Short: "Command initializes default config file.",
-		Long:  `Command Initializes default config file.`,
+		Short: "Command initializes default tcactl config file.",
+		Long: templates.LongDesc(
+			`Command Initializes default config file.`),
 
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -100,8 +136,8 @@ func (ctl *TcaCtl) CmdSaveConfig() *cobra.Command {
 
 	var _cmd = &cobra.Command{
 		Use:   "save",
-		Short: "Saves config variables to config file.",
-		Long:  `Saves config variables to config file.`,
+		Short: "Saves config variables to .tcactl config file.",
+		Long:  `Saves config variables to .tcactl config file.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := viper.WriteConfig()
 			if err != nil {
@@ -116,13 +152,12 @@ func (ctl *TcaCtl) CmdSaveConfig() *cobra.Command {
 }
 
 func (ctl *TcaCtl) CmdCreate() *cobra.Command {
-	// cnf instances
 
 	var cmdCreate = &cobra.Command{
 		Use:   "Create",
-		Short: "Terminate CNF instance",
+		Short: "Command creates a new CNF instance.",
 		Long: templates.LongDesc(
-			`Terminate CNF instance, caller need to provide CNF Identifier.
+			`Command creates a new CNF instance, caller need to provide CNF Identifier.
 `),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

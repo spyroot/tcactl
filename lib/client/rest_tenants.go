@@ -18,6 +18,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
@@ -28,10 +29,12 @@ import (
 
 // GetVimTenants return list of all cloud provider
 // attached to TCA
-func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
+func (c *RestClient) GetVimTenants(ctx context.Context) (*response.Tenants, error) {
+
+	glog.Infof("Retrieving vim tenants")
 
 	c.GetClient()
-	resp, err := c.Client.R().Get(c.BaseURL + apiTenants)
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + apiTenants)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -47,21 +50,21 @@ func (c *RestClient) GetVimTenants() (*response.Tenants, error) {
 
 	var tenants response.Tenants
 	if err := json.Unmarshal(resp.Body(), &tenants); err != nil {
-		glog.Error("Failed parse server respond.")
+		glog.Error("Failed parse server respond. %v", err)
 		return nil, err
 	}
 
 	return &tenants, nil
 }
 
-// GetVim return vim  attached to TCA
-func (c *RestClient) GetVim(vimId string) (*response.TenantSpecs, error) {
+// GetVim return vim attached to TCA
+// vimId in format vmware_FB40D3DE2967483FBF9033B451DC7571
+func (c *RestClient) GetVim(ctx context.Context, vimId string) (*response.TenantSpecs, error) {
 
 	c.GetClient()
-	// format vmware_FB40D3DE2967483FBF9033B451DC7571
 	apiReq := fmt.Sprintf(TcaVimTenant, vimId)
 	glog.Info("Sending request to ", apiReq)
-	resp, err := c.Client.R().Get(c.BaseURL + apiReq)
+	resp, err := c.Client.R().SetContext(ctx).Get(c.BaseURL + apiReq)
 
 	if err != nil {
 		glog.Error(err)

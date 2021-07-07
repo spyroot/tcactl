@@ -19,6 +19,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -29,7 +30,7 @@ import (
 )
 
 // GetVim return vim
-func (a *TcaApi) GetVim(NameOrVimId string) (*response.TenantSpecs, error) {
+func (a *TcaApi) GetVim(ctx context.Context, NameOrVimId string) (*response.TenantSpecs, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -46,7 +47,7 @@ func (a *TcaApi) GetVim(NameOrVimId string) (*response.TenantSpecs, error) {
 	if len(inputs) != 2 {
 		// if we just string it a name
 		if len(inputs) == 1 {
-			vimId, err = a.ResolveVimId(NameOrVimId)
+			vimId, err = a.ResolveVimId(ctx, NameOrVimId)
 			if err != nil {
 				return nil, err
 			}
@@ -57,12 +58,12 @@ func (a *TcaApi) GetVim(NameOrVimId string) (*response.TenantSpecs, error) {
 
 	glog.Infof("Retrieving vim specString vim id %s", vimId)
 
-	return a.rest.GetVim(vimId)
+	return a.rest.GetVim(ctx, vimId)
 }
 
 // GetVimComputeClusters - return compute cluster attached to VIM
 // For example VMware VIM is vCenter.
-func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters, error) {
+func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*models.VMwareClusters, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -72,7 +73,7 @@ func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters
 		return nil, errors.New("empty cloud provider")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters
 			tenant.HcxUUID, tenant.VimURL)
 
 		f := request.NewClusterFilterQuery(tenant.HcxUUID)
-		clusterInventory, err := a.rest.GetVmwareCluster(f)
+		clusterInventory, err := a.rest.GetVmwareCluster(ctx, f)
 
 		if err != nil {
 			return nil, err
@@ -104,13 +105,13 @@ func (a *TcaApi) GetVimComputeClusters(cloudName string) (*models.VMwareClusters
 
 // GetVimNetworks - method return network attached
 // to vim, cloud provider, for a VMware it full path to object
-func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error) {
+func (a *TcaApi) GetVimNetworks(ctx context.Context, cloudName string) (*models.CloudNetworks, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error)
 	}
 
 	f := request.NewClusterFilterQuery(tenant.HcxUUID)
-	clusterInventory, err := a.rest.GetVmwareCluster(f)
+	clusterInventory, err := a.rest.GetVmwareCluster(ctx, f)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +141,7 @@ func (a *TcaApi) GetVimNetworks(cloudName string) (*models.CloudNetworks, error)
 		networkFilter.Filter.TenantId = tenant.HcxUUID
 		if strings.HasPrefix(item.EntityId, "domain") {
 			networkFilter.Filter.ClusterId = item.EntityId
-			net, err := a.rest.GetVmwareNetworks(&networkFilter)
+			net, err := a.rest.GetVmwareNetworks(ctx, &networkFilter)
 			if err != nil {
 				return nil, err
 			}

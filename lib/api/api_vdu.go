@@ -20,6 +20,7 @@ package api
 import (
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/response"
 )
 
@@ -28,6 +29,10 @@ func (a *TcaApi) GetVdu(nfdName string) (*response.VduPackage, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	if len(nfdName) == 0 {
+		return nil, api_errors.NewCatalogNotFound(nfdName)
 	}
 
 	vnfCatalog, err := a.rest.GetVnfPkgm("", "")

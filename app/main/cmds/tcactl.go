@@ -18,6 +18,7 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
@@ -146,10 +147,10 @@ type TcaCtl struct {
 	NodesPrinter map[string]func(*response.NodePool, ui.PrinterStyle)
 
 	// TenantQueryPrinter tenant query printer
-	TemplatePrinter map[string]func(*response.ClusterTemplate, ui.PrinterStyle)
+	TemplatePrinter map[string]func(*response.ClusterTemplateSpec, ui.PrinterStyle)
 
 	// TenantQueryPrinter tenant query printer
-	TemplatesPrinter map[string]func([]response.ClusterTemplate, ui.PrinterStyle)
+	TemplatesPrinter map[string]func([]response.ClusterTemplateSpec, ui.PrinterStyle)
 
 	// TenantQueryPrinter tenant query printer
 	ClusterRequestPrinter map[string]func(*request.Cluster, ui.PrinterStyle)
@@ -281,13 +282,13 @@ func NewTcaCtl() *TcaCtl {
 			ConfigJsonPinter:    printer.PoolSpecJsonPrinter,
 		},
 		// printer for single template
-		TemplatePrinter: map[string]func(*response.ClusterTemplate, ui.PrinterStyle){
+		TemplatePrinter: map[string]func(*response.ClusterTemplateSpec, ui.PrinterStyle){
 			ConfigDefaultPinter: printer.TemplateSpecTablePrinter,
 			ConfigJsonPinter:    printer.TemplateSpecJsonPrinter,
 			ConfigYamlPinter:    printer.TemplateSpecYamlPrinter,
 		},
 		// printer for array of templates
-		TemplatesPrinter: map[string]func([]response.ClusterTemplate, ui.PrinterStyle){
+		TemplatesPrinter: map[string]func([]response.ClusterTemplateSpec, ui.PrinterStyle){
 			ConfigDefaultPinter: printer.TemplatesSpecTablePrinter,
 			ConfigJsonPinter:    printer.TemplatesJsonPrinter,
 			ConfigYamlPinter:    printer.TemplatesYamlPrinter,
@@ -406,13 +407,13 @@ func (ctl *TcaCtl) BasicAuthentication() {
 // ResolvePoolName - resolve pool name to id in given cluster
 // TODO this method will go away
 func (ctl *TcaCtl) ResolvePoolName(poolName string, clusterName string) (string, string, error) {
-	return ctl.tca.ResolvePoolName(poolName, clusterName)
+	return ctl.tca.ResolvePoolName(context.Background(), poolName, clusterName)
 }
 
 // ResolveClusterName - resolve cluster name to cluster id
 // TODO this method will go away
 func (ctl *TcaCtl) ResolveClusterName(q string) (string, error) {
-	return ctl.tca.ResolveClusterName(q)
+	return ctl.tca.ResolveClusterName(context.Background(), q)
 }
 
 // SetTcaBase sets tca base url

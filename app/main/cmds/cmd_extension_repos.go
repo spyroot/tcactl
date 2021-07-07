@@ -1,6 +1,24 @@
+// Package cmds
+// Copyright 2020-2021 Author.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+// Mustafa mbayramo@vmware.com
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
@@ -27,6 +45,7 @@ func (ctl *TcaCtl) CmdGetRepos() *cobra.Command {
 		Aliases: []string{"repo", "rp"},
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
@@ -39,7 +58,7 @@ func (ctl *TcaCtl) CmdGetRepos() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			repos, err := ctl.tca.GetRepos()
+			repos, err := ctl.tca.GetRepos(ctx)
 			CheckErrLogError(err)
 
 			if repos != nil && len(repos.Items) > 0 {
@@ -76,6 +95,7 @@ Command attaches cloud provider to TCA.`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
@@ -89,7 +109,7 @@ Command attaches cloud provider to TCA.`),
 			spec, err := request.ExtensionSpecsFromFile(args[0])
 			CheckErrLogError(err)
 
-			eid, err := ctl.tca.CreateExtension(spec)
+			eid, err := ctl.tca.CreateExtension(ctx, spec)
 			CheckErrLogError(err)
 
 			fmt.Printf("Extention type %s registered extention id %s\n", spec.Type, eid)
@@ -118,6 +138,8 @@ Command delete extension from TCA.`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
@@ -128,7 +150,7 @@ Command delete extension from TCA.`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			_, err := ctl.tca.DeleteExtension(args[0])
+			_, err := ctl.tca.DeleteExtension(ctx, args[0])
 			CheckErrLogError(err)
 
 			fmt.Printf("Extention %s deleted\n", args[0])
@@ -159,6 +181,8 @@ to selected workload cluster`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
@@ -171,7 +195,7 @@ to selected workload cluster`),
 
 			spec, err := request.ExtensionSpecsFromFile(args[0])
 			CheckErrLogError(err)
-			ok, err := ctl.tca.UpdateExtension(spec)
+			ok, err := ctl.tca.UpdateExtension(ctx, spec)
 			CheckErrLogError(err)
 
 			if ok {

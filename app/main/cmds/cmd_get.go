@@ -18,6 +18,7 @@
 package cmds
 
 import (
+	"context"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
@@ -39,6 +40,8 @@ func (ctl *TcaCtl) CmdGetExtensions() *cobra.Command {
 		Long:  `Command retrieves CNF/VNF VDU information, The default output format tabular for detail output -o json`,
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
@@ -51,7 +54,7 @@ func (ctl *TcaCtl) CmdGetExtensions() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			ext, err := ctl.tca.ExtensionQuery()
+			ext, err := ctl.tca.ExtensionQuery(ctx)
 			if err != nil || ext == nil {
 				glog.Errorf("Failed retrieve extension information. %v", err)
 				return

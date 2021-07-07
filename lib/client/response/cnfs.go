@@ -70,24 +70,6 @@ type CnfMetadata struct {
 	AttachedNSCount   string                   `json:"attachedNSCount" yaml:"attachedNSCount"`
 }
 
-// VimConnectionInfo - Contains extra information including vim id , type
-type VimConnectionInfo struct {
-	Id            string `json:"id" yaml:"id"`
-	VimId         string `json:"vimId" yaml:"vimId"`
-	VimType       string `json:"vimType" yaml:"vimType"`
-	InterfaceInfo struct {
-	} `json:"interfaceInfo" yaml:"interfaceInfo"`
-	AccessInfo struct {
-	} `json:"accessInfo" yaml:"accessInfo"`
-	Extra struct {
-		DeploymentProfileId string `json:"deploymentProfileId" yaml:"deploymentProfileId"`
-		NodeProfileName     string `json:"nodeProfileName" yaml:"nodeProfileName"`
-		NodePoolId          string `json:"nodePoolId" yaml:"nodePoolId"`
-		NodePoolName        string `json:"nodePoolName" yaml:"nodePoolName"`
-		VimName             string `json:"vimName" yaml:"vimName"`
-	} `json:"extra" yaml:"extra"`
-}
-
 // CnfInstantiateEntry VNFD Charts detail
 type CnfInstantiateEntry struct {
 	DispatchType       string `json:"dispatchType" yaml:"dispatch_type"`
@@ -109,23 +91,6 @@ type CnfPolicyUri struct {
 	Href string `json:"href,omitempty"`
 }
 
-type PolicyLinks struct {
-	Self           CnfPolicyUri `json:"self,omitempty" yaml:"self"`
-	Indicators     CnfPolicyUri `json:"indicators,omitempty" yaml:"indicators"`
-	Instantiate    CnfPolicyUri `json:"instantiate,omitempty" yaml:"instantiate"`
-	Terminate      CnfPolicyUri `json:"terminate,omitempty" yaml:"terminate"`
-	Scale          CnfPolicyUri `json:"scale,omitempty" yaml:"scale"`
-	ScaleToLevel   CnfPolicyUri `json:"scaleToLevel,omitempty" yaml:"scaleToLevel"`
-	Heal           CnfPolicyUri `json:"heal,omitempty" yaml:"heal"`
-	Update         CnfPolicyUri `json:"update,omitempty" yaml:"update"`
-	UpgradePackage CnfPolicyUri `json:"upgrade_package,omitempty" yaml:"upgrade_package"`
-	Upgrade        CnfPolicyUri `json:"upgrade,omitempty" yaml:"upgrade"`
-	Reconfigure    CnfPolicyUri `json:"reconfigure,omitempty" yaml:"reconfigure"`
-	ChangeFlavour  CnfPolicyUri `json:"changeFlavour,omitempty" yaml:"changeFlavour"`
-	Operate        CnfPolicyUri `json:"operate,omitempty" yaml:"operate"`
-	ChangeExtConn  CnfPolicyUri `json:"changeExtConn,omitempty" yaml:"changeExtConn"`
-}
-
 type CnfLcmExtended struct {
 	RespId                 RespondID                      `json:"_id" yaml:"resp_id"`
 	CID                    string                         `json:"id" yaml:"cid"`
@@ -142,7 +107,7 @@ type CnfLcmExtended struct {
 	InstantiationState     string                         `json:"instantiationState" yaml:"instantiationState"`
 	ManagedBy              *models.InternalManagedBy      `json:"managedBy,omitempty" yaml:"managedBy,omitempty"`
 	NfType                 string                         `json:"nfType" yaml:"nf_type"`
-	Links                  PolicyLinks                    `json:"_links" yaml:"links"`
+	Links                  models.PolicyLinks             `json:"_links" yaml:"_links"`
 	LastUpdated            time.Time                      `json:"lastUpdated" yaml:"lastUpdated"`
 	LastUpdateEnterprise   string                         `json:"lastUpdateEnterprise" yaml:"lastUpdateEnterprise"`
 	LastUpdateOrganization string                         `json:"lastUpdateOrganization" yaml:"lastUpdateOrganization"`
@@ -152,7 +117,7 @@ type CnfLcmExtended struct {
 	CreationOrganization   string                         `json:"creationOrganization" yaml:"creationOrganization"`
 	CreationUser           string                         `json:"creationUser" yaml:"creationUser"`
 	IsDeleted              bool                           `json:"isDeleted" yaml:"isDeleted"`
-	VimConnectionInfo      []VimConnectionInfo            `json:"vimConnectionInfo" yaml:"vimConnectionInfo"`
+	VimConnectionInfo      []models.VimConnectionInfo     `json:"vimConnectionInfo" yaml:"vimConnectionInfo"`
 	LcmOperation           string                         `json:"lcmOperation" yaml:"lcmOperation"`
 	LcmOperationState      string                         `json:"lcmOperationState" yaml:"lcmOperationState"`
 	RowType                string                         `json:"rowType" yaml:"rowType"`
@@ -164,10 +129,10 @@ type CnfLcmExtended struct {
 }
 
 // GetField - return struct field value
-func (t *CnfLcmExtended) GetField(field string) string {
+func (e *CnfLcmExtended) GetField(field string) string {
 
-	r := reflect.ValueOf(t)
-	fields, _ := t.GetFields()
+	r := reflect.ValueOf(e)
+	fields, _ := e.GetFields()
 	if _, ok := fields[field]; ok {
 		f := reflect.Indirect(r).FieldByName(strings.Title(field))
 		return f.String()
@@ -178,11 +143,11 @@ func (t *CnfLcmExtended) GetField(field string) string {
 
 // GetFields return VduPackage fields name as
 // map[string], each key is field name
-func (t *CnfLcmExtended) GetFields() (map[string]interface{}, error) {
+func (e *CnfLcmExtended) GetFields() (map[string]interface{}, error) {
 
 	var m map[string]interface{}
 
-	b, err := json.Marshal(t)
+	b, err := json.Marshal(e)
 	if err != nil {
 		return m, err
 	}
@@ -215,8 +180,16 @@ func (e *CnfLcmExtended) IsInCluster(vimName string) bool {
 	return false
 }
 
-func (t *CnfLcmExtended) IsStateRollback() bool {
-	return t.Meta.LcmOperationState == "ROLLED_BACK"
+func (e *CnfLcmExtended) IsStateRollback() bool {
+	return e.Meta.LcmOperationState == "ROLLED_BACK"
+}
+
+func (e *CnfLcmExtended) IsInstantiated() bool {
+	return e.InstantiationState == "NOT_INSTANTIATED"
+}
+
+func (e *CnfLcmExtended) IsStarting() bool {
+	return e.LcmOperationState == "STARTING"
 }
 
 // CnfsExtended - list of CNF LCM respond
@@ -279,18 +252,18 @@ func (c *CnfsExtended) FindByName(s string) (*CnfLcmExtended, error) {
 }
 
 // ResolveFromName - tries to find CNF by product name or id.
-func (c *CnfsExtended) ResolveFromName(s string) (*CnfLcmExtended, error) {
+func (c *CnfsExtended) ResolveFromName(name string) (*CnfLcmExtended, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("cnfs instance is nil")
 	}
 
+	q := strings.ToLower(name)
 	for _, cnf := range c.CnfLcms {
-		if strings.HasPrefix(cnf.VnfInstanceName, s) ||
-			strings.HasPrefix(cnf.CID, s) {
+		if strings.ToLower(cnf.VnfInstanceName) == q || cnf.CID == q {
 			return &cnf, nil
 		}
 	}
 
-	return nil, &CnfNotFound{s}
+	return nil, &CnfNotFound{name}
 }

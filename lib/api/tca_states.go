@@ -31,6 +31,9 @@ const (
 	StateInstantiated = "INSTANTIATED"
 	StateTerminated   = "TERMINATED"
 	StateTerminate    = "TERMINATE"
+	StateFailedTemp   = "FAILED_TEMP"
+
+	StateNotInstantiated = "NOT_INSTANTIATED"
 
 	DefaultMaxRetry = 32
 

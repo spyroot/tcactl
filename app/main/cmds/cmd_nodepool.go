@@ -18,11 +18,14 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"github.com/spyroot/tcactl/lib/api"
+	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
@@ -39,12 +42,13 @@ func (ctl *TcaCtl) CmdDescClusterNodePools() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:   "pools [name or id]",
-		Short: "Command describes all node pool",
-		Long: `Command describes all node pool, and it 
-outputs all node pool currently`,
+		Use:     "pools [name or id]",
+		Short:   "Command describes all node pool",
+		Long:    templates.LongDesc(`Command describes all node pool, it outputs all node pool currently in a system`),
 		Example: "tcactl describe pools",
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -59,7 +63,7 @@ outputs all node pool currently`,
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			allSpecs, err := ctl.tca.GetAllNodePools()
+			allSpecs, err := ctl.tca.GetAllNodePools(ctx)
 			CheckErrLogError(err)
 
 			if _printer, ok := ctl.NodePoolPrinter[_defaultPrinter]; ok {
@@ -87,12 +91,15 @@ func (ctl *TcaCtl) CmdGetPoolNodes() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "nodes",
-		Short:   "Command returns kubernetes node pool",
-		Long:    `Command returns a list kubernetes node pool for a given cluster name.`,
+		Use:   "nodes",
+		Short: "Command returns kubernetes node pool",
+		Long: templates.LongDesc(
+			`Command returns a list kubernetes node pool for a given cluster name.`),
 		Example: "tcactl get clusters pool 794a675c-777a-47f4-8edb-36a686ef4065",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -107,7 +114,7 @@ func (ctl *TcaCtl) CmdGetPoolNodes() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusters, err := ctl.tca.GetClusters()
+			clusters, err := ctl.tca.GetClusters(ctx)
 			if err != nil || clusters == nil {
 				glog.Errorf("Failed retrieve cluster list %v", err)
 				return
@@ -153,6 +160,8 @@ func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
 		Args:    cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
@@ -166,7 +175,7 @@ func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			task, err := ctl.tca.DeleteNodePool(args[0], args[1])
+			task, err := ctl.tca.DeleteNodePool(ctx, args[0], args[1])
 			CheckErrLogError(err)
 
 			fmt.Printf("Node pool deleted, task id %v\n", task.OperationId)
@@ -192,15 +201,15 @@ func (ctl *TcaCtl) CmdCreatePoolNodes() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "pool [cluster name or id,  spec file]",
 		Short: "Command create additional node pool on target kubernetes cluster.",
-		Long: `
-
+		Long: templates.LongDesc(`
 Command create additional node pool on target kubernetes cluster.
-
-`,
+`),
 		Example: "tcactl create node-pool my_cluster example/node-pool.yaml",
 		Aliases: []string{"pools", "pool"},
 		Args:    cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -215,7 +224,7 @@ Command create additional node pool on target kubernetes cluster.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			nodePoolSpec, err := api.ReadNodeSpecFromFile(args[1])
+			nodePoolSpec, err := request.ReadNodeSpecFromFile(args[1])
 			CheckErrLogError(err)
 
 			if isDry && nodePoolSpec != nil {
@@ -223,16 +232,22 @@ Command create additional node pool on target kubernetes cluster.
 				CheckErrLogError(err)
 			}
 
-			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry, doBlock, showProgress)
+			task, err := ctl.tca.CreateNewNodePool(ctx, &api.NodePoolCreateApiReq{
+				Spec:       nodePoolSpec,
+				Cluster:    args[0],
+				IsDryRun:   isDry,
+				IsVerbose:  showProgress,
+				IsBlocking: doBlock,
+			})
+
 			CheckErrLogError(err)
 			fmt.Printf("Node Pool task %v created.\n", task.OperationId)
 		},
 	}
 
 	_cmd.Flags().BoolVar(&isDry,
-		"dry", false, "Parses input template spec, "+
-			"validates, outputs spec to the terminal screen. Format based on -o flag.")
-
+		"dry", false,
+		"Parses input spec, validates and outputs spec to the terminal screen.")
 	//
 	_cmd.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
 		"Blocks and wait task to finish.")
@@ -261,15 +276,14 @@ func (ctl *TcaCtl) CmdUpdatePoolNodes() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "pool [cluster name or id,  spec file]",
 		Short: "Command update node pool for target kubernetes cluster.",
-		Long: `
-
-Command update node pool for target kubernetes cluster.
-
-`,
-		Example: "tcactl create node-pool my_cluster example/node-pool.yaml",
+		Long: templates.LongDesc(`
+Command update node pool for target kubernetes cluster.`),
+		Example: "tcactl update node-pool my_cluster example/node-pool.yaml",
 		Aliases: []string{"pools", "pool"},
 		Args:    cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -284,7 +298,7 @@ Command update node pool for target kubernetes cluster.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			nodePoolSpec, err := api.ReadNodeSpecFromFile(args[1])
+			nodePoolSpec, err := request.ReadNodeSpecFromFile(args[1])
 			CheckErrLogError(err)
 
 			if isDry && nodePoolSpec != nil {
@@ -292,7 +306,13 @@ Command update node pool for target kubernetes cluster.
 				CheckErrLogError(err)
 			}
 
-			task, err := ctl.tca.CreateNewNodePool(nodePoolSpec, args[0], isDry, doBlock, showProgress)
+			task, err := ctl.tca.UpdateNodePool(ctx, &api.NodePoolCreateApiReq{
+				Spec:       nodePoolSpec,
+				Cluster:    args[0],
+				IsDryRun:   isDry,
+				IsVerbose:  showProgress,
+				IsBlocking: doBlock,
+			})
 			CheckErrLogError(err)
 			fmt.Printf("Node Pool task %v created.\n", task.OperationId)
 		},

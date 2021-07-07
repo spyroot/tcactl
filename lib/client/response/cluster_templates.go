@@ -92,8 +92,8 @@ type TemplateNetworks struct {
 	Label string `json:"label" yaml:"label" validate:"required"`
 }
 
-// ClusterTemplate - cluster template
-type ClusterTemplate struct {
+// ClusterTemplateSpec - cluster template
+type ClusterTemplateSpec struct {
 	ClusterType   string             `json:"clusterType" yaml:"clusterType" validate:"required"`
 	ClusterConfig *ClusterConfigSpec `json:"clusterConfig,omitempty" yaml:"clusterConfig,omitempty" validate:"required"`
 	Description   string             `json:"description" yaml:"description"`
@@ -129,7 +129,7 @@ type ClusterTemplate struct {
 }
 
 // GetField - return field from Cluster Spec struct
-func (t *ClusterTemplate) GetField(field string) string {
+func (t *ClusterTemplateSpec) GetField(field string) string {
 	r := reflect.ValueOf(t)
 	f := reflect.Indirect(r).FieldByName(strings.Title(field))
 	return f.String()
@@ -137,7 +137,9 @@ func (t *ClusterTemplate) GetField(field string) string {
 
 // ValidateSpec - validate cluster specs contains all required node pool
 // based on template spec
-func (t *ClusterTemplate) ValidateSpec(spec *request.Cluster) (bool, error) {
+func (t *ClusterTemplateSpec) ValidateSpec(spec *request.Cluster) (bool, error) {
+
+	glog.Infof("Validating node pool specs.")
 
 	if t == nil {
 		return false, fmt.Errorf("cluster template is nil")
@@ -171,11 +173,13 @@ func (t *ClusterTemplate) ValidateSpec(spec *request.Cluster) (bool, error) {
 			"must be %d found %d", len(t.WorkerNodes), masterPools)
 	}
 
+	glog.Infof("Done validating node pool specs.")
+
 	return workerPools == len(t.WorkerNodes) && masterPools == len(t.MasterNodes), nil
 }
 
 type ClusterTemplates struct {
-	ClusterTemplates []ClusterTemplate
+	ClusterTemplates []ClusterTemplateSpec
 }
 
 type TemplateNotFound struct {
@@ -204,7 +208,7 @@ func (t *ClusterTemplates) GetTemplateId(q string) (string, error) {
 }
 
 // GetTemplate return cluster template , lookup by name or id
-func (t *ClusterTemplates) GetTemplate(idOrName string) (*ClusterTemplate, error) {
+func (t *ClusterTemplates) GetTemplate(idOrName string) (*ClusterTemplateSpec, error) {
 
 	if t == nil {
 		return nil, fmt.Errorf("uninitialized object")
@@ -227,7 +231,7 @@ func (t *ClusterTemplates) Filter(q TemplateFilterType, f func(string) bool) (*C
 		return nil, fmt.Errorf("instance is nil")
 	}
 
-	filtered := make([]ClusterTemplate, 0)
+	filtered := make([]ClusterTemplateSpec, 0)
 	for _, tmpl := range t.ClusterTemplates {
 		if q == FilterById && f(tmpl.Id) {
 			filtered = append(filtered, tmpl)

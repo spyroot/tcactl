@@ -4,7 +4,11 @@ import (
 	ioutils "github.com/spyroot/tcactl/pkg/io"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
+	"path"
+	"runtime"
+	"time"
 )
 
 // SpecTempReader  helper specs from string
@@ -48,4 +52,33 @@ func SpecTempFileName(spec string) string {
 	}
 
 	return tmpFile.Name()
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func RandString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+//RunOnRootFolder Changes dir
+func RunOnRootFolder() string {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Join(path.Dir(filename), "..")
+	err := os.Chdir(dir)
+	if err != nil {
+		ioutils.CheckErr(err)
+	}
+
+	wd, err := os.Getwd()
+	ioutils.CheckErr(err)
+
+	return wd
 }

@@ -18,17 +18,19 @@
 package cmds
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spyroot/tcactl/app/main/cmds/templates"
+	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/api/kubernetes"
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	ioutils "github.com/spyroot/tcactl/pkg/io"
-
 	osutil "github.com/spyroot/tcactl/pkg/os"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -80,12 +82,15 @@ func (ctl *TcaCtl) CmdGetClustersPool() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "pool [name or id of cluster]",
 		Short: "Command returns kubernetes node pool for a given cluster.",
-		Long:  `Command returns a list kubernetes node pool for a given cluster name.`,
+		Long: templates.LongDesc(
+			`Command returns a list kubernetes node pool for a given cluster name.`),
+
 		Example: "\t - tcactl get clusters pool 794a675c-777a-47f4-8edb-36a686ef4065\n " +
 			"\t - tcactl get cluster mycluster",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
+				ctx  = context.Background()
 				pool *response.NodePool
 				err  error
 			)
@@ -98,9 +103,10 @@ func (ctl *TcaCtl) CmdGetClustersPool() *cobra.Command {
 
 			// for exact match for cluster
 			if len(args) > 0 {
-				pool, err = ctl.tca.GetNodePool(args[0])
+				pool, err = ctl.tca.GetNodePool(ctx, args[0])
 			}
-			pool, err = ctl.tca.GetAllNodePool()
+
+			pool, err = ctl.tca.GetAllNodePool(ctx)
 			CheckErrLogError(err)
 
 			if _printer, ok := ctl.NodePoolPrinter[_defaultPrinter]; ok {
@@ -134,6 +140,7 @@ func (ctl *TcaCtl) CmdGetCluster() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
+				ctx        = context.Background()
 				_clusterId string
 				err        error
 			)
@@ -151,7 +158,7 @@ func (ctl *TcaCtl) CmdGetCluster() *cobra.Command {
 			CheckErrLogError(err)
 			_defaultStyler.SetWide(_isWide)
 
-			cluster, err := ctl.tca.GetCluster(_clusterId)
+			cluster, err := ctl.tca.GetCluster(ctx, _clusterId)
 			CheckErrLogError(err)
 
 			if printer, ok := ctl.ClusterPrinter[_defaultPrinter]; ok {
@@ -177,12 +184,16 @@ func (ctl *TcaCtl) CmdGetClustersPoolNodes() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "nodes",
-		Short:   "Command returns kubernetes node pool",
-		Long:    `Command returns a list kubernetes node pool for a given cluster name.`,
+		Use:   "nodes",
+		Short: "Command returns kubernetes nodes in pool",
+		Long: templates.LongDesc(
+			`Command returns a list kubernetes node pool for a given cluster name.`),
+
 		Example: "- tcactl get clusters nodes 794a675c-777a-47f4-8edb-36a686ef4065\n - tcactl get clusters nodes edge",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
@@ -192,7 +203,7 @@ func (ctl *TcaCtl) CmdGetClustersPoolNodes() *cobra.Command {
 			CheckErrLogError(err)
 			_defaultStyler.SetWide(_isWide)
 
-			clusters, err := ctl.tca.GetClusters()
+			clusters, err := ctl.tca.GetClusters(ctx)
 			if err != nil || clusters == nil {
 				glog.Errorf("Failed retrieve cluster list %v", err)
 				return
@@ -236,6 +247,8 @@ func (ctl *TcaCtl) CmdDescClusterNodePool() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
@@ -252,7 +265,7 @@ func (ctl *TcaCtl) CmdDescClusterNodePool() *cobra.Command {
 			}
 			glog.Infof("Using cluster %s to retrieve node pool.", clusterEntry.Value.String())
 			_targetPoolID, _clusterId, err := ctl.ResolvePoolName(poolName, clusterEntry.Value.String())
-			pool, err := ctl.tca.GetClusterNodePool(_clusterId, _targetPoolID)
+			pool, err := ctl.tca.GetClusterNodePool(ctx, _clusterId, _targetPoolID)
 			if err != nil {
 				glog.Errorf("Failed retrieve node pools err: '%v'", err)
 				return
@@ -288,11 +301,12 @@ func (ctl *TcaCtl) CmdDescClusterNodes() *cobra.Command {
 		//Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusters, err := ctl.tca.GetClusters()
+			clusters, err := ctl.tca.GetClusters(ctx)
 			CheckErrLogError(err)
 
 			var allSpecs []response.NodesSpecs
@@ -300,7 +314,7 @@ func (ctl *TcaCtl) CmdDescClusterNodes() *cobra.Command {
 				pools, err := ctl.tca.GetClusterNodePools(c.Id)
 				CheckErrLogError(err)
 				for _, p := range pools.Pools {
-					pool, err := ctl.tca.GetClusterNodePool(c.Id, p.Id)
+					pool, err := ctl.tca.GetClusterNodePool(ctx, c.Id, p.Id)
 					CheckErrLogError(err)
 					allSpecs = append(allSpecs, *pool)
 				}
@@ -333,11 +347,12 @@ func (ctl *TcaCtl) CmdGetClustersList() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
+			ctx := context.Background()
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusters, err := ctl.tca.GetClusters()
+			clusters, err := ctl.tca.GetClusters(ctx)
 			CheckErrLogError(err)
 			// either get all or lookup by name
 			if len(args) > 0 {
@@ -379,12 +394,14 @@ func (ctl *TcaCtl) CmdGetClustersK8SConfig() *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			clusters, err := ctl.tca.GetClusters()
+			clusters, err := ctl.tca.GetClusters(ctx)
 			CheckErrLogError(err)
 			for _, c := range clusters.Clusters {
 				if strings.Contains(c.ClusterName, args[0]) {
@@ -465,6 +482,8 @@ that will wait for the task to finish.'
 		Aliases: []string{"cluster", "cl"},
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
@@ -493,15 +512,19 @@ that will wait for the task to finish.'
 			}
 
 			// otherwise create
-			task, err := ctl.tca.CreateClusters(&spec, isDry, doBlock, showProgress)
+			task, err := ctl.tca.CreateClusters(ctx, &api.ClusterCreateApiReq{
+				Spec:          &spec,
+				IsBlocking:    doBlock,
+				IsDryRun:      isDry,
+				IsVerbose:     showProgress,
+				IsFixConflict: true})
 			CheckErrLogError(err)
 
 			if task != nil {
 				fmt.Printf("Cluster created task create, task id %s\n", task.Id)
 			}
 
-			// dry run will output template to screen after parser
-			// resolved all name to id.
+			// dry run will output spec to screen after all validation and substitution
 			if isDry {
 				if printer, ok := ctl.ClusterRequestPrinter[_defaultPrinter]; ok {
 					printer(&spec, _defaultStyler)
@@ -540,19 +563,30 @@ func (ctl *TcaCtl) CmdDeleteCluster() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "cluster [name or id of cluster]",
-		Short:   "Command delete cluster.",
-		Long:    `Command Command delete cluster.`,
-		Example: "- tcactl delete cluster 794a675c-777a-47f4-8edb-36a686ef4065\n -tcactl delete cluster mycluster",
-		Args:    cobra.MinimumNArgs(1),
+		Use:   "cluster [name or id of cluster]",
+		Short: "Command delete cluster.",
+		Long: templates.LongDesc(
+			`Command deletes cluster.`),
+		Example: "\t - tcactl delete cluster 794a675c-777a-47f4-8edb-36a686ef4065\n " +
+			"\t -tcactl delete cluster mycluster",
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type, and terminal wide or not
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			task, err := ctl.tca.DeleteCluster(args[0], doBlock, showProgress)
+			// otherwise create
+
+			task, err := ctl.tca.DeleteCluster(ctx,
+				&api.ClusterDeleteApiReq{
+					Cluster:    args[0],
+					IsBlocking: doBlock,
+					IsVerbose:  showProgress,
+				})
 			if err != nil {
 				return
 			}
@@ -585,13 +619,15 @@ func (ctl *TcaCtl) CmdGetClusterTasks() *cobra.Command {
 		Use:     "tasks [cluster name or id]",
 		Aliases: []string{"task"},
 		Short:   "Command returns currently running task on a particular cluster.",
-		Long: `
+		Long: templates.LongDesc(`
 
-Command returns currently running task on a particular cluster.`,
+Command returns currently running task on a particular cluster.`),
 
 		Example: "- tcactl get cluster tasks 9411f70f-d24d-4842-ab56-b7214d",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			ctx := context.Background()
 
 			// global output type, and terminal wide or not
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
@@ -600,7 +636,7 @@ Command returns currently running task on a particular cluster.`,
 
 			ctl.tca.SetTrace(ctl.IsTrace)
 
-			task, err := ctl.tca.GetClusterTask(args[0], true)
+			task, err := ctl.tca.GetClusterTask(ctx, args[0], true)
 			CheckErrLogError(err)
 
 			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {
@@ -628,12 +664,14 @@ func (ctl *TcaCtl) CmdDescribeTask() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
+			ctx := context.Background()
+
 			// global output type, and terminal wide or not
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			task, err := ctl.tca.GetCurrentClusterTask(args[0])
+			task, err := ctl.tca.GetCurrentClusterTask(ctx, args[0])
 			CheckErrLogError(err)
 
 			if _printer, ok := ctl.TaskClusterPrinter[_defaultPrinter]; ok {

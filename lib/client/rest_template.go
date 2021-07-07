@@ -59,7 +59,7 @@ func (c *RestClient) GetClusterTemplates() (*response.ClusterTemplates, error) {
 
 // CreateClusterTemplate - creates cluster template from
 // json or yaml specs.
-func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplate) error {
+func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplateSpec) error {
 
 	c.GetClient()
 	resp, err := c.Client.R().SetBody(spec).Post(c.BaseURL + apiClusterTemplates)
@@ -93,7 +93,7 @@ func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplate) error
 // UpdateClusterTemplate - updates existing cluster template
 // Template must be already defined. Template id in a spec used
 // to update template
-func (c *RestClient) UpdateClusterTemplate(spec *response.ClusterTemplate) error {
+func (c *RestClient) UpdateClusterTemplate(spec *response.ClusterTemplateSpec) error {
 
 	c.GetClient()
 	resp, err := c.Client.R().SetBody(spec).Put(c.BaseURL + apiClusterTemplates + "/" + spec.Id)
@@ -125,7 +125,7 @@ func (c *RestClient) UpdateClusterTemplate(spec *response.ClusterTemplate) error
 }
 
 // GetClusterTemplate - return list of cluster templates
-func (c *RestClient) GetClusterTemplate(clusterId string) (*response.ClusterTemplate, error) {
+func (c *RestClient) GetClusterTemplate(clusterId string) (*response.ClusterTemplateSpec, error) {
 
 	c.GetClient()
 	resp, err := c.Client.R().Get(c.BaseURL + apiClusterTemplates + "/" + clusterId)
@@ -147,7 +147,7 @@ func (c *RestClient) GetClusterTemplate(clusterId string) (*response.ClusterTemp
 		return nil, c.checkError(resp)
 	}
 
-	var template response.ClusterTemplate
+	var template response.ClusterTemplateSpec
 	if err := json.Unmarshal(resp.Body(), &template); err != nil {
 		return nil, err
 	}

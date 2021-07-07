@@ -20,6 +20,7 @@ package cmds
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"strings"
 )
@@ -36,11 +37,9 @@ func (ctl *TcaCtl) CmdGetVdu() *cobra.Command {
 	var cmdCreate = &cobra.Command{
 		Use:   "vdu [package name or id]",
 		Short: "Command retrieves CNF/VNF VDU information.",
-		Long: `
-
+		Long: templates.LongDesc(`
 Command retrieves CNF/VNF VDU information. 
-The default output format tabular for detail output -o json`,
-
+The default output format tabular for detail output -o json`),
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
 				return fmt.Errorf("Command Requires a catalog cnf/vnf name or ID. " +
@@ -48,7 +47,9 @@ The default output format tabular for detail output -o json`,
 			}
 			return nil
 		},
-		Example: "tcactl get vdu 917a67eb-dcf2-481f-ae36-732aec1ba093",
+		Example: "\t - tcactl get vdu 917a67eb-dcf2-481f-ae36-732aec1ba093\n" +
+			"\t - tcactl get vdu my_app -o json -t\n" +
+			"\t - tcactl get vdu my_app -o yaml -t",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type

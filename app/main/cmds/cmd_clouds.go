@@ -19,6 +19,7 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
@@ -29,35 +30,6 @@ import (
 	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
 )
-
-// Chunks splits string to chunks,
-// it uses sep to split near chunkSize limit.
-// Each chunk is variable size. Method used to partition
-// flags usage.
-func Chunks(s string, chunkSize int, sep byte) []string {
-
-	if len(s) == 0 {
-		return nil
-	}
-
-	if chunkSize >= len(s) {
-		return []string{s}
-	}
-
-	var chunks []string = make([]string, 0, (len(s)-1)/chunkSize+1)
-	currentLen := 0
-	currentStart := 0
-	for i := range s {
-		if currentLen >= chunkSize && s[i-1] == sep {
-			chunks = append(chunks, s[currentStart:i])
-			currentLen = 0
-			currentStart = i
-		}
-		currentLen++
-	}
-	chunks = append(chunks, s[currentStart:])
-	return chunks
-}
 
 // CmdGetClouds - return list of cloud provider
 // attached to Telco Cloud Automation
@@ -100,13 +72,12 @@ Workload and Tenant cluster must be attached to target provider.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			tenants, vimErr := ctl.tca.GetVimTenants()
+			ctx := context.Background()
+			tenants, vimErr := ctl.tca.GetVimTenants(ctx)
 			CheckErrLogError(vimErr)
 
-			io.PrettyPrint(tenants)
-
 			if len(args) > 0 {
-				r, err := ctl.tca.TenantsCloudProvider(args[0])
+				r, err := ctl.tca.TenantsCloudProvider(ctx, args[0])
 				io.CheckErr(err)
 				if printer, ok := ctl.TenantsPrinter[_defaultPrinter]; ok {
 					printer(r, _defaultStyler)

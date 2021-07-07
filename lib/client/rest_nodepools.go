@@ -24,7 +24,6 @@ import (
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
-	"github.com/spyroot/tcactl/pkg/io"
 	"net/http"
 )
 
@@ -97,8 +96,6 @@ func (c *RestClient) CreateNewNodePool(r *request.NewNodePoolSpec, clusterId str
 	}
 
 	c.GetClient()
-
-	io.PrettyPrint(r)
 
 	resp, err := c.Client.R().SetBody(r).
 		Post(c.BaseURL + fmt.Sprintf(TcaInfraCreatPool, clusterId))

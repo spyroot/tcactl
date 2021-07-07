@@ -1,5 +1,50 @@
 package response
 
+import (
+	"github.com/spyroot/tcactl/lib/models"
+	"time"
+)
+
+type InstanceUpdate struct {
+	Id                    string `json:"id" yaml:"id"`
+	TaskId                string `json:"taskId" yaml:"taskId"`
+	OperationState        string `json:"operationState" yaml:"operationState"`
+	StateEnteredTime      int64  `json:"stateEnteredTime" yaml:"stateEnteredTime"`
+	StartTime             int64  `json:"startTime" yaml:"startTime"`
+	InstanceId            string `json:"instanceId" yaml:"instanceId"`
+	Operation             string `json:"operation" yaml:"operation"`
+	IsAutomaticInvocation bool   `json:"isAutomaticInvocation" yaml:"isAutomaticInvocation"`
+	OperationParams       struct {
+		FlavourId        string `json:"flavourId" yaml:"flavourId"`
+		AdditionalParams struct {
+			VimId               string `json:"vimId" yaml:"vimId"`
+			NodePoolId          string `json:"nodePoolId" yaml:"nodePoolId"`
+			SkipGrant           bool   `json:"skipGrant" yaml:"skipGrant"`
+			IgnoreGrantFailure  bool   `json:"ignoreGrantFailure" yaml:"ignoreGrantFailure"`
+			DisableAutoRollback bool   `json:"disableAutoRollback" yaml:"disableAutoRollback"`
+			DisableGrant        bool   `json:"disableGrant" yaml:"disableGrant"`
+			UseVAppTemplates    bool   `json:"useVAppTemplates" yaml:"useVAppTemplates"`
+		} `json:"additionalParams" yaml:"additional_params"`
+		VimId        string `json:"vimId" yaml:"vimId"`
+		NfInstanceId string `json:"nfInstanceId" yaml:"nfInstanceId"`
+		Id           string `json:"id" yaml:"id"`
+	} `json:"operationParams" yaml:"operationParams"`
+	IsCancelPending        bool      `json:"isCancelPending" yaml:"is_cancel_pending"`
+	EntityName             string    `json:"entityName" yaml:"entityName"`
+	EntityType             string    `json:"entityType" yaml:"entityType"`
+	LastUpdated            time.Time `json:"lastUpdated" yaml:"lastUpdated"`
+	LastUpdateEnterprise   string    `json:"lastUpdateEnterprise" yaml:"lastUpdateEnterprise"`
+	LastUpdateOrganization string    `json:"lastUpdateOrganization" yaml:"lastUpdateOrganization"`
+	LastUpdateUser         string    `json:"lastUpdateUser" yaml:"last_update_user"`
+	CreationDate           time.Time `json:"creationDate" yaml:"creationDate"`
+	CreationEnterprise     string    `json:"creationEnterprise" yaml:"creationEnterprise"`
+	CreationOrganization   string    `json:"creationOrganization" yaml:"creationOrganization"`
+	CreationUser           string    `json:"creationUser" yaml:"creation_user"`
+	IsDeleted              bool      `json:"isDeleted" yaml:"is_deleted"`
+	EndTime                int64     `json:"endTime" yaml:"end_time"`
+	Error                  string    `json:"error" yaml:"error"`
+}
+
 // LcmInfo information about current state
 type LcmInfo struct {
 	Id                        string `json:"id" yaml:"id"`
@@ -12,13 +57,21 @@ type LcmInfo struct {
 	VnfdVersion               string `json:"vnfdVersion" yaml:"vnfdVersion"`
 	VnfConfigurableProperties struct {
 	} `json:"vnfConfigurableProperties,omitempty" yaml:"vnfConfigurableProperties"`
-	VimConnectionInfo  []VimConnectionInfo  `json:"vimConnectionInfo,omitempty" yaml:"vimConnectionInfo"`
-	InstantiationState string               `json:"instantiationState" yaml:"instantiationState"`
-	VnfInfo            *InstantiatedVnfInfo `json:"instantiatedVnfInfo,omitempty" yaml:"instantiatedVnfInfo"`
-	Metadata           *ExtendedMetadata    `json:"metadata" yaml:"metadata"`
+	VimConnectionInfo  []models.VimConnectionInfo `json:"vimConnectionInfo,omitempty" yaml:"vimConnectionInfo"`
+	InstantiationState string                     `json:"instantiationState" yaml:"instantiationState"`
+	VnfInfo            *InstantiatedVnfInfo       `json:"instantiatedVnfInfo,omitempty" yaml:"instantiatedVnfInfo"`
+	Metadata           *ExtendedMetadata          `json:"metadata" yaml:"metadata"`
 	Extensions         struct {
 	} `json:"extensions" yaml:"extensions"`
-	Links PolicyLinks `json:"_links" yaml:"links"`
+	Links models.PolicyLinks `json:"_links" yaml:"_links"`
+}
+
+func (i *LcmInfo) IsInstantiated() bool {
+	return i.InstantiationState == "INSTANTIATED"
+}
+
+func (i *LcmInfo) IsFailed() bool {
+	return i.Metadata.LcmOperationState == "FAILED_TEMP"
 }
 
 // Cnfs - list of CNF LCM respond

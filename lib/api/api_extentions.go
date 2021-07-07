@@ -18,6 +18,7 @@
 package api
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"fmt"
 	"github.com/go-playground/validator/v10"
@@ -29,32 +30,64 @@ import (
 	"github.com/spyroot/tcactl/pkg/errors"
 )
 
+// GetRepos retrieve repos by tenant id
+func (a *TcaApi) GetRepos(ctx context.Context) (*response.ReposList, error) {
+
+	if a.rest == nil {
+		return nil, fmt.Errorf("rest interface is nil")
+	}
+
+	tenants, err := a.rest.GetVimTenants(ctx)
+	if err != nil {
+		glog.Error(err)
+	}
+
+	var allRepos response.ReposList
+	for _, r := range tenants.TenantsList {
+		repos, err := a.rest.RepositoriesQuery(&request.RepoQuery{
+			QueryFilter: request.Filter{
+				ExtraFilter: request.AdditionalFilters{
+					VimID: r.TenantID,
+				},
+			},
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		allRepos.Items = append(allRepos.Items, repos.Items...)
+	}
+
+	return &allRepos, nil
+}
+
 // GetExtensions returns all extension registered in TCA
 // This method useful if we need find Harbor or any other extension
 // for example attached to particular VIM
-func (a *TcaApi) GetExtensions() (*response.Extensions, error) {
+func (a *TcaApi) GetExtensions(ctx context.Context) (*response.Extensions, error) {
 
 	if a == nil {
 		return nil, errors.NilError
 	}
 
-	return a.rest.GetExtensions()
+	return a.rest.GetExtensions(ctx)
 }
 
 // GetExtension api call return extension register in TCA
 // NameOrId is name of extension or id.  If name provided
 // method need resolve name to id first.
-func (a *TcaApi) GetExtension(NameOrId string) (*response.Extensions, error) {
+func (a *TcaApi) GetExtension(ctx context.Context, NameOrId string) (*response.Extensions, error) {
 
 	if a == nil {
 		return nil, errors.NilError
 	}
 
 	if IsValidUUID(NameOrId) {
-		return a.rest.GetExtension(NameOrId)
+		return a.rest.GetExtension(ctx, NameOrId)
 	}
 
-	eid, err := a.ResolveExtensionId(NameOrId)
+	eid, err := a.ResolveExtensionId(ctx, NameOrId)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +96,7 @@ func (a *TcaApi) GetExtension(NameOrId string) (*response.Extensions, error) {
 		return nil, api_errors.NewExtensionsNotFound(NameOrId)
 	}
 
-	extension, err := a.rest.GetExtension(eid)
+	extension, err := a.rest.GetExtension(ctx, eid)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +104,12 @@ func (a *TcaApi) GetExtension(NameOrId string) (*response.Extensions, error) {
 	return extension, err
 }
 
-func (a *TcaApi) resolveVimInfo(spec *request.ExtensionSpec) error {
+func (a *TcaApi) resolveVimInfo(ctx context.Context, spec *request.ExtensionSpec) error {
 	if spec.VimInfo != nil {
 		for i, vimInfo := range spec.VimInfo {
 			// if vim name preset resolve all vim ids if needed
 			if len(vimInfo.VimName) > 0 {
-				vim, err := a.GetVim(vimInfo.VimName)
+				vim, err := a.GetVim(ctx, vimInfo.VimName)
 				if err != nil {
 					return err
 				}
@@ -107,7 +140,7 @@ func (a *TcaApi) resolveVimInfo(spec *request.ExtensionSpec) error {
 }
 
 // CreateExtension api call create extension in TCA
-func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
+func (a *TcaApi) CreateExtension(ctx context.Context, spec *request.ExtensionSpec) (string, error) {
 
 	if a == nil {
 		return "", errors.NilError
@@ -126,19 +159,19 @@ func (a *TcaApi) CreateExtension(spec *request.ExtensionSpec) (string, error) {
 		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
 	}
 
-	err = a.resolveVimInfo(spec)
+	err = a.resolveVimInfo(ctx, spec)
 	if err != nil {
 		return "", err
 	}
 
-	return a.rest.CreateExtension(spec)
+	return a.rest.CreateExtension(ctx, spec)
 }
 
 // ResolveExtensionId method resolve Name or Id to extension
 // if extension already valid id it no op
-func (a *TcaApi) ResolveExtensionId(NameOrId string) (string, error) {
+func (a *TcaApi) ResolveExtensionId(ctx context.Context, NameOrId string) (string, error) {
 
-	extension, err := a.GetExtensions()
+	extension, err := a.GetExtensions(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -151,24 +184,25 @@ func (a *TcaApi) ResolveExtensionId(NameOrId string) (string, error) {
 	return ext.ExtensionId, nil
 }
 
-// DeleteExtension api call delete extension from TCA
-func (a *TcaApi) DeleteExtension(NameOrId string) (bool, error) {
+// DeleteExtension api call delete extension from tca
+// return true
+func (a *TcaApi) DeleteExtension(ctx context.Context, NameOrId string) (bool, error) {
 
 	if a == nil {
 		return false, errors.NilError
 	}
 
-	eid, err := a.ResolveExtensionId(NameOrId)
+	eid, err := a.ResolveExtensionId(ctx, NameOrId)
 	if err != nil {
 		return false, err
 	}
 
 	// remove kind and encode password as base64
-	return a.rest.DeleteExtension(eid)
+	return a.rest.DeleteExtension(ctx, eid)
 }
 
 // UpdateExtension api call delete extension from TCA
-func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (bool, error) {
+func (a *TcaApi) UpdateExtension(ctx context.Context, spec *request.ExtensionSpec) (bool, error) {
 
 	if a == nil {
 		return false, errors.NilError
@@ -185,7 +219,7 @@ func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (bool, error) {
 		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
 	}
 
-	extension, err := a.GetExtension(spec.Name)
+	extension, err := a.GetExtension(ctx, spec.Name)
 	if err != nil {
 		return false, err
 	}
@@ -198,32 +232,32 @@ func (a *TcaApi) UpdateExtension(spec *request.ExtensionSpec) (bool, error) {
 	specCopy := spec
 	specCopy.SpecType = nil
 
-	err = a.resolveVimInfo(spec)
+	err = a.resolveVimInfo(ctx, spec)
 	if err != nil {
 		return false, err
 	}
 
-	return a.rest.UpdateExtension(spec, e.ExtensionId)
+	return a.rest.UpdateExtension(ctx, spec, e.ExtensionId)
 }
 
 // ExtensionQuery - query for all extension api
-func (a *TcaApi) ExtensionQuery() (*response.Extensions, error) {
+func (a *TcaApi) ExtensionQuery(ctx context.Context) (*response.Extensions, error) {
 
 	if a == nil {
 		return nil, errors.NilError
 	}
 
-	return a.rest.GetExtensions()
+	return a.rest.GetExtensions(ctx)
 }
 
 // GetFilteredExtension retrieve repos by tenant id
-func (a *TcaApi) GetFilteredExtension() (*response.ReposList, error) {
+func (a *TcaApi) GetFilteredExtension(ctx context.Context) (*response.ReposList, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	tenants, err := a.rest.GetVimTenants()
+	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		glog.Error(err)
 	}

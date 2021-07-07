@@ -17,6 +17,10 @@
 // Mustafa mbayramo@vmware.com
 package request
 
+import (
+	"github.com/spyroot/tcactl/lib/models"
+)
+
 type TerminateVnfRequest struct {
 	TerminationType            string `json:"terminationType" yaml:"terminationType"`
 	GracefulTerminationTimeout int    `json:"gracefulTerminationTimeout" yaml:"gracefulTerminationTimeout"`
@@ -48,10 +52,10 @@ type VduParam struct {
 }
 
 type AdditionalParams struct {
-	VduParams           []VduParam `json:"vduParams" yal:"vdu_params"`
-	DisableGrant        bool       `json:"disableGrant" yal:"disableGrant"`
-	IgnoreGrantFailure  bool       `json:"ignoreGrantFailure" yal:"ignoreGrantFailure"`
-	DisableAutoRollback bool       `json:"disableAutoRollback" yal:"disableAutoRollback"`
+	VduParams           []VduParam `json:"vduParams,omitempty" yal:"vduParams,omitempty"`
+	DisableGrant        bool       `json:"disableGrant,omitempty" yal:"disableGrant,omitempty"`
+	IgnoreGrantFailure  bool       `json:"ignoreGrantFailure,omitempty" yal:"ignoreGrantFailure,omitempty"`
+	DisableAutoRollback bool       `json:"disableAutoRollback,omitempty" yal:"disableAutoRollback,omitempty"`
 }
 
 type PoolExtra struct {
@@ -65,7 +69,7 @@ type VimConInfo struct {
 }
 
 type InstantiateVnfRequest struct {
-	FlavourID           string           `json:"flavourId" yaml:"flavourId"`
-	VimConnectionInfo   []VimConInfo     `json:"vimConnectionInfo" yaml:"vimConnectionInfo"`
-	AdditionalVduParams AdditionalParams `json:"additionalParams" yaml:"additionalParams"`
+	FlavourID           string                     `json:"flavourId,omitempty" yaml:"flavourId,omitempty"`
+	VimConnectionInfo   []models.VimConnectionInfo `json:"vimConnectionInfo,omitempty" yaml:"vimConnectionInfo,omitempty"`
+	AdditionalVduParams *AdditionalParams          `json:"additionalParams,omitempty" yaml:"additionalParams,omitempty"`
 }

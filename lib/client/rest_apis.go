@@ -101,6 +101,12 @@ const (
 	// TcaVmwareVnflcmInstance operation on instance
 	TcaVmwareVnflcmInstance = "/telco/api/vnflcm/v2/vnf_instances/%s"
 
+	//TcaVmwareVnflcmInstantiate instantiate
+	TcaVmwareVnflcmInstantiate = "/telco/api/vnflcm/v2/vnf_instances/%s/instantiate"
+
+	//TcaVmwareVnflcmUpdate update state
+	TcaVmwareVnflcmUpdate = "/hybridity/api/vnflcm/v1/vnf_instances/%s/update_state"
+
 	// TcaInfraPoolRetry Retry task
 	TcaInfraPoolRetry = "/hybridity/api/infra/k8s/operations/%s/retry"
 

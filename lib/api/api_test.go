@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client"
+	"github.com/spyroot/tcactl/lib/testutil"
 	"github.com/spyroot/tcactl/pkg/io"
 	"os"
 )
@@ -56,9 +57,10 @@ func getClient() *client.RestClient {
 	return r
 }
 
+//
 func getAuthenticatedClient() *client.RestClient {
-	r := getClient()
 
+	r := getClient()
 	ok, err := r.GetAuthorization()
 	if err != nil {
 		io.CheckErr(err)
@@ -76,6 +78,21 @@ func getAuthenticatedClient() *client.RestClient {
 var (
 	rest = getAuthenticatedClient()
 )
+
+//GetTestAssetsDir return dir where test assets are
+//it call RunOnRootFolder that change dir
+func GetTestAssetsDir() string {
+
+	wd := testutil.RunOnRootFolder()
+	wd = wd + "/test_assets"
+
+	_, err := os.Stat(wd)
+	if os.IsNotExist(err) {
+		io.CheckErr(err)
+	}
+
+	return wd
+}
 
 //harbor = &client.RestClient{
 //	BaseURL:               os.Getenv("HARBOR_URL"),

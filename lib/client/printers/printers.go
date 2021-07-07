@@ -100,6 +100,11 @@ func CnfInstanceTablePrinter(cnfs *response.Cnfs, style ui.PrinterStyle) {
 		return
 	}
 
+	if len(cnfs.CnfLcms) == 0 {
+		fmt.Println("No active instance.")
+		return
+	}
+
 	// default stdout
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)

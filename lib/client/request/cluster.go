@@ -19,14 +19,12 @@ package request
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/models"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"strings"
 )
 
@@ -179,15 +177,11 @@ func ReadClusterSpec(b io.Reader) (*Cluster, error) {
 	err = json.Unmarshal(buffer, &spec)
 	if err == nil {
 		return &spec, nil
-	} else {
-		fmt.Println(reflect.TypeOf(err).String())
 	}
 
 	err = yaml.Unmarshal(buffer, &spec)
 	if err == nil {
 		return &spec, nil
-	} else {
-		fmt.Println(err)
 	}
 
 	return nil, &InvalidClusterSpec{"unknown format"}

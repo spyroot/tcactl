@@ -28,6 +28,8 @@ import (
 	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/models"
+	"github.com/spyroot/tcactl/pkg/netutils"
+	"net"
 	"strings"
 )
 
@@ -44,13 +46,13 @@ func ClusterFields() []string {
 }
 
 // GetCluster -  method retrieve cluster information
-func (a *TcaApi) GetCluster(clusterId string) (*response.ClusterSpec, error) {
+func (a *TcaApi) GetCluster(ctx context.Context, clusterId string) (*response.ClusterSpec, error) {
 
 	if IsValidUUID(clusterId) {
-		return a.rest.GetCluster(clusterId)
+		return a.rest.GetCluster(ctx, clusterId)
 	}
 
-	clusters, err := a.rest.GetClusters()
+	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -62,13 +64,13 @@ func (a *TcaApi) GetCluster(clusterId string) (*response.ClusterSpec, error) {
 		return nil, err
 	}
 
-	return a.rest.GetCluster(_clusterId)
+	return a.rest.GetCluster(ctx, _clusterId)
 }
 
 // GetClusterNodePool -  API Method lookup clusters node pool.
 // clusterId is identified either a name or UUID.
 // nodePoolId is identifier either a name or UUID.
-func (a *TcaApi) GetClusterNodePool(clusterId string, nodePoolId string) (*response.NodesSpecs, error) {
+func (a *TcaApi) GetClusterNodePool(ctx context.Context, clusterId string, nodePoolId string) (*response.NodesSpecs, error) {
 
 	var (
 		_clusterid  = clusterId
@@ -78,7 +80,7 @@ func (a *TcaApi) GetClusterNodePool(clusterId string, nodePoolId string) (*respo
 
 	if !IsValidUUID(_clusterid) {
 		glog.Infof("Resolving cluster name %s to id", clusterId)
-		_clusterid, err = a.ResolveClusterName(clusterId)
+		_clusterid, err = a.ResolveClusterName(ctx, clusterId)
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +88,7 @@ func (a *TcaApi) GetClusterNodePool(clusterId string, nodePoolId string) (*respo
 
 	if !IsValidUUID(_nodePoolId) {
 		glog.Infof("Resolving pool name %s to id", _nodePoolId)
-		_nodePoolId, err = a.ResolvePoolId(_nodePoolId, _clusterid)
+		_nodePoolId, err = a.ResolvePoolId(ctx, _nodePoolId, _clusterid)
 		if err != nil {
 			return nil, err
 		}
@@ -97,20 +99,20 @@ func (a *TcaApi) GetClusterNodePool(clusterId string, nodePoolId string) (*respo
 
 // GetClusterTask method return list task models.ClusterTask
 // currently executing on given cluster
-func (a *TcaApi) GetClusterTask(clusterId string, showChildren bool) (*models.ClusterTask, error) {
+func (a *TcaApi) GetClusterTask(ctx context.Context, clusterId string, showChildren bool) (*models.ClusterTask, error) {
 
 	var err error
 	_clustered := clusterId
 
 	if !IsValidUUID(_clustered) {
 		glog.Infof("Resolving cluster id from name %s", clusterId)
-		_clustered, err = a.ResolveClusterName(_clustered)
+		_clustered, err = a.ResolveClusterName(ctx, _clustered)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	clusters, err := a.rest.GetClusters()
+	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		return nil, nil
 	}
@@ -123,7 +125,7 @@ func (a *TcaApi) GetClusterTask(clusterId string, showChildren bool) (*models.Cl
 	r := request.NewClusterTaskQuery(clusterSpec.ManagementClusterId)
 	r.IncludeChildTasks = showChildren
 
-	return a.rest.GetClustersTask(r)
+	return a.rest.GetClustersTask(ctx, r)
 }
 
 // ResolveManagementCluster mgmt cluster
@@ -151,7 +153,7 @@ func (a *TcaApi) ResolveManagementCluster(NameOrId string, tenants *response.Clu
 	return spec, nil
 }
 
-func specFixup(spec *request.Cluster) {
+func normalizeSpec(spec *request.Cluster) {
 
 	// fix cluster type
 	spec.ClusterType = strings.ToUpper(spec.ClusterType)
@@ -161,69 +163,138 @@ func specFixup(spec *request.Cluster) {
 			normalizeDatastoreName(config.Properties.DatastoreUrl)
 		}
 	}
+
+}
+
+func (a *TcaApi) checkClusterAddrConflict(ctx context.Context, spec *request.Cluster) (bool, *response.ClusterEndpoint) {
+
+	clusters, err := a.GetClusters(ctx)
+	if err != nil {
+		return false, nil
+	}
+
+	ips := clusters.GetClusterIPs()
+	v, ok := ips[spec.EndpointIP]
+	return ok, &v
+}
+
+func (a *TcaApi) allocateNewClusterIp(ctx context.Context, spec *request.Cluster) error {
+
+	clusters, err := a.GetClusters(ctx)
+	if err != nil {
+		return nil
+	}
+
+	allIps := clusters.GetClusterIPs()
+
+	// check if addr conflicts
+	var (
+		maxCheck = 0
+		ok       = true
+		endPoint response.ClusterEndpoint
+		addr     = spec.EndpointIP
+	)
+
+	for ok != false || maxCheck < 16 {
+
+		endPoint, ok = allIps[addr]
+		// if no overlap we done
+		if !ok {
+			spec.EndpointIP = addr
+			return nil
+		}
+
+		// otherwise check if it IP or FQDN name conflicts
+		// if IP compute next address and check
+		if endPoint.IsIP {
+			ip := net.ParseIP(addr)
+			if ip == nil {
+				return fmt.Errorf("failed parse IP address")
+			}
+
+			nextAddr := netutils.NextIPv4(ip, 1)
+			if nextAddr != nil {
+				addr = nextAddr.String()
+			}
+		} else {
+			// TODO when TCA will support FQDN add FQDN support.
+		}
+		maxCheck++
+	}
+
+	return nil
 }
 
 // CreateClusters - creates new cluster , in Dry Run method only will do
 // specString validation. isBlocking will indicate if caller expects cluster
 // task to finish. verbose will output status of each task,
 // linked to specific cluster creation.
-func (a *TcaApi) CreateClusters(spec *request.Cluster,
-	isDry bool, isBlocking bool, verbose bool) (*models.TcaTask, error) {
+func (a *TcaApi) CreateClusters(ctx context.Context, req *ClusterCreateApiReq) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	if spec == nil {
+	if req == nil {
+		return nil, api_errors.NewInvalidSpec("nil req")
+	}
+
+	if req.Spec == nil {
 		return nil, api_errors.NewInvalidSpec("new cluster specString can't be nil")
 	}
 
 	// fix specString
-	specFixup(spec)
+	normalizeSpec(req.Spec)
 
 	// validate cluster
-	if err := validateClusterSpec(spec); err != nil {
+	if err := validateClusterSpec(req.Spec); err != nil {
 		return nil, err
 	}
 
 	// do all sanity check here.
-	tenants, err := a.rest.GetClusters()
+	tenants, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = tenants.GetClusterId(spec.Name)
+	_, err = tenants.GetClusterId(req.Spec.Name)
 	// swap name if needed
 	if err == nil {
-		spec.Name = spec.Name + "-" + uuid.New().String()
-		spec.Name = spec.Name[0:25]
-		glog.Infof("Duplicate name regenerated new name '%v'", spec.Name)
+		req.Spec.Name = req.Spec.Name + "-" + uuid.New().String()
+		req.Spec.Name = req.Spec.Name[0:25]
+		glog.Infof("Duplicate name regenerated new name '%v'", req.Spec.Name)
 	}
 
 	// resolve template id, and cluster type
-	spec.ClusterTemplateId, err = a.NormalizeTemplateId(spec.ClusterTemplateId, spec.ClusterType)
+	req.Spec.ClusterTemplateId, err = a.NormalizeTemplateId(req.Spec.ClusterTemplateId, req.Spec.ClusterType)
 	if err != nil {
 		return nil, err
 	}
 
 	// get template and validate specs
-	t, err := a.rest.GetClusterTemplate(spec.ClusterTemplateId)
+	t, err := a.rest.GetClusterTemplate(req.Spec.ClusterTemplateId)
 	if err != nil {
 		return nil, err
 	}
 
-	glog.Infof("Validating node pool specs.")
-	_, err = t.ValidateSpec(spec)
+	_, err = t.ValidateSpec(req.Spec)
 	if err != nil {
 		return nil, err
 	}
 
-	glog.Infof("Resolved template id %v", spec.ClusterTemplateId)
-	tenant, err := a.validateCloudEndpoint(spec.HcxCloudUrl)
+	if req.IsFixConflict {
+		err := a.allocateNewClusterIp(ctx, req.Spec)
+		if err != nil {
+			return nil, fmt.Errorf("failed resolve cluster ip conflict error %v", err)
+		}
+	}
+
+	glog.Infof("Resolved template id %v", req.Spec.ClusterTemplateId)
+	tenant, err := a.validateCloudEndpoint(ctx, req.Spec.HcxCloudUrl)
 	if err != nil {
 		return nil, err
 	}
-	spec.HcxCloudUrl = tenant.HcxCloudURL
+	req.Spec.HcxCloudUrl = tenant.HcxCloudURL
 
 	err = a.validateTenant(tenant)
 	if err != nil {
@@ -231,17 +302,17 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 	}
 
 	identified := false
-	if spec.IsWorkload() {
+	if req.Spec.IsWorkload() {
 		glog.Infof("Validating workload cluster specString")
 
 		// resolve template id, in case client used name instead id
-		mspec, err := a.ResolveManagementCluster(spec.ManagementClusterId, tenants)
+		mspec, err := a.ResolveManagementCluster(req.Spec.ManagementClusterId, tenants)
 		if err != nil {
 			return nil, err
 		}
 
-		spec.ManagementClusterId = mspec.Id
-		err = a.validatePlacements(spec, tenant)
+		req.Spec.ManagementClusterId = mspec.Id
+		err = a.validatePlacements(ctx, req.Spec, tenant)
 		if err != nil {
 			return nil, err
 		}
@@ -249,11 +320,11 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 		identified = true
 	}
 
-	if spec.IsManagement() {
+	if req.Spec.IsManagement() {
 		glog.Infof("Validating management cluster specString")
 		// ignoring mgmt cluster id
-		spec.ManagementClusterId = ""
-		err = a.validatePlacements(spec, tenant)
+		req.Spec.ManagementClusterId = ""
+		err = a.validatePlacements(ctx, req.Spec, tenant)
 		if err != nil {
 			return nil, err
 		}
@@ -261,24 +332,24 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 	}
 
 	if !identified {
-		return nil, fmt.Errorf("invalid cluster type %s", spec.ClusterType)
+		return nil, fmt.Errorf("invalid cluster type %s", req.Spec.ClusterType)
 	}
 
-	spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(spec.ClusterPassword))
+	req.Spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
 
 	glog.Infof("Cluster specString validated.")
 
-	if isDry {
+	if req.IsDryRun {
 		return &models.TcaTask{}, nil
 	}
 
-	task, err := a.rest.CreateCluster(spec)
+	task, err := a.rest.CreateCluster(req.Spec)
 	if err != nil {
 		return nil, err
 	}
 
-	if isBlocking {
-		err := a.BlockWaitTaskFinish(context.Background(), task, TaskStateSuccess, BlockMaxRetryTimer, verbose)
+	if req.IsBlocking {
+		err := a.BlockWaitTaskFinish(context.Background(), task, TaskStateSuccess, BlockMaxRetryTimer, req.IsBlocking)
 		if err != nil {
 			return task, err
 		}
@@ -290,37 +361,41 @@ func (a *TcaApi) CreateClusters(spec *request.Cluster,
 // DeleteCluster - Method deletes cluster, note in order delete
 // it must not have anything running on it. In order delete management
 // cluster, all tenant cluster must be deleted first.
-func (a *TcaApi) DeleteCluster(clusterId string, isBlocking bool, verbose bool) (*models.TcaTask, error) {
-
-	var (
-		cid = clusterId
-		err error
-	)
+func (a *TcaApi) DeleteCluster(ctx context.Context, req *ClusterDeleteApiReq) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
+	if req == nil {
+		return nil, fmt.Errorf("nil request")
+	}
+
+	var (
+		cid = req.Cluster
+		err error
+	)
+
 	if len(cid) == 0 {
 		return nil, fmt.Errorf("empty cluster id or name")
 	}
 
-	// resolve id if it not UUID
+	// resolve name to id , if it not UUID
 	if !IsValidUUID(cid) {
-		cid, err = a.ResolveClusterName(cid)
+		cid, err = a.ResolveClusterName(ctx, cid)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	task, err := a.rest.DeleteCluster(cid)
+	task, err := a.rest.DeleteCluster(ctx, cid)
 	if err != nil {
 		return nil, err
 	}
 
 	// block and wait task to finish
-	if isBlocking {
-		err := a.BlockWaitTaskFinish(context.Background(), task, TaskStateSuccess, BlockMaxRetryTimer, verbose)
+	if req.IsBlocking {
+		err := a.BlockWaitTaskFinish(ctx, task, TaskStateSuccess, BlockMaxRetryTimer, req.IsVerbose)
 		if err != nil {
 			return task, err
 		}
