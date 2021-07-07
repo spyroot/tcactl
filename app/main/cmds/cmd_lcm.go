@@ -308,7 +308,10 @@ The command reconfigures the existing CNF active instance.
 // CmdTerminateInstances command to update CNF state. i.e terminate
 func (ctl *TcaCtl) CmdTerminateInstances() *cobra.Command {
 
-	var doBlock bool
+	var (
+		doBlock      bool
+		showProgress bool
+	)
 
 	var cmdTerminate = &cobra.Command{
 		Use:   "terminate [instance name or id]",
@@ -325,7 +328,12 @@ The command terminates active CNF or VNF instances.
 
 			ctl.checkDefaultsConfig()
 			err = ctl.tca.TerminateCnfInstance(context.Background(),
-				args[0], ctl.DefaultClusterName, doBlock, true)
+				&api.TerminateInstanceApiReq{
+					InstanceName: args[0],
+					ClusterName:  ctl.DefaultClusterName,
+					IsBlocking:   doBlock,
+					IsVerbose:    showProgress,
+				})
 			CheckErrLogError(err)
 
 			fmt.Println("Successfully updated state.")
@@ -335,6 +343,10 @@ The command terminates active CNF or VNF instances.
 	//
 	cmdTerminate.Flags().BoolVarP(&doBlock, CliBlock, "b", false,
 		"Flag instructs to blocks and pools the status of the operation.")
+
+	//
+	cmdTerminate.Flags().BoolVarP(&showProgress, CliProgress, "s", false,
+		"Show task progress.")
 
 	return cmdTerminate
 }

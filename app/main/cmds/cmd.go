@@ -40,10 +40,10 @@ const (
 	// CliDisableGran disable grand validation flag
 	CliDisableGran = "grant"
 
-	//
+	//CliIgnoreGrantFailure flag sets ignore grant failure
 	CliIgnoreGrantFailure = "ignoreGrantFailure"
 
-	//
+	//CliDisableAutoRollback flag disables auto rollback during instantiation
 	CliDisableAutoRollback = "disableAutoRollback"
 
 	// CliForce force delete flag

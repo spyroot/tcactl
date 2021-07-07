@@ -19,7 +19,6 @@
 package api
 
 // InstanceRequestSpec new instance request
-// TODO no validation
 type InstanceRequestSpec struct {
 	cloudName    string
 	clusterName  string
