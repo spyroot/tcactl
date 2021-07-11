@@ -1,3 +1,5 @@
+kind: template
+name: min
 clusterType: MANAGEMENT
 clusterConfig:
     kubernetesVersion: v1.20.4+vmware.1
@@ -11,7 +13,6 @@ masterNodes:
       replica: 1
       labels: []
       cloneMode: linkedClone
-name: min 
 workerNodes:
     - cpu: 4 
       memory: 131072

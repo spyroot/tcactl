@@ -32,7 +32,7 @@ import (
 	//	pflag "github.com/spf13/pflag"
 	//flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	_ "github.com/spyroot/tcactl/lib/client/request"
+	_ "github.com/spyroot/tcactl/lib/client/specs"
 	"os"
 )
 
@@ -81,7 +81,7 @@ func init() {
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultClusterName,
 		cmds.ConfigDefaultCluster, "m", "",
-		"overwrites default Tenant Cluster Name.")
+		"overwrites default Tenant SpecCluster Name.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultRepoName,
 		cmds.ConfigRepoName, "z", "",
@@ -218,7 +218,7 @@ func initConfig() {
 	//tcaCtl.TcaClient.Username = viper.GetString(cmds.ConfigTcaUsername)
 	//tcaCtl.TcaClient.Password = viper.GetString(cmds.ConfigTcaPassword)
 
-	// default Cloud in TCA,  Cluster and node pool
+	// default Cloud in TCA,  SpecCluster and node pool
 	tcaCtl.DefaultCloudName = viper.GetString(cmds.ConfigDefaultCloud)
 	tcaCtl.DefaultClusterName = viper.GetString(cmds.ConfigDefaultCluster)
 	tcaCtl.DefaultNodePoolName = viper.GetString(cmds.ConfigNodePool)

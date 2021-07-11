@@ -22,8 +22,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 )
 
 type ExtensionDeleteReplay struct {
@@ -104,7 +104,7 @@ func (c *RestClient) GetExtension(ctx context.Context, eid string) (*response.Ex
 //CreateExtension - method creates new extension
 // spec can contain optional VimInfo that indicates
 // cluster or cluster where extension will be attach.
-func (c *RestClient) CreateExtension(ctx context.Context, spec *request.ExtensionSpec) (string, error) {
+func (c *RestClient) CreateExtension(ctx context.Context, spec *specs.SpecExtension) (string, error) {
 
 	if c == nil {
 		return "", fmt.Errorf("uninitialized rest client")
@@ -177,7 +177,7 @@ func (c *RestClient) DeleteExtension(ctx context.Context, extensionId string) (b
 
 //UpdateExtension - update extension
 //Returns true if extension updated
-func (c *RestClient) UpdateExtension(ctx context.Context, spec *request.ExtensionSpec, eid string) (bool, error) {
+func (c *RestClient) UpdateExtension(ctx context.Context, spec *specs.SpecExtension, eid string) (bool, error) {
 
 	if c == nil {
 		return false, fmt.Errorf("uninitialized rest client")

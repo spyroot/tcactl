@@ -1,0 +1,17 @@
+kind: instance
+cloud_name: edge
+cluster_name: edge-test01
+vim_type: k8s
+catalog_name: default
+repo_url: https://test
+repo_username: admin
+repo_password: pass
+instance_name: test_instance01
+node_pool: default
+namespace: default
+flavor_name: default
+description: default
+additionalParams:
+  disableGrant: true
+  ignoreGrantFailure: true
+  disableAutoRollback: true

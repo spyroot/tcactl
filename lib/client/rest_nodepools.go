@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"net/http"
 )
@@ -89,7 +89,7 @@ func (c *RestClient) GetClusterNodePool(clusterId string, nodePoolId string) (*r
 // CreateNewNodePool api method create a new node pool for
 // a target cluster, method return models.TcaTask that progress
 // can be monitored.
-func (c *RestClient) CreateNewNodePool(r *request.NewNodePoolSpec, clusterId string) (*models.TcaTask, error) {
+func (c *RestClient) CreateNewNodePool(r *specs.NodePoolSpec, clusterId string) (*models.TcaTask, error) {
 
 	if len(clusterId) == 0 {
 		return nil, fmt.Errorf("cluster id is empty string")
@@ -165,7 +165,7 @@ func (c *RestClient) DeleteNodePool(clusterId string, nodePoolId string) (*model
 }
 
 // UpdateNodePool - update a note pool
-func (c *RestClient) UpdateNodePool(r *request.NewNodePoolSpec, clusterId string, nodePoolId string) (*models.TcaTask, error) {
+func (c *RestClient) UpdateNodePool(r *specs.NodePoolSpec, clusterId string, nodePoolId string) (*models.TcaTask, error) {
 
 	if len(clusterId) == 0 {
 		return nil, fmt.Errorf("cluster id is empty string")

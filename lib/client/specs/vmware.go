@@ -1,4 +1,4 @@
-// Package request
+// Package specs
 // Copyright 2020-2021 Author.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 //
 //
 // Mustafa mbayramo@vmware.com
-package request
+package specs
 
 import "github.com/spyroot/tcactl/lib/models"
 

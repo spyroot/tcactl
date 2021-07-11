@@ -25,8 +25,8 @@ import (
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"github.com/spyroot/tcactl/lib/api"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/pkg/io"
 	"strings"
 )
@@ -224,7 +224,7 @@ Command create additional node pool on target kubernetes cluster.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			nodePoolSpec, err := request.ReadNodeSpecFromFile(args[1])
+			nodePoolSpec, err := specs.ReadNodeSpecFromFile(args[1])
 			CheckErrLogError(err)
 
 			if isDry && nodePoolSpec != nil {
@@ -298,7 +298,7 @@ Command update node pool for target kubernetes cluster.`),
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			nodePoolSpec, err := request.ReadNodeSpecFromFile(args[1])
+			nodePoolSpec, err := specs.ReadNodeSpecFromFile(args[1])
 			CheckErrLogError(err)
 
 			if isDry && nodePoolSpec != nil {

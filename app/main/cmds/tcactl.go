@@ -27,8 +27,8 @@ import (
 	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/printers"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
 	"os"
@@ -153,7 +153,7 @@ type TcaCtl struct {
 	TemplatesPrinter map[string]func([]response.ClusterTemplateSpec, ui.PrinterStyle)
 
 	// TenantQueryPrinter tenant query printer
-	ClusterRequestPrinter map[string]func(*request.Cluster, ui.PrinterStyle)
+	ClusterRequestPrinter map[string]func(*specs.SpecCluster, ui.PrinterStyle)
 
 	// cloud tenant printer
 	TenantsResponsePrinter map[string]func(*response.TenantSpecs, ui.PrinterStyle)
@@ -294,7 +294,7 @@ func NewTcaCtl() *TcaCtl {
 			ConfigYamlPinter:    printer.TemplatesYamlPrinter,
 		},
 
-		ClusterRequestPrinter: map[string]func(*request.Cluster, ui.PrinterStyle){
+		ClusterRequestPrinter: map[string]func(*specs.SpecCluster, ui.PrinterStyle){
 			ConfigDefaultPinter: printer.ClusterRequestJsonPrinter,
 			ConfigJsonPinter:    printer.ClusterRequestJsonPrinter,
 			ConfigYamlPinter:    printer.ClusterRequestYamlPrinter,

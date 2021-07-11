@@ -380,7 +380,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 //		specValidator *validator.Validate
 //	}
 //	type args struct {
-//		cloudName string
+//		CloudName string
 //	}
 //	tests := []struct {
 //		name    string
@@ -397,7 +397,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 //				rest:          tt.fields.rest,
 //				specValidator: tt.fields.specValidator,
 //			}
-//			got, err := a.GetVimComputeClusters(tt.args.cloudName)
+//			got, err := a.GetVimComputeClusters(tt.args.CloudName)
 //			if (err != nil) != tt.wantOnGetErr {
 //				t.Errorf("GetVimComputeClusters() error = %v, wantOnGetErr %v", err, tt.wantOnGetErr)
 //				return
@@ -415,7 +415,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 //		specValidator *validator.Validate
 //	}
 //	type args struct {
-//		cloudName string
+//		CloudName string
 //	}
 //	tests := []struct {
 //		name    string
@@ -432,7 +432,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 //				rest:          tt.fields.rest,
 //				specValidator: tt.fields.specValidator,
 //			}
-//			got, err := a.GetVimNetworks(tt.args.cloudName)
+//			got, err := a.GetVimNetworks(tt.args.CloudName)
 //			if (err != nil) != tt.wantOnGetErr {
 //				t.Errorf("GetVimNetworks() error = %v, wantOnGetErr %v", err, tt.wantOnGetErr)
 //				return

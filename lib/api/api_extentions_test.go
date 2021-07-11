@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"github.com/spyroot/tcactl/lib/client"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/testutil"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -63,7 +63,7 @@ func TestCreateExtension(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			a := getTcaApi(t, rest, false)
-			spec, err := request.ExtensionSpecFromFromString(tt.spec)
+			spec, err := specs.ExtensionSpecFromFromString(tt.spec)
 			assert.NoError(t, err)
 			ctx := context.Background()
 
@@ -161,7 +161,7 @@ func TestGetExtension(t *testing.T) {
 
 			ctx := context.Background()
 			api := getTcaApi(t, rest, false)
-			spec, err := request.ExtensionSpecFromFromString(tt.spec)
+			spec, err := specs.ExtensionSpecFromFromString(tt.spec)
 			assert.NoError(t, err)
 
 			if tt.addBefore {
@@ -256,7 +256,7 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 
 			ctx = context.Background()
 			api := getTcaApi(t, rest, false)
-			spec, err := request.ExtensionSpecFromFromString(tt.specString)
+			spec, err := specs.ExtensionSpecFromFromString(tt.specString)
 			assert.NoError(t, err)
 
 			if len(tt.password) > 0 {
@@ -408,7 +408,7 @@ var testHarborExt = `{
   "vimInfo": [],
   "interfaceInfo": {
     "url": "https://1.1.1.1",
-    "description": "",
+    "Description": "",
     "trustedCertificate": ""
   },
   "additionalParameters": {
@@ -457,7 +457,7 @@ var testHarborWithVim = `{
   ],
   "interfaceInfo": {
     "url": "https://10.252.80.135",
-    "description": "",
+    "Description": "",
     "trustedCertificate": ""
   },
   "additionalParameters": {
@@ -486,7 +486,7 @@ var testHarborWithInvalidVim = `{
   ],
   "interfaceInfo": {
     "url": "https://10.252.80.135",
-    "description": "",
+    "Description": "",
     "trustedCertificate": ""
   },
   "additionalParameters": {
@@ -502,7 +502,7 @@ var testHarborWithInvalidVim = `{
 
 var testHarborCreateUpdate = `{
   "kind": "extensions",
-  "name": "repo",
+  "name": "Repo",
   "version": "v2.x",
   "type": "Repository",
   "extensionKey": "",
@@ -510,7 +510,7 @@ var testHarborCreateUpdate = `{
   "products": [],
   "interfaceInfo": {
     "url": "https://10.252.80.135",
-    "description": "",
+    "Description": "",
     "trustedCertificate": ""
   },
   "additionalParameters": {
@@ -534,7 +534,7 @@ var testGetExtention = `{
   "products": [],
   "interfaceInfo": {
     "url": "https://1.1.1.1",
-    "description": "",
+    "Description": "",
     "trustedCertificate": ""
   },
   "additionalParameters": {

@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/tcactl/lib/client/request"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"net/http"
 )
@@ -44,7 +44,7 @@ const (
 	TcaServiceVmwareVmContainers = "/api/service/inventory/containers"
 )
 
-func (c *RestClient) GetVmwareCluster(ctx context.Context, f *request.ClusterFilterQuery) (*models.VMwareClusters, error) {
+func (c *RestClient) GetVmwareCluster(ctx context.Context, f *specs.ClusterFilterQuery) (*models.VMwareClusters, error) {
 
 	c.GetClient()
 
@@ -68,7 +68,7 @@ func (c *RestClient) GetVmwareCluster(ctx context.Context, f *request.ClusterFil
 }
 
 // GetVmwareNetworks - return query for vmware network list
-func (c *RestClient) GetVmwareNetworks(ctx context.Context, f *request.VMwareNetworkQuery) (*models.CloudNetworks, error) {
+func (c *RestClient) GetVmwareNetworks(ctx context.Context, f *specs.VMwareNetworkQuery) (*models.CloudNetworks, error) {
 
 	if f == nil {
 		glog.Error("vmware network filter query is nil")
@@ -101,7 +101,7 @@ func (c *RestClient) GetVmwareNetworks(ctx context.Context, f *request.VMwareNet
 
 // GetVMwareTemplates - return VMware VM templates
 // Typically Query filters based on cloud provider id.
-func (c *RestClient) GetVMwareTemplates(ctx context.Context, f *request.VMwareTemplateQuery) (*models.VcInventory, error) {
+func (c *RestClient) GetVMwareTemplates(ctx context.Context, f *specs.VMwareTemplateQuery) (*models.VcInventory, error) {
 
 	if f == nil {
 		glog.Error("vm template filter query is nil")
@@ -134,7 +134,7 @@ func (c *RestClient) GetVMwareTemplates(ctx context.Context, f *request.VMwareTe
 
 // GetVMwareFolders - return VMware folder view
 // Typically Query filters based on cloud provider id.
-func (c *RestClient) GetVMwareFolders(f *request.VmwareFolderQuery) (*models.Folders, error) {
+func (c *RestClient) GetVMwareFolders(f *specs.VmwareFolderQuery) (*models.Folders, error) {
 
 	if f == nil {
 		glog.Error("folder filter query is nil")
@@ -167,7 +167,7 @@ func (c *RestClient) GetVMwareFolders(f *request.VmwareFolderQuery) (*models.Fol
 
 // GetVMwareResourcePool return VMware resource view
 // Typically Query filters based on cloud provider id.
-func (c *RestClient) GetVMwareResourcePool(ctx context.Context, f *request.VMwareResourcePoolQuery) (*models.ResourcePool, error) {
+func (c *RestClient) GetVMwareResourcePool(ctx context.Context, f *specs.VMwareResourcePoolQuery) (*models.ResourcePool, error) {
 
 	c.GetClient()
 	resp, err := c.Client.R().SetContext(ctx).SetBody(f).Post(c.BaseURL + TcaVmwareVmContainers)

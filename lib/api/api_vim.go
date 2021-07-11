@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"strings"
 )
@@ -88,7 +88,7 @@ func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*
 		glog.Infof("Retrieving list for cloud provider %v '%v'",
 			tenant.HcxUUID, tenant.VimURL)
 
-		f := request.NewClusterFilterQuery(tenant.HcxUUID)
+		f := specs.NewClusterFilterQuery(tenant.HcxUUID)
 		clusterInventory, err := a.rest.GetVmwareCluster(ctx, f)
 
 		if err != nil {
@@ -128,7 +128,7 @@ func (a *TcaApi) GetVimNetworks(ctx context.Context, cloudName string) (*models.
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
 	}
 
-	f := request.NewClusterFilterQuery(tenant.HcxUUID)
+	f := specs.NewClusterFilterQuery(tenant.HcxUUID)
 	clusterInventory, err := a.rest.GetVmwareCluster(ctx, f)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (a *TcaApi) GetVimNetworks(ctx context.Context, cloudName string) (*models.
 	// get all network for all clusters
 	var networks models.CloudNetworks
 	for _, item := range clusterInventory.Items {
-		networkFilter := request.VMwareNetworkQuery{}
+		networkFilter := specs.VMwareNetworkQuery{}
 		networkFilter.Filter.TenantId = tenant.HcxUUID
 		if strings.HasPrefix(item.EntityId, "domain") {
 			networkFilter.Filter.ClusterId = item.EntityId

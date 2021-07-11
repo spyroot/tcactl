@@ -120,6 +120,15 @@ func PrettyPrint(v interface{}) (err error) {
 	return
 }
 
+// YamlString return struct yaml as one string
+func YamlString(t interface{}) string {
+	b, err := yaml.Marshal(t)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
 // YamlPrinter Default Json printer
 func YamlPrinter(t interface{}, isColor ...bool) error {
 	b, err := yaml.Marshal(t)

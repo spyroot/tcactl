@@ -22,8 +22,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-playground/validator/v10"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 )
 
@@ -89,7 +89,7 @@ func (a *TcaApi) DeleteTenantsProvider(ctx context.Context, tenantCluster string
 
 // CreateTenantProvider method create, registers new target cloud provider
 // as tenant infrastructure in TCA.
-func (a *TcaApi) CreateTenantProvider(spec *request.RegisterVimSpec) (*models.TcaTask, error) {
+func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.TcaTask, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")

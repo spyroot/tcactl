@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
-	"github.com/spyroot/tcactl/lib/client/request"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"strings"
 )
 
@@ -106,7 +106,7 @@ Command attaches cloud provider to TCA.`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			spec, err := request.ExtensionSpecsFromFile(args[0])
+			spec, err := specs.ExtensionSpecsFromFile(args[0])
 			CheckErrLogError(err)
 
 			eid, err := ctl.tca.CreateExtension(ctx, spec)
@@ -193,7 +193,7 @@ to selected workload cluster`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			spec, err := request.ExtensionSpecsFromFile(args[0])
+			spec, err := specs.ExtensionSpecsFromFile(args[0])
 			CheckErrLogError(err)
 			ok, err := ctl.tca.UpdateExtension(ctx, spec)
 			CheckErrLogError(err)

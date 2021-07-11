@@ -25,10 +25,10 @@ const (
 	testInstanceName = "unit_test_instance"
 
 	//testRepoName
-	testRepoName = "repo"
+	testRepoName = "Repo"
 
 	//testRepoUrl
-	testRepoUrl = "repo.cnfdemo.io/chartrepo/library"
+	testRepoUrl = "Repo.cnfdemo.io/chartrepo/library"
 
 	//testRepoUsername
 	testRepoUsername = "admin"
@@ -160,7 +160,7 @@ func getTenantCluster() string {
 	return e
 }
 
-// getTestRepoUsername return test repo either from env or default
+// getTestRepoUsername return test Repo either from env or default
 func getTestRepoUsername() string {
 	e := os.Getenv("TCA_TEST_REPO_USERNAME")
 	if len(e) == 0 {
@@ -169,7 +169,7 @@ func getTestRepoUsername() string {
 	return e
 }
 
-// getTestRepoPassword return test repo password from env or default
+// getTestRepoPassword return test Repo password from env or default
 func getTestRepoPassword() string {
 	e := os.Getenv("TCA_REPO_PASSWORD")
 	if len(e) == 0 {
@@ -178,7 +178,7 @@ func getTestRepoPassword() string {
 	return e
 }
 
-//getTestRepoUrl return test repo url from env or default
+//getTestRepoUrl return test Repo url from env or default
 func getTestRepoUrl() string {
 	e := os.Getenv("TCA_TEST_REPO_URL")
 	if len(e) == 0 {
@@ -348,7 +348,7 @@ clusterConfig:
     tools:
         - name: helm
           version: 2.17.0
-description: ""
+Description: ""
 masterNodes:
     - cpu: 4
       memory: 16384

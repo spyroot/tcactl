@@ -4,7 +4,7 @@ import (
 	"context"
 	_ "github.com/nsf/jsondiff"
 	"github.com/spyroot/tcactl/lib/client"
-	"github.com/spyroot/tcactl/lib/client/request"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
 	"github.com/stretchr/testify/assert"
@@ -15,14 +15,14 @@ import (
 )
 
 // specNodePoolStringReaderHelper test helper return node specString
-func specNodePoolStringReaderHelper(s string) *request.NewNodePoolSpec {
-	r, err := request.ReadNodeSpecFromString(s)
+func specNodePoolStringReaderHelper(s string) *specs.NodePoolSpec {
+	r, err := specs.ReadNodeSpecFromString(s)
 	io.CheckErr(err)
 	return r
 }
 
 // specNodePoolStringReaderHelper test helper return node specString
-func specNodePoolFromFile(spec string) *request.NewNodePoolSpec {
+func specNodePoolFromFile(spec string) *specs.NodePoolSpec {
 
 	tmpFile, err := ioutil.TempFile("", "tcactltest")
 	if err != nil {
@@ -40,7 +40,7 @@ func specNodePoolFromFile(spec string) *request.NewNodePoolSpec {
 	}
 
 	// read from file
-	r, err := request.ReadNodeSpecFromFile(tmpFile.Name())
+	r, err := specs.ReadNodeSpecFromFile(tmpFile.Name())
 	io.CheckErr(err)
 
 	return r
@@ -53,7 +53,7 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 	tests := []struct {
 		name         string
 		rest         *client.RestClient
-		spec         *request.NewNodePoolSpec
+		spec         *specs.NodePoolSpec
 		wantErr      bool
 		reset        bool
 		withoutlabel bool
@@ -115,7 +115,7 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 			a := getTcaApi(t, rest, false)
 			assert.NotNil(t, tt.spec)
 
-			tt.spec.CloneMode = request.LinkedClone
+			tt.spec.CloneMode = specs.LinkedClone
 
 			if tt.spec != nil && tt.withoutlabel == false {
 				tt.spec.Name = generateName()
@@ -160,7 +160,7 @@ func TestTcaUpdateNodePool(t *testing.T) {
 	tests := []struct {
 		name      string
 		rest      *client.RestClient
-		spec      *request.NewNodePoolSpec
+		spec      *specs.NodePoolSpec
 		wantErr   bool
 		reset     bool
 		doBlock   bool
@@ -231,7 +231,7 @@ func TestTcaUpdateNodePool(t *testing.T) {
 				a.rest = nil
 			}
 
-			tt.spec.CloneMode = request.LinkedClone
+			tt.spec.CloneMode = specs.LinkedClone
 			SetLoggingFlags()
 
 			req := NodePoolCreateApiReq{

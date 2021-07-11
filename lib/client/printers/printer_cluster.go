@@ -20,8 +20,8 @@ package printer
 import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"os"
 )
@@ -55,12 +55,12 @@ func ClusterSpecYamlPrinter(spec *response.ClusterSpec, style ui.PrinterStyle) {
 }
 
 // ClusterRequestJsonPrinter - json printer for new cluster creation request
-func ClusterRequestJsonPrinter(spec *request.Cluster, style ui.PrinterStyle) {
+func ClusterRequestJsonPrinter(spec *specs.SpecCluster, style ui.PrinterStyle) {
 	DefaultJsonPrinter(spec, style)
 }
 
 // ClusterRequestYamlPrinter - json printer for new cluster creation request
-func ClusterRequestYamlPrinter(specs *request.Cluster, style ui.PrinterStyle) {
+func ClusterRequestYamlPrinter(specs *specs.SpecCluster, style ui.PrinterStyle) {
 	DefaultYamlPrinter(specs, style)
 }
 

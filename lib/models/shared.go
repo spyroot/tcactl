@@ -25,6 +25,14 @@ type CnfPolicyUri struct {
 	Href string `json:"href,omitempty"`
 }
 
+type LcmInterfaces struct {
+	InterfaceName string `json:"interfaceName" yaml:"interfaceName"`
+	Parameters    []struct {
+		Name string `json:"name" yaml:"name"`
+		Type string `json:"type" yaml:"type"`
+	} `json:"parameters" yaml:"parameters"`
+}
+
 type PolicyLinks struct {
 	Self           CnfPolicyUri `json:"self,omitempty" yaml:"self"`
 	Indicators     CnfPolicyUri `json:"indicators,omitempty" yaml:"indicators"`

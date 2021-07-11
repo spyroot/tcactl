@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"net/http"
 )
 
@@ -34,9 +34,9 @@ func (c *RestClient) LinkedRepositories(tenantId string, repo string) (string, e
 		return "", fmt.Errorf("uninitialized object")
 	}
 
-	repos, err := c.RepositoriesQuery(&request.RepoQuery{
-		QueryFilter: request.Filter{
-			ExtraFilter: request.AdditionalFilters{
+	repos, err := c.RepositoriesQuery(&specs.RepoQuery{
+		QueryFilter: specs.Filter{
+			ExtraFilter: specs.AdditionalFilters{
 				VimID: tenantId,
 			},
 		},
@@ -50,7 +50,7 @@ func (c *RestClient) LinkedRepositories(tenantId string, repo string) (string, e
 }
 
 //RepositoriesQuery - query repositories linked to vim
-func (c *RestClient) RepositoriesQuery(query *request.RepoQuery) (*response.ReposList, error) {
+func (c *RestClient) RepositoriesQuery(query *specs.RepoQuery) (*response.ReposList, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("uninitialized rest client")
@@ -85,7 +85,7 @@ func (c *RestClient) RepositoriesQuery(query *request.RepoQuery) (*response.Repo
 }
 
 //GetRepositoriesQuery - query repositories linked to vim
-func (c *RestClient) GetRepositoriesQuery(query *request.RepoQuery) (*response.ReposList, error) {
+func (c *RestClient) GetRepositoriesQuery(query *specs.RepoQuery) (*response.ReposList, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("uninitialized rest client")

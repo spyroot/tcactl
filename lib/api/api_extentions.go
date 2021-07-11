@@ -25,8 +25,8 @@ import (
 	"github.com/golang/glog"
 	_ "github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/api_errors"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/pkg/errors"
 )
 
@@ -44,9 +44,9 @@ func (a *TcaApi) GetRepos(ctx context.Context) (*response.ReposList, error) {
 
 	var allRepos response.ReposList
 	for _, r := range tenants.TenantsList {
-		repos, err := a.rest.RepositoriesQuery(&request.RepoQuery{
-			QueryFilter: request.Filter{
-				ExtraFilter: request.AdditionalFilters{
+		repos, err := a.rest.RepositoriesQuery(&specs.RepoQuery{
+			QueryFilter: specs.Filter{
+				ExtraFilter: specs.AdditionalFilters{
 					VimID: r.TenantID,
 				},
 			},
@@ -104,7 +104,7 @@ func (a *TcaApi) GetExtension(ctx context.Context, NameOrId string) (*response.E
 	return extension, err
 }
 
-func (a *TcaApi) resolveVimInfo(ctx context.Context, spec *request.ExtensionSpec) error {
+func (a *TcaApi) resolveVimInfo(ctx context.Context, spec *specs.SpecExtension) error {
 	if spec.VimInfo != nil {
 		for i, vimInfo := range spec.VimInfo {
 			// if vim name preset resolve all vim ids if needed
@@ -140,7 +140,7 @@ func (a *TcaApi) resolveVimInfo(ctx context.Context, spec *request.ExtensionSpec
 }
 
 // CreateExtension api call create extension in TCA
-func (a *TcaApi) CreateExtension(ctx context.Context, spec *request.ExtensionSpec) (string, error) {
+func (a *TcaApi) CreateExtension(ctx context.Context, spec *specs.SpecExtension) (string, error) {
 
 	if a == nil {
 		return "", errors.NilError
@@ -202,7 +202,7 @@ func (a *TcaApi) DeleteExtension(ctx context.Context, NameOrId string) (bool, er
 }
 
 // UpdateExtension api call delete extension from TCA
-func (a *TcaApi) UpdateExtension(ctx context.Context, spec *request.ExtensionSpec) (bool, error) {
+func (a *TcaApi) UpdateExtension(ctx context.Context, spec *specs.SpecExtension) (bool, error) {
 
 	if a == nil {
 		return false, errors.NilError
@@ -264,9 +264,9 @@ func (a *TcaApi) GetFilteredExtension(ctx context.Context) (*response.ReposList,
 
 	var allRepos response.ReposList
 	for _, r := range tenants.TenantsList {
-		repos, err := a.rest.RepositoriesQuery(&request.RepoQuery{
-			QueryFilter: request.Filter{
-				ExtraFilter: request.AdditionalFilters{
+		repos, err := a.rest.RepositoriesQuery(&specs.RepoQuery{
+			QueryFilter: specs.Filter{
+				ExtraFilter: specs.AdditionalFilters{
 					VimID: r.TenantID,
 				},
 			},

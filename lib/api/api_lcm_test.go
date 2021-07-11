@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"github.com/spyroot/tcactl/lib/client"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"testing"
 )
 
@@ -148,7 +148,7 @@ func TestCreateCnfInstance(t *testing.T) {
 				RepoUrl:      getTestRepoUrl(),
 				IsBlocking:   false,
 				IsVerbose:    false,
-				AdditionalParam: &request.AdditionalParams{
+				AdditionalParam: &specs.AdditionalParams{
 					DisableGrant:        true,
 					IgnoreGrantFailure:  false,
 					DisableAutoRollback: false,
@@ -214,9 +214,9 @@ func TestCnfUpdateState(t *testing.T) {
 			}
 
 			if len(actions.Instantiate.Href) > 0 {
-				instantiateReq := request.InstantiateVnfRequest{
+				instantiateReq := specs.LcmInstantiateRequest{
 					FlavourID: "default",
-					AdditionalVduParams: &request.AdditionalParams{
+					AdditionalVduParams: &specs.AdditionalParams{
 						DisableGrant:        true,
 						IgnoreGrantFailure:  false,
 						DisableAutoRollback: false,
@@ -350,8 +350,8 @@ func TestTerminateCnfInstance(t *testing.T) {
 			ctx := context.Background()
 			a := getTcaApi(t, tt.rest, false)
 			//req := TerminateInstanceApiReq{
-			//	InstanceName: tt.instanceName,
-			//	ClusterName:  tt.clusterName,
+			//	InstanceName: tt.InstanceName,
+			//	ClusterName:  tt.ClusterName,
 			//	IsBlocking:   tt.doBlock,
 			//	IsVerbose:    tt.doVerbose,
 			//}

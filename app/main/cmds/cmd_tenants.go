@@ -23,8 +23,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"strings"
 )
 
@@ -192,7 +192,7 @@ Command attaches cloud provider to TCA.`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			spec, err := request.ProviderSpecsFromFile(args[0])
+			spec, err := specs.ProviderSpecsFromFile(args[0])
 			CheckErrLogError(err)
 
 			_, err = ctl.tca.CreateTenantProvider(spec)

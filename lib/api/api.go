@@ -26,8 +26,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"strings"
 	"time"
@@ -60,7 +60,7 @@ type ClusterDeleteApiReq struct {
 // ClusterCreateApiReq api request to create cluster
 type ClusterCreateApiReq struct {
 	//
-	Spec *request.Cluster
+	Spec *specs.SpecCluster
 	//
 	IsDryRun bool
 	//
@@ -119,21 +119,21 @@ func (m *UnsupportedCloudProvider) Error() string {
 }
 
 func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
-	repo string, instanceName string, nodePoolName string) *InstanceRequestSpec {
-	i := &InstanceRequestSpec{
-		cloudName:        cloudName,
-		clusterName:      clusterName,
-		vimType:          vimType,
-		nfdName:          nfdName,
-		repo:             repo,
-		instanceName:     instanceName,
-		nodePoolName:     nodePoolName,
-		useLinkedRepo:    true,
-		AdditionalParams: request.AdditionalParams{}}
+	repo string, instanceName string, nodePoolName string) *specs.InstanceRequestSpec {
+	i := &specs.InstanceRequestSpec{
+		CloudName:        cloudName,
+		ClusterName:      clusterName,
+		VimType:          vimType,
+		NfdName:          nfdName,
+		Repo:             repo,
+		InstanceName:     instanceName,
+		NodePoolName:     nodePoolName,
+		UseLinkedRepo:    true,
+		AdditionalParams: specs.AdditionalParams{}}
 
-	i.flavorName = DefaultNamespace
-	i.description = ""
-	i.namespace = DefaultFlavor
+	i.FlavorName = DefaultNamespace
+	i.Description = ""
+	i.Namespace = DefaultFlavor
 
 	return i
 }
@@ -161,7 +161,7 @@ func (a *TcaApi) GetAllNodePool(ctx context.Context) (*response.NodePool, error)
 
 		// if cluster in failed state we have no pool.s
 		if len(cluster.Id) == 0 {
-			glog.Infof("Cluster id empty value")
+			glog.Infof("SpecCluster id empty value")
 			continue
 		}
 
@@ -217,7 +217,7 @@ func (a *TcaApi) GetCurrentClusterTask(ctx context.Context, taskId string) (*mod
 	}
 
 	glog.Infof("Retrieving current task task list for cluster '%v'", cid)
-	task, err := a.rest.GetClustersTask(ctx, request.NewClusterTaskQuery(taskId))
+	task, err := a.rest.GetClustersTask(ctx, specs.NewClusterTaskQuery(taskId))
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (a *TcaApi) GetVimVMTemplates(ctx context.Context, cloudName string,
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
 	}
 
-	_filter := request.NewVMwareTemplateQuery(tenant.HcxUUID, string(templateType), ver)
+	_filter := specs.NewVMwareTemplateQuery(tenant.HcxUUID, string(templateType), ver)
 	t, err := a.rest.GetVMwareTemplates(ctx, _filter)
 	if err != nil {
 		return nil, err
@@ -302,7 +302,7 @@ func (a *TcaApi) GetVimFolders(ctx context.Context, cloudName string) (*models.F
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
 	}
 
-	f := request.NewVmwareFolderQuery(tenant.HcxUUID)
+	f := specs.NewVmwareFolderQuery(tenant.HcxUUID)
 	if f == nil {
 		return nil, fmt.Errorf("failed create folder filter")
 	}
@@ -342,7 +342,7 @@ func (a *TcaApi) GetVimResourcePool(ctx context.Context, cloudName string) (*mod
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
 	}
 
-	f := request.NewVMwareResourcePoolQuery(tenant.HcxUUID)
+	f := specs.NewVMwareResourcePoolQuery(tenant.HcxUUID)
 	if f == nil {
 		return nil, fmt.Errorf("failed create folder filter")
 	}
@@ -386,7 +386,7 @@ func validateKubeSpecCheck(spec []models.TypeNode) error {
 	return nil
 }
 
-func validateClusterSpec(spec *request.Cluster) error {
+func validateClusterSpec(spec *specs.SpecCluster) error {
 
 	if len(spec.Name) == 0 {
 		return api_errors.NewInvalidSpec("cluster initialSpec must contains name key:value")
@@ -428,7 +428,7 @@ func validateClusterSpec(spec *request.Cluster) error {
 		return err
 	}
 
-	if spec.ClusterType == string(request.ClusterWorkload) {
+	if spec.ClusterType == string(specs.ClusterWorkload) {
 		if len(spec.ManagementClusterId) == 0 {
 			return fmt.Errorf("workload cluster must contain ManagementClusterId key value")
 		}
@@ -618,7 +618,7 @@ func (a *TcaApi) getVmwareVimState(ctx context.Context, vimName string) (*Vmware
 	return &vimState, nil
 }
 
-func (a *TcaApi) validateExtensions(ctx context.Context, spec *request.Cluster) error {
+func (a *TcaApi) validateExtensions(ctx context.Context, spec *specs.SpecCluster) error {
 
 	repos, err := a.GetRepos(ctx)
 	if err != nil {
@@ -646,7 +646,7 @@ func (a *TcaApi) validateExtensions(ctx context.Context, spec *request.Cluster) 
 }
 
 // validateVmwarePlacement method validate placement for VMware VIM
-func (a *TcaApi) validateVmwarePlacement(ctx context.Context, spec *request.Cluster, tenant *response.TenantsDetails) error {
+func (a *TcaApi) validateVmwarePlacement(ctx context.Context, spec *specs.SpecCluster, tenant *response.TenantsDetails) error {
 
 	vmwareVim, err := a.getVmwareVimState(ctx, tenant.VimName)
 	if err != nil {
@@ -720,7 +720,7 @@ func (a *TcaApi) validateVmwarePlacement(ctx context.Context, spec *request.Clus
 }
 
 // validateCsi validate csi specString
-func (a *TcaApi) validateCsi(spec *request.Cluster) error {
+func (a *TcaApi) validateCsi(spec *specs.SpecCluster) error {
 	if spec.ClusterConfig != nil {
 		for _, s := range spec.ClusterConfig.Csi {
 			if s.Name == CLusterCsiNfs {
@@ -738,7 +738,7 @@ func (a *TcaApi) validateCsi(spec *request.Cluster) error {
 }
 
 // validateCsi validate csi specString
-func (a *TcaApi) validateVim(spec *request.Cluster, tenant *response.TenantsDetails) error {
+func (a *TcaApi) validateVim(spec *specs.SpecCluster, tenant *response.TenantsDetails) error {
 
 	if tenant == nil {
 		return fmt.Errorf("tenant vim is nil")
@@ -762,7 +762,7 @@ func (a *TcaApi) validateVim(spec *request.Cluster, tenant *response.TenantsDeta
 }
 
 // Validate cloud tenant state
-func (a *TcaApi) validatePlacements(ctx context.Context, spec *request.Cluster, tenant *response.TenantsDetails) error {
+func (a *TcaApi) validatePlacements(ctx context.Context, spec *specs.SpecCluster, tenant *response.TenantsDetails) error {
 
 	glog.Infof("Validate placement details.")
 
@@ -861,11 +861,11 @@ func (a *TcaApi) CreateSpecExample(
 	p string,
 	netpath string,
 	dns string,
-) *request.Cluster {
+) *specs.SpecCluster {
 
-	var spec request.Cluster
+	var spec specs.SpecCluster
 	spec.Name = name
-	spec.ClusterType = string(request.ClusterManagement)
+	spec.ClusterType = string(specs.ClusterManagement)
 	spec.ClusterTemplateId = t
 	spec.HcxCloudUrl = h
 	spec.VmTemplate = vm
@@ -879,7 +879,7 @@ func (a *TcaApi) CreateSpecExample(
 	}
 	spec.ClusterPassword = p
 
-	net := models.NewNetworks(string(request.ClusterManagement),
+	net := models.NewNetworks(string(specs.ClusterManagement),
 		netpath,
 		[]string{dns})
 
@@ -1004,8 +1004,8 @@ func (a *TcaApi) GetTenantsQuery(tenantId string, nfType string) (*response.Tena
 		return nil, fmt.Errorf("rest interface is nil")
 	}
 
-	reqFilter := request.TenantsNfFilter{
-		Filter: request.TenantFilter{
+	reqFilter := specs.TenantsNfFilter{
+		Filter: specs.TenantFilter{
 			NfType: nfType,
 		},
 	}
@@ -1052,7 +1052,7 @@ func (a *TcaApi) GetNamedClusterTemplate(name string) (*response.ClusterTemplate
 
 // CreateCnfNewInstance create a new instance of VNF or CNF.
 // Dry run will validate request but will not create any CNF.
-func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpec, isDry bool, isBlocked bool) (*response.LcmInfo, error) {
+func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *specs.InstanceRequestSpec, isDry bool, isBlocked bool) (*response.LcmInfo, error) {
 
 	if a.rest == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -1063,18 +1063,18 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 	}
 
 	var (
-		repoUsername = n.repoUsername
-		repoPassword = n.repoPassword
+		repoUsername = n.RepoUsername
+		repoPassword = n.RepoPassword
 	)
 
 	if n.IsAutoName() {
-		instance, err := a.GetInstance(ctx, n.instanceName)
+		instance, err := a.GetInstance(ctx, n.InstanceName)
 		if err != nil {
 			return nil, err
 		}
-		if instance.VnfInstanceName == n.instanceName {
-			n.instanceName = n.instanceName + "-" + uuid.New().String()
-			n.instanceName = n.instanceName[0:16]
+		if instance.VnfInstanceName == n.InstanceName {
+			n.InstanceName = n.InstanceName + "-" + uuid.New().String()
+			n.InstanceName = n.InstanceName[0:16]
 		}
 	}
 
@@ -1084,25 +1084,25 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, err
 	}
 
-	cloud, err := tenants.GetTenantClouds(n.cloudName, n.vimType)
+	cloud, err := tenants.GetTenantClouds(n.CloudName, n.VimType)
 	if err != nil {
 		glog.Errorf("Failed acquire cloud provider details, error: %v", err)
 		return nil, err
 	}
 
-	pkg, vnfd, err := a.GetCatalogAndVdu(n.nfdName)
+	pkg, vnfd, err := a.GetCatalogAndVdu(n.NfdName)
 	if err != nil || vnfd == nil {
-		glog.Errorf("Failed acquire VDU information for %v", n.nfdName)
+		glog.Errorf("Failed acquire VDU information for %v", n.NfdName)
 		return nil, err
 	}
 
-	// get linked repo, if caller provide repo that is not
+	// get linked Repo, if caller provide Repo that is not
 	// linked nothing to do.
-	reposUuid, err := a.rest.LinkedRepositories(cloud.TenantID, n.repo)
+	reposUuid, err := a.rest.LinkedRepositories(cloud.TenantID, n.Repo)
 	if err != nil {
 		glog.Errorf("Failed acquire linked %v "+
-			"repository to cloud provider %v. Indicate a repo "+
-			"linked to cloud provider.", n.repo, cloud.TenantID)
+			"repository to cloud provider %v. Indicate a Repo "+
+			"linked to cloud provider.", n.Repo, cloud.TenantID)
 		return nil, err
 	}
 
@@ -1112,7 +1112,7 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, err
 	}
 
-	// if linked repo resolve it
+	// if linked Repo resolve it
 	if n.UseLinked() {
 		linkedRepos, err := ext.FindRepo(reposUuid)
 		if err != nil || linkedRepos == nil {
@@ -1125,22 +1125,22 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 			return nil, fmt.Errorf("repository %v is disabled", linkedRepos.Name)
 		}
 
-		glog.Infof("Found attached repo %v and status %v", n.repo, linkedRepos.State)
+		glog.Infof("Found attached Repo %v and status %v", n.Repo, linkedRepos.State)
 
-		// overwrite credential from linked repo
+		// overwrite credential from linked Repo
 		repoUsername = linkedRepos.AccessInfo.Username
 		repoPassword = linkedRepos.AccessInfo.Password
 	}
 
 	// resolve nodePools
-	nodePool, _, err := a.rest.GetNamedClusterNodePools(ctx, n.clusterName)
+	nodePool, _, err := a.rest.GetNamedClusterNodePools(ctx, n.ClusterName)
 	if err != nil || nodePool == nil {
-		glog.Errorf("Failed acquire clusters node information for cluster %v, error %v", n.clusterName, err)
+		glog.Errorf("Failed acquire clusters node information for cluster %v, error %v", n.ClusterName, err)
 		return nil, err
 	}
-	pool, err := nodePool.GetPool(n.nodePoolName)
+	pool, err := nodePool.GetPool(n.NodePoolName)
 	if err != nil {
-		glog.Errorf("Failed acquire node pool information for node pool %v, error %v", n.nodePoolName, err)
+		glog.Errorf("Failed acquire node pool information for node pool %v, error %v", n.NodePoolName, err)
 		return nil, err
 	}
 
@@ -1148,10 +1148,10 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, nil
 	}
 
-	vnfLcm, err := a.rest.CreateInstance(ctx, &request.CreateVnfLcm{
+	vnfLcm, err := a.rest.CreateInstance(ctx, &specs.LcmCreateRequest{
 		VnfdId:                 pkg.VnfdID,
-		VnfInstanceName:        n.instanceName,
-		VnfInstanceDescription: n.description,
+		VnfInstanceName:        n.InstanceName,
+		VnfInstanceDescription: n.Description,
 	})
 
 	if err != nil {
@@ -1159,13 +1159,13 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 		return nil, err
 	}
 
-	var flavorName = n.flavorName
+	var flavorName = n.FlavorName
 	if len(vnfd.Vnf.Properties.FlavourId) > 0 {
 		flavorName = vnfd.Vnf.Properties.FlavourId
 	}
 
 	for _, vdu := range vnfd.Vdus {
-		var req = request.InstantiateVnfRequest{
+		var req = specs.LcmInstantiateRequest{
 			FlavourID: flavorName,
 			VimConnectionInfo: []models.VimConnectionInfo{
 				{
@@ -1176,10 +1176,10 @@ func (a *TcaApi) CreateCnfNewInstance(ctx context.Context, n *InstanceRequestSpe
 					},
 				},
 			},
-			AdditionalVduParams: &request.AdditionalParams{
-				VduParams: []request.VduParam{{
-					Namespace: n.namespace,
-					RepoURL:   n.repo,
+			AdditionalVduParams: &specs.AdditionalParams{
+				VduParams: []specs.VduParam{{
+					Namespace: n.Namespace,
+					RepoURL:   n.Repo,
 					Username:  repoUsername,
 					Password:  repoPassword,
 					VduName:   vdu.VduId,
@@ -1295,7 +1295,7 @@ func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	req := request.NewClusterTaskQuery(task.Id)
+	req := specs.NewClusterTaskQuery(task.Id)
 
 	if verbose {
 		glog.Infof("Waiting task id=%s type=%s", task.Id, task.OperationId)

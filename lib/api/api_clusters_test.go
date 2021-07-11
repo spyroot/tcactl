@@ -22,8 +22,8 @@ import (
 	"encoding/json"
 	"github.com/nsf/jsondiff"
 	"github.com/spyroot/tcactl/lib/client"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/lib/testutil"
 	iotuils "github.com/spyroot/tcactl/pkg/io"
@@ -38,14 +38,14 @@ import (
 )
 
 // specNodePoolStringReaderHelper helper return node specString
-func specClusterStringReaderHelper(s string) *request.Cluster {
-	r, err := request.ClusterSpecsFromString(s)
+func specClusterStringReaderHelper(s string) *specs.SpecCluster {
+	r, err := specs.ClusterSpecsFromString(s)
 	iotuils.CheckErr(err)
 	return r
 }
 
 // specNodePoolStringReaderHelper helper return node specString
-func specClusterFromFile(spec string) *request.NewNodePoolSpec {
+func specClusterFromFile(spec string) *specs.NodePoolSpec {
 
 	tmpFile, err := ioutil.TempFile("", "tcactltest")
 	if err != nil {
@@ -63,7 +63,7 @@ func specClusterFromFile(spec string) *request.NewNodePoolSpec {
 	}
 
 	// read from file
-	r, err := request.ReadNodeSpecFromFile(tmpFile.Name())
+	r, err := specs.ReadNodeSpecFromFile(tmpFile.Name())
 	iotuils.CheckErr(err)
 
 	return r
@@ -120,7 +120,7 @@ func TestClusterSpecFromString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := request.ReadNodeSpecFromString(tt.spec)
+			got, err := specs.ReadNodeSpecFromString(tt.spec)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
 				return
@@ -175,7 +175,7 @@ func TestClusterSpecFromFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := request.ClusterSpecsFromFile(tt.fileName)
+			got, err := specs.ClusterSpecsFromFile(tt.fileName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
 				return
@@ -229,7 +229,7 @@ func TestClusterSpecFromReader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := request.ReadClusterSpec(tt.reader)
+			got, err := specs.ReadClusterSpec(tt.reader)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
 				return
@@ -363,7 +363,7 @@ func TestAllocateNewClusterIp(t *testing.T) {
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
 			wCluster := getTestWorkloadCluster(t, a)
-			spec, err := request.ReadClusterSpec(tt.reader)
+			spec, err := specs.ReadClusterSpec(tt.reader)
 			assert.NoError(t, err)
 
 			// create conflict
@@ -614,7 +614,7 @@ func TestGetCurrentClusterTask(t *testing.T) {
 			)
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
-			spec, err := request.ReadClusterSpec(tt.reader)
+			spec, err := specs.ReadClusterSpec(tt.reader)
 
 			assert.NoError(t, err)
 			assert.NotNil(t, spec)
@@ -654,7 +654,7 @@ func TestGetCurrentClusterTask(t *testing.T) {
 			}
 
 			assert.NotNil(t, task)
-			t.Logf("Cluster create task created %s", task.Id)
+			t.Logf("SpecCluster create task created %s", task.Id)
 			clusterCreateTask, err := a.GetCurrentClusterTask(context.Background(), task.Id)
 			assert.NoError(t, err)
 			if _, err := clusterCreateTask.FindEntityByName(spec.Name); (err != nil) != tt.wantErr {
@@ -852,7 +852,7 @@ func TestCreateClusters(t *testing.T) {
 			)
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
-			spec, err := request.ReadClusterSpec(tt.reader)
+			spec, err := specs.ReadClusterSpec(tt.reader)
 
 			assert.NoError(t, err)
 			assert.NotNil(t, spec)
@@ -955,7 +955,7 @@ func TestCreateBlockDeleteCluster(t *testing.T) {
 			)
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
-			spec, err := request.ReadClusterSpec(tt.reader)
+			spec, err := specs.ReadClusterSpec(tt.reader)
 			assert.NoError(t, err)
 			if spec == nil {
 				t.Errorf("ReadClusterSpec() must not return nil")

@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/spyroot/tcactl/app/main/cmds"
-	_ "github.com/spyroot/tcactl/lib/client/request"
+	_ "github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/csar"
 	"github.com/spyroot/tcactl/pkg/io"
 	_ "github.com/spyroot/tcactl/pkg/io"
@@ -71,7 +71,7 @@ func init() {
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultClusterName,
 		cmds.ConfigDefaultCluster, "k", "",
-		"Default Cluster.")
+		"Default SpecCluster.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultClusterName,
 		cmds.ConfigNodePool, "",
@@ -133,7 +133,7 @@ func initConfig() {
 	tcaCtl.TcaClient.Username = viper.GetString(cmds.ConfigTcaUsername)
 	tcaCtl.TcaClient.Password = viper.GetString(cmds.ConfigTcaPassword)
 
-	// default Cloud in TCA,  Cluster and node pool
+	// default Cloud in TCA,  SpecCluster and node pool
 	tcaCtl.DefaultCloudName = viper.GetString(cmds.ConfigDefaultCloud)
 	tcaCtl.DefaultClusterName = viper.GetString(cmds.ConfigDefaultCluster)
 	tcaCtl.DefaultNodePoolName = viper.GetString(cmds.ConfigNodePool)

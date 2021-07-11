@@ -63,7 +63,7 @@ func TestClusterInstanceSpecsFromString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ClusterSpec{}.InstanceSpecsFromString(tt.spec)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("InstanceSpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -80,7 +80,7 @@ func TestClusterInstanceSpecsFromString(t *testing.T) {
 			diff, _ := jsondiff.Compare(newJson, []byte(tt.spec), &opt)
 
 			if tt.wantErr != true && diff > 0 {
-				t.Errorf("InstanceSpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})
@@ -236,7 +236,7 @@ func TestClustersInstanceSpecsFromString(t *testing.T) {
 
 			got, err := Clusters{}.InstanceSpecsFromString(tt.spec)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("InstanceSpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 

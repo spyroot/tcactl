@@ -311,7 +311,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 		recheck     bool
 	}{
 		{
-			name:        "Update description",
+			name:        "Update Description",
 			rest:        rest,
 			initialSpec: specStringReaderHelper(yamlMgmtTemplate),
 			wantErr:     false,

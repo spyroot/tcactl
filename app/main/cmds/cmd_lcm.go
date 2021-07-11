@@ -25,8 +25,8 @@ import (
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"github.com/spyroot/tcactl/lib/api"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"strings"
 )
@@ -402,7 +402,7 @@ wait when task will finished.
 				ClusterName:  ctl.DefaultClusterName,
 				IsBlocking:   doBlock,
 				IsVerbose:    showProgress,
-				AdditionalParam: &request.AdditionalParams{
+				AdditionalParam: &specs.AdditionalParams{
 					DisableGrant:        disableGrant,
 					IgnoreGrantFailure:  ignoreGrantFailure,
 					DisableAutoRollback: disableAutoRollback,

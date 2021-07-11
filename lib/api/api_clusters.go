@@ -25,8 +25,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/spyroot/tcactl/lib/api_errors"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/netutils"
 	"net"
@@ -122,7 +122,7 @@ func (a *TcaApi) GetClusterTask(ctx context.Context, clusterId string, showChild
 		return nil, err
 	}
 
-	r := request.NewClusterTaskQuery(clusterSpec.ManagementClusterId)
+	r := specs.NewClusterTaskQuery(clusterSpec.ManagementClusterId)
 	r.IncludeChildTasks = showChildren
 
 	return a.rest.GetClustersTask(ctx, r)
@@ -145,7 +145,7 @@ func (a *TcaApi) ResolveManagementCluster(NameOrId string, tenants *response.Clu
 		return nil, err
 	}
 
-	if strings.ToLower(spec.ClusterType) != strings.ToLower(string(request.ClusterManagement)) {
+	if strings.ToLower(spec.ClusterType) != strings.ToLower(string(specs.ClusterManagement)) {
 		glog.Warning("managementClusterId cluster id is not management cluster")
 		return nil, errors.New("managementClusterId cluster id is not management cluster")
 	}
@@ -153,7 +153,7 @@ func (a *TcaApi) ResolveManagementCluster(NameOrId string, tenants *response.Clu
 	return spec, nil
 }
 
-func normalizeSpec(spec *request.Cluster) {
+func normalizeSpec(spec *specs.SpecCluster) {
 
 	// fix cluster type
 	spec.ClusterType = strings.ToUpper(spec.ClusterType)
@@ -167,7 +167,7 @@ func normalizeSpec(spec *request.Cluster) {
 }
 
 // checkClusterAddrConflict - check for cluster IP conflicts
-func (a *TcaApi) checkClusterAddrConflict(ctx context.Context, spec *request.Cluster) (bool, *response.ClusterEndpoint) {
+func (a *TcaApi) checkClusterAddrConflict(ctx context.Context, spec *specs.SpecCluster) (bool, *response.ClusterEndpoint) {
 
 	clusters, err := a.GetClusters(ctx)
 	if err != nil {
@@ -181,7 +181,7 @@ func (a *TcaApi) checkClusterAddrConflict(ctx context.Context, spec *request.Clu
 
 // allocateNewClusterIp - allocate new IP if spec uses cluster IP
 // that already allocated.
-func (a *TcaApi) allocateNewClusterIp(ctx context.Context, spec *request.Cluster) error {
+func (a *TcaApi) allocateNewClusterIp(ctx context.Context, spec *specs.SpecCluster) error {
 
 	clusters, err := a.GetClusters(ctx)
 	if err != nil {
@@ -344,7 +344,7 @@ func (a *TcaApi) CreateClusters(ctx context.Context, req *ClusterCreateApiReq) (
 
 	req.Spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
 
-	glog.Infof("Cluster specString validated.")
+	glog.Infof("SpecCluster specString validated.")
 
 	if req.IsDryRun {
 		return &models.TcaTask{}, nil

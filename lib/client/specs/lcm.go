@@ -1,4 +1,4 @@
-// Package request
+// Package specs
 // Copyright 2020-2021 Author.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,18 @@
 //
 //
 // Mustafa mbayramo@vmware.com
-package request
+package specs
 
-// CreateVnfLcm Vnf Lcm Action
+import "github.com/spyroot/tcactl/lib/models"
+
+// LcmCreateRequest Vnf Lcm Action
 
 const (
 	LcmTypeScaleOut = "SCALE_OUT"
 	AspectId        = "aspect1"
 )
 
-type CreateVnfLcm struct {
+type LcmCreateRequest struct {
 	VnfdId                 string `json:"vnfdId" yaml:"vnfdId"`
 	VnfInstanceName        string `json:"vnfInstanceName" yaml:"vnfInstanceName"`
 	VnfInstanceDescription string `json:"vnfInstanceDescription" yaml:"vnfInstanceDescription"`
@@ -53,19 +55,27 @@ type VduParams struct {
 	CatalogId           string `json:"catalogId" yaml:"catalogId"`
 }
 
-type CnfReconfigure struct {
+type LcmTerminateRequest struct {
+	TerminationType            string `json:"terminationType" yaml:"terminationType"`
+	GracefulTerminationTimeout int    `json:"gracefulTerminationTimeout" yaml:"gracefulTerminationTimeout"`
+	AdditionalParams           struct {
+		LcmInterfaces []models.LcmInterfaces `json:"lcmInterfaces" yaml:"lcmInterfaces"`
+	} `json:"additionalParams" yaml:"additionalParams"`
+}
+
+type LcmReconfigureRequest struct {
 	Type             string `json:"type" yaml:"type"`
 	AspectId         string `json:"aspectId" yaml:"aspectId"`
 	NumberOfSteps    int    `json:"numberOfSteps" yaml:"numberOfSteps"`
 	AdditionalParams struct {
-		SkipGrant     bool        `json:"skipGrant" yaml:"skipGrant"`
-		VduParams     []VduParams `json:"vduParams" yaml:"vduParams"`
-		LcmInterfaces []struct {
-			InterfaceName string `json:"interfaceName" yaml:"interfaceName"`
-			Parameters    []struct {
-				Name string `json:"name" yaml:"name"`
-				Type string `json:"type" yaml:"type"`
-			} `json:"parameters" yaml:"parameters"`
-		} `json:"lcmInterfaces" yaml:"lcm_interfaces"`
+		SkipGrant     bool                   `json:"skipGrant" yaml:"skipGrant"`
+		VduParams     []VduParams            `json:"vduParams" yaml:"vduParams"`
+		LcmInterfaces []models.LcmInterfaces `json:"lcmInterfaces" yaml:"lcmInterfaces"`
 	} `json:"additionalParams" yaml:"additional_params"`
+}
+
+type LcmInstantiateRequest struct {
+	FlavourID           string                     `json:"flavourId,omitempty" yaml:"flavourId,omitempty"`
+	VimConnectionInfo   []models.VimConnectionInfo `json:"vimConnectionInfo,omitempty" yaml:"vimConnectionInfo,omitempty"`
+	AdditionalVduParams *AdditionalParams          `json:"additionalParams,omitempty" yaml:"additionalParams,omitempty"`
 }

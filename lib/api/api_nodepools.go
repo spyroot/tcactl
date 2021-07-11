@@ -23,8 +23,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	errnos "github.com/spyroot/tcactl/pkg/errors"
 )
@@ -131,7 +131,7 @@ func (a *TcaApi) DeleteNodePool(ctx context.Context, cluster string, nodePool st
 
 // updateNodePoolValidator
 // specString Validator
-func (a *TcaApi) nodePoolValidator(spec *request.NewNodePoolSpec) error {
+func (a *TcaApi) nodePoolValidator(spec *specs.NodePoolSpec) error {
 
 	if len(spec.PlacementParams) == 0 {
 		return errors.New("node pool spec must contain placement params")

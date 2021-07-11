@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
 	"io/ioutil"
@@ -73,9 +73,9 @@ func (a *TcaApi) ResolveInstanceName(name string) (string, error) {
 // CreateCnfInstance - create cnf instance that already in running, not instantiated state
 // or termination state.
 // method take req *CreateInstanceApiReq
-//  where   instanceName is instance that state must change
+//  where   InstanceName is instance that state must change
 // 		    poolName is target pool
-// 			clusterName a cluster that will be used to query and search instance.
+// 			ClusterName a cluster that will be used to query and search instance.
 func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiReq) error {
 
 	// resolve pool id, if client indicated target pool
@@ -125,12 +125,12 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiRe
 		}
 	}
 
-	var additionalVduParams request.AdditionalParams
+	var additionalVduParams specs.AdditionalParams
 	if req.AdditionalParam != nil {
 		additionalVduParams = *req.AdditionalParam
 	} else {
 		// default if not provided
-		additionalVduParams = request.AdditionalParams{
+		additionalVduParams = specs.AdditionalParams{
 			DisableGrant:        false,
 			IgnoreGrantFailure:  false,
 			DisableAutoRollback: false,
@@ -159,7 +159,7 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiRe
 		if len(req.RepoPassword) > 0 {
 			namespace = b64.StdEncoding.EncodeToString([]byte(req.RepoPassword))
 		}
-		additionalVduParams.VduParams = append(additionalVduParams.VduParams, request.VduParam{
+		additionalVduParams.VduParams = append(additionalVduParams.VduParams, specs.VduParam{
 			Namespace: namespace,
 			RepoURL:   repoUrl,
 			Username:  username,
@@ -174,7 +174,7 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiRe
 		currentNodePoolId = _targetPool
 	}
 
-	var instantiateReq = request.InstantiateVnfRequest{
+	var instantiateReq = specs.LcmInstantiateRequest{
 		FlavourID:           "default",
 		AdditionalVduParams: &additionalVduParams,
 		// construct placement from request.
@@ -327,19 +327,19 @@ func (a *TcaApi) CnfReconfigure(ctx context.Context, instanceName string, valueF
 	}
 
 	override := b64.StdEncoding.EncodeToString(b)
-	p := request.VduParams{
+	p := specs.VduParams{
 		Overrides: override,
 		ChartName: chartName,
 	}
 
-	var newVduParams []request.VduParams
+	var newVduParams []specs.VduParams
 	newVduParams = append(newVduParams, p)
 
-	req := request.CnfReconfigure{}
+	req := specs.LcmReconfigureRequest{}
 	req.AdditionalParams.VduParams = newVduParams
-	req.AspectId = request.AspectId
+	req.AspectId = specs.AspectId
 	req.NumberOfSteps = 2
-	req.Type = request.LcmTypeScaleOut
+	req.Type = specs.LcmTypeScaleOut
 
 	if isDry {
 		return nil
@@ -387,7 +387,7 @@ func (a *TcaApi) TerminateCnfInstance(ctx context.Context, req *TerminateInstanc
 
 	if err = a.rest.TerminateInstance(
 		instance.Links.Terminate.Href,
-		&request.TerminateVnfRequest{
+		&specs.LcmTerminateRequest{
 			TerminationType:            "GRACEFUL",
 			GracefulTerminationTimeout: 120,
 		}); err != nil {

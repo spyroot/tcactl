@@ -22,8 +22,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 )
 
@@ -90,7 +90,7 @@ func (c *RestClient) GetVim(ctx context.Context, vimId string) (*response.Tenant
 
 // GetTenantsQuery returns list of cloud provider attached to TCA.
 // tenant filter , filter result
-func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tenants, error) {
+func (c *RestClient) GetTenantsQuery(f *specs.TenantsNfFilter) (*response.Tenants, error) {
 
 	c.GetClient()
 	resp, err := c.Client.R().SetBody(f).SetQueryString(apiTenantAction).Post(c.BaseURL + apiTenants)
@@ -117,7 +117,7 @@ func (c *RestClient) GetTenantsQuery(f *request.TenantsNfFilter) (*response.Tena
 }
 
 // RegisterCloudProvider method register new cloud provider.
-func (c *RestClient) RegisterCloudProvider(r *request.RegisterVimSpec) (*models.TcaTask, error) {
+func (c *RestClient) RegisterCloudProvider(r *specs.SpecCloudProvider) (*models.TcaTask, error) {
 
 	glog.Infof("Cloud provider registration request %s", r.HcxCloudUrl)
 

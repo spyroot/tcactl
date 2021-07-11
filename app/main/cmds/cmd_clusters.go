@@ -28,8 +28,8 @@ import (
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/api/kubernetes"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	ioutils "github.com/spyroot/tcactl/pkg/io"
 	osutil "github.com/spyroot/tcactl/pkg/os"
 	"gopkg.in/yaml.v3"
@@ -490,7 +490,7 @@ that will wait for the task to finish.'
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
 			// spec read from file
-			var spec request.Cluster
+			var spec specs.SpecCluster
 			if ioutils.FileExists(args[0]) {
 				buffer, err := ioutil.ReadFile(args[0])
 				CheckErrLogError(err)
@@ -521,7 +521,7 @@ that will wait for the task to finish.'
 			CheckErrLogError(err)
 
 			if task != nil {
-				fmt.Printf("Cluster created task create, task id %s\n", task.Id)
+				fmt.Printf("SpecCluster created task create, task id %s\n", task.Id)
 			}
 
 			// dry run will output spec to screen after all validation and substitution
@@ -591,7 +591,7 @@ func (ctl *TcaCtl) CmdDeleteCluster() *cobra.Command {
 				return
 			}
 			if task != nil {
-				fmt.Println("Cluster deleted.")
+				fmt.Println("SpecCluster deleted.")
 			}
 		},
 	}

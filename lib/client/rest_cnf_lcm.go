@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/glog"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"net/http"
 )
 
@@ -138,7 +138,7 @@ func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 }
 
 // TerminateInstance action
-func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *request.TerminateVnfRequest) error {
+func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *specs.LcmTerminateRequest) error {
 
 	glog.Infof("Terminating instancing %v", terminateUri)
 	c.GetClient()
@@ -232,7 +232,7 @@ func (c *RestClient) CnfResetState(ctx context.Context, href string) error {
 }
 
 // CreateInstance vnf instances
-func (c *RestClient) CreateInstance(ctx context.Context, req *request.CreateVnfLcm) (*response.VNFInstantiate, error) {
+func (c *RestClient) CreateInstance(ctx context.Context, req *specs.LcmCreateRequest) (*response.VNFInstantiate, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("unutilized client")
@@ -273,7 +273,7 @@ func (c *RestClient) CreateInstance(ctx context.Context, req *request.CreateVnfL
 
 // InstanceInstantiate - instantiate CNF or VNF
 // Note instance state must be terminated.
-func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string, req request.InstantiateVnfRequest) error {
+func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string, req specs.LcmInstantiateRequest) error {
 
 	if c == nil {
 		return fmt.Errorf("unutilized client")
@@ -308,7 +308,7 @@ func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string,
 
 // InstanceUpdateState current state of running instance.
 func (c *RestClient) InstanceUpdateState(ctx context.Context,
-	instanceId string, req *request.InstantiateVnfRequest) (*response.InstanceUpdate, error) {
+	instanceId string, req *specs.LcmInstantiateRequest) (*response.InstanceUpdate, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("unutilized client")
@@ -350,7 +350,7 @@ func (c *RestClient) InstanceUpdateState(ctx context.Context,
 }
 
 // InstanceReconfigure - reconfigure cnf instance.
-func (c *RestClient) InstanceReconfigure(ctx context.Context, r *request.CnfReconfigure, id string) error {
+func (c *RestClient) InstanceReconfigure(ctx context.Context, r *specs.LcmReconfigureRequest, id string) error {
 
 	c.GetClient()
 

@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"github.com/spyroot/tcactl/lib/client/request"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	ioutils "github.com/spyroot/tcactl/pkg/io"
 	"net/http"
@@ -174,7 +174,7 @@ func (m *TaskNotFound) Error() string {
 // GetClustersTask - returns infrastructure k8s clusters task list
 // Before adjusting cluster task , caller must first check existing task list.
 // each task can fail.
-func (c *RestClient) GetClustersTask(ctx context.Context, f *request.ClusterTaskQuery) (*models.ClusterTask, error) {
+func (c *RestClient) GetClustersTask(ctx context.Context, f *specs.ClusterTaskQuery) (*models.ClusterTask, error) {
 
 	c.GetClient()
 
@@ -244,7 +244,7 @@ func (c *RestClient) GetClusterTask(ctx context.Context, clusterId string) (*mod
 // TCA also require each type of cluster has valid template.
 // raw rest call doesn't do any validation, while API interface does basic validation check
 // for spec.
-func (c *RestClient) CreateCluster(spec *request.Cluster) (*models.TcaTask, error) {
+func (c *RestClient) CreateCluster(spec *specs.SpecCluster) (*models.TcaTask, error) {
 
 	c.GetClient()
 	glog.Infof("Creating cluster %v", spec)
@@ -276,7 +276,7 @@ func (c *RestClient) CreateCluster(spec *request.Cluster) (*models.TcaTask, erro
 		return nil, err
 	}
 
-	glog.Infof("Cluster create task created task id %s op id %s", task.Id, task.OperationId)
+	glog.Infof("SpecCluster create task created task id %s op id %s", task.Id, task.OperationId)
 
 	return &task, nil
 }
@@ -309,7 +309,7 @@ func (c *RestClient) DeleteCluster(ctx context.Context, clusterId string) (*mode
 		return nil, err
 	}
 
-	glog.Infof("Cluster delete task created task id %s op id %s", task.Id, task.OperationId)
+	glog.Infof("SpecCluster delete task created task id %s op id %s", task.Id, task.OperationId)
 
 	return &task, nil
 }

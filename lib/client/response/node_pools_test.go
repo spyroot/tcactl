@@ -545,13 +545,13 @@ func TestNodePool_Filter(t *testing.T) {
 //				Nodes:                         tt.fields.Nodes,
 //				IsNodeCustomizationDeprecated: tt.fields.IsNodeCustomizationDeprecated,
 //			}
-//			got, err := n.InstanceSpecsFromString(tt.args.s)
+//			got, err := n.SpecsFromString(tt.args.s)
 //			if (err != nil) != tt.wantErr {
-//				t.Errorf("InstanceSpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
+//				t.Errorf("SpecsFromString() error = %v, wantErr %v", err, tt.wantErr)
 //				return
 //			}
 //			if !reflect.DeepEqual(got, tt.want) {
-//				t.Errorf("InstanceSpecsFromString() got = %v, want %v", got, tt.want)
+//				t.Errorf("SpecsFromString() got = %v, want %v", got, tt.want)
 //			}
 //		})
 //	}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/api_errors"
-	"github.com/spyroot/tcactl/lib/client/request"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"reflect"
 	"strings"
 )
@@ -46,7 +46,7 @@ type ClusterConfigSpec struct {
 	} `json:"tools" yaml:"tools"`
 }
 
-// GetField - return field from Cluster Spec struct
+// GetField - return field from ClusterSpec Spec struct
 func (t *ClusterConfigSpec) GetField(field string) string {
 	r := reflect.ValueOf(t)
 	f := reflect.Indirect(r).FieldByName(strings.Title(field))
@@ -64,8 +64,8 @@ type HealthCheckSpec struct {
 	} `json:"unhealthyConditions,omitempty" yaml:"unhealthyConditions,omitempty"`
 }
 
-// Properties -CpuManagerPolicy properties
-type Properties struct {
+// CpuManagerSpecProperties -CpuManagerPolicy properties
+type CpuManagerSpecProperties struct {
 	KubeReserved struct {
 		Cpu         int `json:"cpu,omitempty" yaml:"cpu,omitempty"`
 		MemoryInGiB int `json:"memoryInGiB,omitempty" yaml:"memoryInGiB,omitempty"`
@@ -78,9 +78,9 @@ type Properties struct {
 
 // CpuManagerPolicy - overwrite CPU mgmt policy
 type CpuManagerPolicy struct {
-	Type        string `json:"type,omitempty" yaml:"type,omitempty"`
-	Policy      string `json:"policy,omitempty" yaml:"policy,omitempty"`
-	*Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Type                      string `json:"type,omitempty" yaml:"type,omitempty"`
+	Policy                    string `json:"policy,omitempty" yaml:"policy,omitempty"`
+	*CpuManagerSpecProperties `json:"properties,omitempty" yaml:"properties,omitempty"`
 }
 
 type Tags struct {
@@ -128,7 +128,7 @@ type ClusterTemplateSpec struct {
 	} `json:"workerNodes,omitempty" yaml:"workerNodes,omitempty"`
 }
 
-// GetField - return field from Cluster Spec struct
+// GetField - return field from ClusterSpec Spec struct
 func (t *ClusterTemplateSpec) GetField(field string) string {
 	r := reflect.ValueOf(t)
 	f := reflect.Indirect(r).FieldByName(strings.Title(field))
@@ -137,7 +137,7 @@ func (t *ClusterTemplateSpec) GetField(field string) string {
 
 // ValidateSpec - validate cluster specs contains all required node pool
 // based on template spec
-func (t *ClusterTemplateSpec) ValidateSpec(spec *request.Cluster) (bool, error) {
+func (t *ClusterTemplateSpec) ValidateSpec(spec *specs.SpecCluster) (bool, error) {
 
 	glog.Infof("Validating node pool specs.")
 
