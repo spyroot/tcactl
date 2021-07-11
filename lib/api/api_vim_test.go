@@ -82,8 +82,6 @@ func TestGetVim(t *testing.T) {
 				return
 			}
 
-			io.PrettyPrint(provider)
-
 			if !tt.vimErr {
 				if provider == nil {
 					t.Errorf("provide must not be nil")
@@ -340,7 +338,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 				return
 			}
 
-			if tt.wantErr && got == nil {
+			if got == nil {
 				return
 			}
 

@@ -33,32 +33,32 @@ func dataSourceCnfs() *schema.Resource {
 		ReadContext: dataSourceCnfRead,
 
 		Schema: map[string]*schema.Schema{
-			"cnfs": &schema.Schema{
+			"cnfs": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
+						"id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"vnf_instance_name": &schema.Schema{
+						"vnf_instance_name": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"vnf_instance_description": &schema.Schema{
+						"vnf_instance_description": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"vnfd_id": &schema.Schema{
+						"vnfd_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"vnf_pkg_id": &schema.Schema{
+						"vnf_pkg_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"vnf_catalog_name": &schema.Schema{
+						"vnf_catalog_name": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},

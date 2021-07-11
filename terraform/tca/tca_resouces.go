@@ -157,7 +157,10 @@ func ClusterTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		//	return diag.FromErr(err)
 		//}
 
-		d.Set("last_updated", time.Now().Format(time.RFC850))
+		err := d.Set("last_updated", time.Now().Format(time.RFC850))
+		if err != nil {
+			return nil
+		}
 	}
 
 	return ClusterTemplateRead(ctx, d, m)

@@ -207,11 +207,14 @@ func TestCnfUpdateState(t *testing.T) {
 
 			// we can only reset
 			if len(actions.Instantiate.Href) == 0 && len(actions.UpdateState.Href) > 0 {
-				a.ResetState(ctx, &ResetInstanceApiReq{
+				err := a.ResetState(ctx, &ResetInstanceApiReq{
 					InstanceName: tt.instanceName,
 					IsBlocking:   tt.doBlock,
 					IsVerbose:    tt.doVerbose,
 				})
+				if err != nil {
+					return
+				}
 			}
 
 			if len(actions.Instantiate.Href) > 0 {
