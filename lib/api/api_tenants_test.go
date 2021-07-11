@@ -99,3 +99,23 @@ func TestTenantsCloudProvider(t *testing.T) {
 		})
 	}
 }
+
+// Test tenant fields
+func TestTenantFields(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "Basic get tenant positive case",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field := TenantFields()
+			assert.NotEqual(t, 0, len(field))
+		})
+	}
+}

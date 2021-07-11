@@ -112,6 +112,7 @@ func TestCreateCnfInstance(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			a := getTcaApi(t, tt.rest, false)
 			ctx := context.Background()
 

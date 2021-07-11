@@ -258,7 +258,7 @@ It take input spec and apply to existing cluster template.`),
 			if len(templateId) == 0 {
 				templateId = spec.Id
 				if len(templateId) == 0 {
-					CheckErrLogError(fmt.Errorf("you must indicate tempalte id " +
+					CheckErrLogError(fmt.Errorf("tempalate spec must contain tempalte id or name " +
 						"in cluster template spec or provide template_id argument"))
 				}
 			} else {

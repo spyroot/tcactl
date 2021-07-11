@@ -31,6 +31,7 @@ import (
 // TenantFields method return all struct
 // fields name
 func TenantFields() []string {
+
 	f := response.TenantsDetails{}
 	fields, _ := f.GetFields()
 
@@ -44,10 +45,6 @@ func TenantFields() []string {
 
 // TenantsCloudProvider return a tenant attached to cloud provide for lookup query string
 func (a *TcaApi) TenantsCloudProvider(ctx context.Context, query string) (*response.Tenants, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
 
 	if len(query) == 0 {
 		return nil, fmt.Errorf("empty query string")
@@ -71,10 +68,6 @@ func (a *TcaApi) TenantsCloudProvider(ctx context.Context, query string) (*respo
 // DeleteTenantsProvider delete a tenant attached to cloud provide.
 func (a *TcaApi) DeleteTenantsProvider(ctx context.Context, tenantCluster string) (*models.TcaTask, error) {
 
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
 	tenants, err := a.rest.GetVimTenants(ctx)
 	if err != nil {
 		return nil, err
@@ -91,10 +84,6 @@ func (a *TcaApi) DeleteTenantsProvider(ctx context.Context, tenantCluster string
 // CreateTenantProvider method create, registers new target cloud provider
 // as tenant infrastructure in TCA.
 func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.TcaTask, error) {
-
-	if a.rest == nil {
-		return nil, errnos.RestNil
-	}
 
 	if spec == nil {
 		return nil, errnos.SpecNil
@@ -118,6 +107,7 @@ func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.Tc
 func (a *TcaApi) DeleteCloudProvider(ctx context.Context, s string) (*models.TcaTask, error) {
 
 	vims, err := a.GetVims(ctx)
+
 	if err != nil {
 		return nil, err
 	}

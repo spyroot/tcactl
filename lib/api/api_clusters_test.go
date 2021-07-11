@@ -55,6 +55,7 @@ func getTestMgmtCluster(t *testing.T, api *TcaApi) *response.ClusterSpec {
 	return c
 }
 
+//
 func NormalizeClusterIP(s string) string {
 	u := s
 
@@ -101,7 +102,6 @@ func TestGetClusterIPs(t *testing.T) {
 			if clusters == nil {
 				t.Errorf("GetClusters() must not return nil")
 				return
-
 			}
 
 			if !tt.wantErr {
@@ -116,6 +116,28 @@ func TestGetClusterIPs(t *testing.T) {
 	}
 }
 
+// Test cluster fields method
+func TestClusterFields(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "Test cluster IP must be resolved",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+			fields := ClusterFields()
+			assert.NotEqual(t, 0, len(fields))
+		})
+	}
+}
+
+// Tests cluster IP allocation in case of IP conflict.
 func TestAllocateNewClusterIp(t *testing.T) {
 
 	tests := []struct {

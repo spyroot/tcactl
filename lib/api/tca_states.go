@@ -22,8 +22,12 @@ import (
 )
 
 const (
+
+	// BlockMaxRetryTimer - default retry timer
 	BlockMaxRetryTimer = 32
-	TaskWaitSeconds    = 10
+
+	// TaskPoolSeconds  default pool timer.
+	TaskPoolSeconds = 10
 
 	StateInstantiate  = "INSTANTIATE"
 	StateCompleted    = "COMPLETED"
@@ -37,10 +41,14 @@ const (
 
 	DefaultMaxRetry = 32
 
+	// TaskStateSuccess task state successes
 	TaskStateSuccess = "SUCCESS"
-	TaskStateRunning = "SUCCESS"
-	TaskStateQueued  = "QUEUED"
-	TaskStateFailed  = "FAILED"
+
+	// TaskStateQueued task state queued by tca
+	TaskStateQueued = "QUEUED"
+
+	// TaskStateFailed task state failed
+	TaskStateFailed = "FAILED"
 
 	TaskTypeNodePoolCreation = "Node Pool Creation"
 	TaskTypeInventoryUpdate  = "Inventory Update"

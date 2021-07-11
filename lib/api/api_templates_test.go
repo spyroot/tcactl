@@ -21,24 +21,25 @@ import (
 	"github.com/google/uuid"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/pkg/io"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-// return initialSpec from file
-func specFileReaderHelper(f string) *response.ClusterTemplateSpec {
-	s, err := ReadTemplateSpecFromFile(f)
-	io.CheckErr(err)
-	return s
-}
-
 // return initialSpec from string
-func specStringReaderHelper(s string) *response.ClusterTemplateSpec {
-	r, err := ReadTemplateSpecFromString(s)
+func specStringReaderHelper(specString string) *specs.SpecClusterTemplate {
+
+	_spec, err := specs.SpecClusterTemplate{}.SpecsFromString(specString)
 	io.CheckErr(err)
-	return r
+
+	spec, ok := (*_spec).(*specs.SpecClusterTemplate)
+	if !ok {
+		io.CheckErr("wrong instance type")
+	}
+
+	return spec
 }
 
 // Create new cluster template
@@ -48,7 +49,7 @@ func TestTcaApi_CreateClusterTemplate(t *testing.T) {
 	tests := []struct {
 		name    string
 		rest    *client.RestClient
-		spec    *response.ClusterTemplateSpec
+		spec    *specs.SpecClusterTemplate
 		wantErr bool
 		reset   bool
 	}{
@@ -159,7 +160,7 @@ func TestTcaApi_GetClusterTemplate(t *testing.T) {
 	tests := []struct {
 		name    string
 		rest    *client.RestClient
-		specs   *response.ClusterTemplateSpec
+		specs   *specs.SpecClusterTemplate
 		repeat  int
 		wantErr bool
 	}{
@@ -211,7 +212,7 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 	tests := []struct {
 		name    string
 		rest    *client.RestClient
-		specs   *response.ClusterTemplateSpec
+		specs   *specs.SpecClusterTemplate
 		repeat  int
 		wantErr bool
 	}{
@@ -267,7 +268,7 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 	}
 }
 
-func changeDescription(t *response.ClusterTemplateSpec) *response.ClusterTemplateSpec {
+func changeDescription(t *specs.SpecClusterTemplate) *specs.SpecClusterTemplate {
 	t.Description = "test"
 	return t
 }
@@ -276,7 +277,7 @@ func checkerDescription(t *response.ClusterTemplateSpec) bool {
 	return t.Description == "test"
 }
 
-func changeReplica(t *response.ClusterTemplateSpec) *response.ClusterTemplateSpec {
+func changeReplica(t *specs.SpecClusterTemplate) *specs.SpecClusterTemplate {
 	t.WorkerNodes[0].Replica = 5
 	return t
 }
@@ -285,7 +286,7 @@ func checkerReplica(t *response.ClusterTemplateSpec) bool {
 	return t.WorkerNodes[0].Replica == 5
 }
 
-func changeTemplateId(t *response.ClusterTemplateSpec) *response.ClusterTemplateSpec {
+func changeTemplateId(t *specs.SpecClusterTemplate) *specs.SpecClusterTemplate {
 	t.Id = t.Name
 	return t
 }
@@ -294,19 +295,21 @@ func checkerTemplateId(t *response.ClusterTemplateSpec) bool {
 	return IsValidUUID(t.Id)
 }
 
-func changeInvalidTemplateId(t *response.ClusterTemplateSpec) *response.ClusterTemplateSpec {
+func changeInvalidTemplateId(t *specs.SpecClusterTemplate) *specs.SpecClusterTemplate {
 	t.Id = "01ac6fc7-435e-4eb6-9444-c6ed07999999"
 	return t
 }
 
+// Tests template update API method
 func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 
 	tests := []struct {
 		name        string
 		rest        *client.RestClient
-		initialSpec *response.ClusterTemplateSpec
+		initialSpec *specs.SpecClusterTemplate
+		updatedSpec *specs.SpecClusterTemplate
 		wantErr     bool
-		transformer func(*response.ClusterTemplateSpec) *response.ClusterTemplateSpec
+		transformer func(*specs.SpecClusterTemplate) *specs.SpecClusterTemplate
 		checker     func(*response.ClusterTemplateSpec) bool
 		recheck     bool
 	}{
@@ -362,22 +365,18 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 				name, err = a.CreateClusterTemplate(tt.initialSpec)
 				assert.NoError(t, err)
 				time.Sleep(3 * time.Second)
+
+				//
 				template, err = a.GetClusterTemplate(name)
 				assert.NoError(t, err)
+				t.Logf("Template created %s", name)
 			}
-
-			t.Logf("Template created %s", name)
 
 			assert.NotNil(t, template)
-
-			transformed := tt.transformer(template)
-
-			if tt.recheck {
-				assert.NotEqual(t, tt.checker(transformed), false)
-			}
+			updatedSpec := tt.transformer(tt.initialSpec)
 
 			var errUpdate error
-			if errUpdate = a.UpdateClusterTemplate(transformed); (errUpdate != nil) != tt.wantErr {
+			if errUpdate = a.UpdateClusterTemplate(updatedSpec); (errUpdate != nil) != tt.wantErr {
 				t.Errorf("UpdateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
@@ -398,8 +397,6 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 				return
 			}
 
-			io.PrettyPrint(updateTemplate)
-
 			if tt.checker(updateTemplate) == true && tt.wantErr == false {
 				if err = a.DeleteTemplate(name); (err != nil) != tt.wantErr {
 					t.Errorf("DeleteTemplate() error = %v, vimErr %v", err, tt.wantErr)
@@ -412,12 +409,13 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 	}
 }
 
+// Tests cluster template delete operation
 func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 
 	tests := []struct {
 		name    string
 		rest    *client.RestClient
-		spec    *response.ClusterTemplateSpec
+		spec    *specs.SpecClusterTemplate
 		tid     string
 		wantErr bool
 	}{
@@ -446,9 +444,7 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a := &TcaApi{
-				rest: tt.rest,
-			}
+			api := getTcaApi(t, tt.rest, false)
 
 			var (
 				err  error
@@ -458,7 +454,7 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 
 			// if need create initialSpec
 			if tt.spec != nil {
-				if name, err = a.CreateClusterTemplate(tt.spec); (err != nil) != tt.wantErr {
+				if name, err = api.CreateClusterTemplate(tt.spec); (err != nil) != tt.wantErr {
 					t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
@@ -475,7 +471,7 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 
 				time.Sleep(3 * time.Second)
 
-				if _, err2 = a.GetClusterTemplate(name); (err2 != nil) != tt.wantErr {
+				if _, err2 = api.GetClusterTemplate(name); (err2 != nil) != tt.wantErr {
 					t.Errorf("CreateClusterTemplate() error = %v, vimErr %v", err, tt.wantErr)
 					return
 				}
@@ -483,7 +479,7 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 				t.Logf("Template created %s", name)
 			}
 
-			if err = a.DeleteTemplate(name); (err != nil) != tt.wantErr {
+			if err = api.DeleteTemplate(name); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteTemplate() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
@@ -497,6 +493,26 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 				t.Logf("Recieved correct error %v", err)
 				return
 			}
+		})
+	}
+}
+
+// Tests template field method
+func TestTcaApi_TemplateFields(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "Should return list of fields.",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fields := TemplateFields()
+			assert.NotEqual(t, 0, len(fields))
 		})
 	}
 }

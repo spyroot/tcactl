@@ -393,7 +393,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 //	}
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			a := &TcaApi{
+//			a := &tcaApi{
 //				rest:          tt.fields.rest,
 //				specValidator: tt.fields.specValidator,
 //			}
@@ -428,7 +428,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 //	}
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			a := &TcaApi{
+//			a := &tcaApi{
 //				rest:          tt.fields.rest,
 //				specValidator: tt.fields.specValidator,
 //			}

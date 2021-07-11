@@ -86,7 +86,7 @@ Command retrieves a list of CNFs or VNFs catalog entities or single element if -
 				io.CheckErr(err)
 				if _printer, ok := ctl.CnfPackagePrinters[_defaultPrinter]; ok {
 					_printer(&response.VnfPackages{
-						Packages: r,
+						Entity: r,
 					}, _defaultStyler)
 				}
 				return
@@ -100,7 +100,7 @@ Command retrieves a list of CNFs or VNFs catalog entities or single element if -
 				io.CheckErr(err)
 				if _printer, ok := ctl.CnfPackagePrinters[_defaultPrinter]; ok {
 					_printer(&response.VnfPackages{
-						Packages: r,
+						Entity: r,
 					}, _defaultStyler)
 				}
 				return

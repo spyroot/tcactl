@@ -22,7 +22,8 @@ import "github.com/spyroot/tcactl/lib/client/specs"
 
 // NodePoolCreateApiReq api request issued to create new node pool
 type NodePoolCreateApiReq struct {
-	// Spec is a specs.SpecNodePool spec
+
+	// Spec is a specs.SpecNodePool
 	Spec *specs.SpecNodePool
 
 	// Cluster is cluster name or cluster id
@@ -36,6 +37,35 @@ type NodePoolCreateApiReq struct {
 
 	// if blocking request require output progress
 	IsVerbose bool
+}
+
+// ClusterDeleteApiReq api request issued to delete cluster
+type ClusterDeleteApiReq struct {
+	// cluster name or id
+	Cluster string
+	//
+	IsBlocking bool
+	//
+	IsVerbose bool
+}
+
+// ClusterCreateApiReq api request issued to create new cluster
+type ClusterCreateApiReq struct {
+
+	// Spec hold a pointer to specs.SpecCluster and must not be nil
+	Spec *specs.SpecCluster
+
+	//
+	IsDryRun bool
+
+	//
+	IsBlocking bool
+
+	//
+	IsVerbose bool
+
+	// isFixConflict if true , api create method will try to resolve cluster IP conflict.
+	IsFixConflict bool
 }
 
 // CreateInstanceApiReq - api request to create new cnf or vnf instance
@@ -75,7 +105,8 @@ type CreateInstanceApiReq struct {
 	RepoUrl string
 }
 
-// TerminateInstanceApiReq - api request to terminate new cnf or vnf instance
+// TerminateInstanceApiReq - api request
+// to terminate CNF or VNF instance.
 type TerminateInstanceApiReq struct {
 
 	//InstanceName instance name
@@ -91,7 +122,10 @@ type TerminateInstanceApiReq struct {
 	IsVerbose bool
 }
 
+// UpdateInstanceApiReq api request to update a LCM state of existing
+// CNF or VNF instance.
 type UpdateInstanceApiReq struct {
+
 	//
 	UpdateReq *specs.LcmInstantiateRequest
 
@@ -107,12 +141,14 @@ type UpdateInstanceApiReq struct {
 	//IsBlocking block or async task
 	IsBlocking bool
 
-	// if blocking request require output progress
+	// if a request is blocking, and caller requires output progress
 	IsVerbose bool
 }
 
+// ResetInstanceApiReq api request to reset existing CNF or VNF instance.
 type ResetInstanceApiReq struct {
-	//InstanceName instance name
+
+	//InstanceName instance name or id
 	InstanceName string
 
 	//ClusterName target cluster name
@@ -121,6 +157,6 @@ type ResetInstanceApiReq struct {
 	//IsBlocking block or async task
 	IsBlocking bool
 
-	// if blocking request require output progress
+	// if a request is blocking, and caller requires output progress
 	IsVerbose bool
 }

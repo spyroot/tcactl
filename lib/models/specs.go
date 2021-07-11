@@ -3,12 +3,12 @@ package models
 import "time"
 
 type HealthCheck struct {
-	NodeStartupTimeout  string `json:"nodeStartupTimeout" yaml:"nodeStartupTimeout"`
+	NodeStartupTimeout  string `json:"nodeStartupTimeout,omitempty" yaml:"nodeStartupTimeout,omitempty"`
 	UnhealthyConditions []struct {
 		Type    string `json:"type" yaml:"type"`
 		Status  string `json:"status" yaml:"status"`
 		Timeout string `json:"timeout" yaml:"timeout"`
-	} `json:"unhealthyConditions," yaml:"unhealthy_conditions"`
+	} `json:"unhealthyConditions,omitempty" yaml:"unhealthyConditions,omitempty"`
 }
 
 type Nodes struct {
@@ -71,13 +71,13 @@ type NodeProperties struct {
 	} `json:"systemReserved,omitempty" yaml:"system_reserved,omitempty"`
 }
 
-type K8sCpuManagerPolicy struct {
+type ClusterCpuManagerPolicy struct {
 	Type       string          `json:"type,omitempty" yaml:"type,omitempty"`
 	Policy     string          `json:"policy,omitempty" yaml:"policy,omitempty"`
 	Properties *NodeProperties `json:"properties,omitempty" yaml:"properties,omitempty"`
 }
 
 type NodeConfig struct {
-	CpuManagerPolicy *K8sCpuManagerPolicy `json:"cpuManagerPolicy,omitempty" yaml:"cpu_manager_policy,omitempty"`
-	HealthCheck      *HealthCheck         `json:"healthCheck,omitempty" yaml:"health_check,omitempty"`
+	CpuManagerPolicy *ClusterCpuManagerPolicy `json:"cpuManagerPolicy,omitempty" yaml:"cpuManagerPolicy,omitempty"`
+	HealthCheck      *HealthCheck             `json:"healthCheck,omitempty" yaml:"healthCheck,omitempty"`
 }

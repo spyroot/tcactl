@@ -59,7 +59,7 @@ func CnfPackageTablePrinter(cnfs *response.VnfPackages, style ui.PrinterStyle) {
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"#", "Name", "Catalog Name", "VnfID", "Type", "State", "Operation"})
 
-	for i, p := range cnfs.Packages {
+	for i, p := range cnfs.Entity {
 		t.AppendRows([]table.Row{
 			{i, p.PID, p.VnfProductName, p.VnfdID, p.OnboardingState, p.UsageState, p.VnfSoftwareVersion},
 		})

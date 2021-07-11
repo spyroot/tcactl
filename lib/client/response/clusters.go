@@ -1,4 +1,4 @@
-// Package respons
+// Package response
 // Copyright 2020-2021 Author.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,73 +45,40 @@ type ClusterSpecTemplate struct {
 	Id      string `json:"id"`
 }
 
-type ClusterNetwork struct {
-	Label       string   `json:"label"`
-	NetworkName string   `json:"networkName"`
-	Nameservers []string `json:"nameservers"`
-}
-
-type MasterNodesDetails struct {
-	Cpu       int              `json:"cpu"`
-	Memory    int              `json:"memory"`
-	Name      string           `json:"name"`
-	Networks  []ClusterNetwork `json:"networks"`
-	Storage   int              `json:"storage"`
-	Replica   int              `json:"replica"`
-	Labels    []string         `json:"labels"`
-	CloneMode string           `json:"cloneMode"`
-}
-
-type WorkerNodesDetails struct {
-	Cpu       int               `json:"cpu"`
-	Memory    int               `json:"memory"`
-	Name      string            `json:"name"`
-	Networks  []models.Networks `json:"networks"`
-	Storage   int               `json:"storage"`
-	Replica   int               `json:"replica"`
-	Labels    []string          `json:"labels"`
-	CloneMode string            `json:"cloneMode"`
-	Config    struct {
-		CpuManagerPolicy struct {
-			Type       string `json:"type"`
-			Policy     string `json:"policy"`
-			Properties struct {
-				KubeReserved struct {
-					Cpu         int `json:"cpu"`
-					MemoryInGiB int `json:"memoryInGiB"`
-				} `json:"kubeReserved"`
-				SystemReserved struct {
-					Cpu         int `json:"cpu"`
-					MemoryInGiB int `json:"memoryInGiB"`
-				} `json:"systemReserved"`
-			} `json:"properties"`
-		} `json:"cpuManagerPolicy"`
-		HealthCheck *models.HealthCheck `json:"healthCheck"`
-	} `json:"config"`
+type ClusterNodeSpec struct {
+	Cpu       int                `json:"cpu" yaml:"cpu"`
+	Memory    int                `json:"memory" yaml:"memory"`
+	Name      string             `json:"name" yaml:"name"`
+	Networks  []models.Networks  `json:"networks" yaml:"networks"`
+	Storage   int                `json:"storage" yaml:"storage"`
+	Replica   int                `json:"replica" yaml:"replica"`
+	Labels    []string           `json:"labels" yaml:"labels"`
+	CloneMode string             `json:"cloneMode" yaml:"clone_mode"`
+	Config    *models.NodeConfig `json:"config" yaml:"config"`
 }
 
 // ClusterSpec - hold cluster specs
 type ClusterSpec struct {
 	// Id cluster ID user internal
-	Id string `json:"id"`
+	Id string `json:"id" yaml:"id"`
 	// Cluster name
-	ClusterName string `json:"clusterName"`
+	ClusterName string `json:"clusterName" yaml:"cluster_name"`
 	// Cluster Type VC or Kube
-	ClusterType         string               `json:"clusterType"`
-	VsphereClusterName  string               `json:"vsphereClusterName"`
-	ManagementClusterId string               `json:"managementClusterId"`
-	HcxUUID             string               `json:"hcxUUID"`
-	Status              string               `json:"status"`
-	ActiveTasksCount    int                  `json:"activeTasksCount"`
-	ClusterTemplate     *ClusterSpecTemplate `json:"clusterTemplate"`
-	ClusterId           string               `json:"clusterId"`
-	ClusterUrl          string               `json:"clusterUrl"`
-	KubeConfig          string               `json:"kubeConfig"`
-	EndpointIP          string               `json:"endpointIP"`
-	MasterNodes         []MasterNodesDetails `json:"masterNodes"`
-	WorkerNodes         []WorkerNodesDetails `json:"workerNodes"`
-	VimId               string               `json:"vimId"`
-	Error               string               `json:"error"`
+	ClusterType         string               `json:"clusterType" yaml:"clusterType"`
+	VsphereClusterName  string               `json:"vsphereClusterName" yaml:"vsphereClusterName"`
+	ManagementClusterId string               `json:"managementClusterId" yaml:"managementClusterId"`
+	HcxUUID             string               `json:"hcxUUID" yaml:"hcxUUID"`
+	Status              string               `json:"status" yaml:"status"`
+	ActiveTasksCount    int                  `json:"activeTasksCount" yaml:"activeTasksCount"`
+	ClusterTemplate     *ClusterSpecTemplate `json:"clusterTemplate" yaml:"clusterTemplate"`
+	ClusterId           string               `json:"clusterId" yaml:"clusterId"`
+	ClusterUrl          string               `json:"clusterUrl" yaml:"cluster_url"`
+	KubeConfig          string               `json:"kubeConfig" yaml:"kube_config"`
+	EndpointIP          string               `json:"endpointIP" yaml:"endpoint_ip"`
+	MasterNodes         []ClusterNodeSpec    `json:"masterNodes" yaml:"masterNodes"`
+	WorkerNodes         []ClusterNodeSpec    `json:"workerNodes" yaml:"workerNodes"`
+	VimId               string               `json:"vimId" yaml:"vimId"`
+	Error               string               `json:"error" yaml:"error"`
 }
 
 // Clusters - a list of all clusters
@@ -167,39 +134,35 @@ func (m *ClusterNotFound) Error() string {
 	return "cluster '" + m.ErrMsg + "' not found"
 }
 
-// GetClusterId return cluster ID
-func (c *Clusters) GetClusterId(NameOrId string) (string, error) {
-
-	if c == nil {
-		return "", fmt.Errorf("uninitialized object")
-	}
-
-	for _, it := range c.Clusters {
-		if it.ClusterName == NameOrId || it.Id == NameOrId {
-			glog.Infof("Found cluster '%v' cluster uuid '%v'", NameOrId, it.Id)
-			return it.Id, nil
-		}
-	}
-
-	return "", &ClusterNotFound{ErrMsg: NameOrId}
-}
-
 // GetClusterSpec return cluster information,
 // loop up up by name or id, if not found return error
-func (c *Clusters) GetClusterSpec(q string) (*ClusterSpec, error) {
+func (c *Clusters) GetClusterSpec(cluster string) (*ClusterSpec, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("uninitialized clusters object")
 	}
 
+	NameOrId := strings.ToLower(cluster)
+
 	for _, it := range c.Clusters {
-		if it.ClusterName == q || it.Id == q {
-			glog.Infof("Found cluster %v cluster id %v", q, it.Id)
+		if it.ClusterName == NameOrId || it.Id == NameOrId {
+			glog.Infof("Found cluster %v cluster id %v", NameOrId, it.Id)
 			return &it, nil
 		}
 	}
 
-	return nil, &ClusterNotFound{ErrMsg: q}
+	return nil, &ClusterNotFound{ErrMsg: cluster}
+}
+
+// GetClusterId return cluster id.
+func (c *Clusters) GetClusterId(cluster string) (string, error) {
+
+	spec, err := c.GetClusterSpec(cluster)
+	if err != nil {
+		return "", err
+	}
+
+	return spec.Id, nil
 }
 
 // GetClusterIds -return list of all cluster ids
@@ -216,18 +179,6 @@ func (c *Clusters) GetClusterIds() ([]string, error) {
 		}
 	}
 	return ids, nil
-}
-
-// ClustersSpecsFromFile - reads tenant spec from file
-// and return ClusterSpec instance
-func ClustersSpecsFromFile(fileName string) (*Clusters, error) {
-
-	file, err := os.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	return ReadClustersSpec(file)
 }
 
 // ClustersSpecsFromString take string that hold entire spec

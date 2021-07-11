@@ -46,42 +46,34 @@ const (
 	DefaultFlavor = "default"
 )
 
-// ClusterDeleteApiReq api request to delete cluster
-type ClusterDeleteApiReq struct {
-	//
-	Cluster string
-	//
-	IsBlocking bool
-	//
-	IsVerbose bool
-}
+func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
+	repo string, instanceName string, nodePoolName string) *specs.InstanceRequestSpec {
+	i := &specs.InstanceRequestSpec{
+		CloudName:        cloudName,
+		ClusterName:      clusterName,
+		VimType:          vimType,
+		NfdName:          nfdName,
+		Repo:             repo,
+		InstanceName:     instanceName,
+		NodePoolName:     nodePoolName,
+		UseLinkedRepo:    true,
+		AdditionalParams: specs.AdditionalParams{}}
 
-// ClusterCreateApiReq api request to create cluster
-type ClusterCreateApiReq struct {
-	//
-	Spec *specs.SpecCluster
-	//
-	IsDryRun bool
-	//
-	IsBlocking bool
-	//
-	IsVerbose bool
-	// isFixConflict resolve IP conflict, by check next IP
-	IsFixConflict bool
+	i.FlavorName = DefaultNamespace
+	i.Description = ""
+	i.Namespace = DefaultFlavor
+
+	return i
 }
 
 // TcaApi - TCA Api interface
 // Called need to use NewTcaApi to get instance before
 type TcaApi struct {
-
 	// rest client used to interact with tca
 	rest *client.RestClient
-
-	// specString validator.
 }
 
 // NewTcaApi - return instance for API.
-//
 func NewTcaApi(r *client.RestClient) (*TcaApi, error) {
 
 	if r == nil {
@@ -113,26 +105,6 @@ type UnsupportedCloudProvider struct {
 //
 func (m *UnsupportedCloudProvider) Error() string {
 	return m.errMsg + " cloud provider not supported"
-}
-
-func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
-	repo string, instanceName string, nodePoolName string) *specs.InstanceRequestSpec {
-	i := &specs.InstanceRequestSpec{
-		CloudName:        cloudName,
-		ClusterName:      clusterName,
-		VimType:          vimType,
-		NfdName:          nfdName,
-		Repo:             repo,
-		InstanceName:     instanceName,
-		NodePoolName:     nodePoolName,
-		UseLinkedRepo:    true,
-		AdditionalParams: specs.AdditionalParams{}}
-
-	i.FlavorName = DefaultNamespace
-	i.Description = ""
-	i.Namespace = DefaultFlavor
-
-	return i
 }
 
 // GetAllNodePool return a Node pool for particular cluster
@@ -192,15 +164,14 @@ func (a *TcaApi) GetVimTenants(ctx context.Context) (*response.Tenants, error) {
 }
 
 // GetCurrentClusterTask get current cluster task
-// taskId is operationId field.
-func (a *TcaApi) GetCurrentClusterTask(ctx context.Context, taskId string) (*models.ClusterTask, error) {
+func (a *TcaApi) GetCurrentClusterTask(ctx context.Context, clusterId string) (*models.ClusterTask, error) {
 
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
+	if len(clusterId) == 0 {
+		return nil, api_errors.NewInvalidTaskId(clusterId)
 	}
 
-	if IsValidUUID(taskId) == false {
-		return nil, &InvalidTaskId{taskId}
+	if !IsValidUUID(clusterId) == false {
+		return nil, api_errors.NewInvalidTaskId(clusterId)
 	}
 
 	clusters, err := a.rest.GetClusters(ctx)
@@ -208,13 +179,13 @@ func (a *TcaApi) GetCurrentClusterTask(ctx context.Context, taskId string) (*mod
 		return nil, err
 	}
 
-	cid, err := clusters.GetClusterId(taskId)
+	cid, err := clusters.GetClusterId(clusterId)
 	if err != nil {
 		return nil, err
 	}
 
 	glog.Infof("Retrieving current task task list for cluster '%v'", cid)
-	task, err := a.rest.GetClustersTask(ctx, specs.NewClusterTaskQuery(taskId))
+	task, err := a.rest.GetClustersTask(ctx, specs.NewClusterTaskQuery(clusterId))
 	if err != nil {
 		return nil, err
 	}
@@ -226,10 +197,6 @@ func (a *TcaApi) GetCurrentClusterTask(ctx context.Context, taskId string) (*mod
 // caller need indicate template type and version.
 func (a *TcaApi) GetVimVMTemplates(ctx context.Context, cloudName string,
 	templateType VmTemplateFilterType, ver string) (*models.VcInventory, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
 
 	if len(cloudName) == 0 {
 		return nil, fmt.Errorf("empty cloud provider name")
@@ -1251,7 +1218,7 @@ func (a *TcaApi) BlockWaitStateChange(ctx context.Context, instanceId string, wa
 					break
 				}
 
-				time.Sleep(TaskWaitSeconds * time.Second)
+				time.Sleep(TaskPoolSeconds * time.Second)
 			}
 		}
 	}
@@ -1345,7 +1312,7 @@ func (a *TcaApi) BlockWaitTaskFinish(ctx context.Context, task *models.TcaTask, 
 					allTaskDone = true
 				}
 
-				time.Sleep(TaskWaitSeconds * time.Second)
+				time.Sleep(TaskPoolSeconds * time.Second)
 				retry++
 			}
 		}

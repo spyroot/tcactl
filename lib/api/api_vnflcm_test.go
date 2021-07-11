@@ -33,7 +33,7 @@ func TestGetAllPackages(t *testing.T) {
 		vduName string
 	}{
 		{
-			name:    "Get all packages shouldn't fail",
+			name:    "Get all packages",
 			rest:    rest,
 			wantErr: false,
 			vduName: "",

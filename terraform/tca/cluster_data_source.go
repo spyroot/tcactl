@@ -25,6 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/models"
 	"log"
 	"strconv"
 	"time"
@@ -160,6 +161,20 @@ func dataSourceClusters() *schema.Resource {
 	}
 }
 
+func GetApi(m interface{}) (*api.TcaApi, error) {
+	tca := m.(*api.TcaApi)
+	if tca == nil {
+		return nil, fmt.Errorf("nil instance")
+	}
+
+	_, err := tca.GetAuthorization()
+	if err != nil {
+		return nil, err
+	}
+
+	return tca, nil
+}
+
 // dataSourceOrderRead
 func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
@@ -168,12 +183,7 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	var diags diag.Diagnostics
 
-	tca := m.(*api.TcaApi)
-	if tca == nil {
-		return diag.FromErr(fmt.Errorf("nil client"))
-	}
-
-	_, err := tca.GetAuthorization()
+	tca, err := GetApi(m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -189,7 +199,7 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, m interf
 	//
 	//orderID, ok := d.Get("id").(string)
 	//
-	clusters, err := tca.GetClusters()
+	clusters, err := tca.GetClusters(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -238,7 +248,8 @@ func flattenClusterData(clusters *response.Clusters) []interface{} {
 	return make([]interface{}, 0)
 }
 
-func flattenMasterNodeData(nodes *[]response.MasterNodesDetails) []interface{} {
+// flattenMasterNodeData flattens master node data
+func flattenMasterNodeData(nodes *[]response.ClusterNodeSpec) []interface{} {
 
 	if nodes != nil {
 		ois := make([]interface{}, len(*nodes), len(*nodes))
@@ -263,7 +274,8 @@ func flattenMasterNodeData(nodes *[]response.MasterNodesDetails) []interface{} {
 	return make([]interface{}, 0)
 }
 
-func flattenMasterNodeNetworks(networks *[]response.ClusterNetwork) []interface{} {
+// flattenMasterNodeNetworks flattens network data
+func flattenMasterNodeNetworks(networks *[]models.Networks) []interface{} {
 
 	if networks != nil {
 		ois := make([]interface{}, len(*networks), len(*networks))

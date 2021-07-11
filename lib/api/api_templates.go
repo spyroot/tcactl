@@ -121,11 +121,10 @@ func (a *TcaApi) CreateClusterTemplate(spec *specs.SpecClusterTemplate) (string,
 	spec.ClusterType = strings.ToUpper(spec.ClusterType)
 
 	if len(spec.MasterNodes) == 0 {
-		return "", &InvalidSpec{" master node section not present."}
+		return "", api_errors.NewInvalidSpec(" master node spec section not present.")
 	}
-
 	if len(spec.WorkerNodes) == 0 {
-		return "", &InvalidSpec{" worker node section not present."}
+		return "", api_errors.NewInvalidSpec(" worker node section not present.")
 	}
 
 	return spec.Name, a.rest.CreateClusterTemplate(spec)
@@ -161,12 +160,8 @@ func (a *TcaApi) UpdateClusterTemplate(spec *specs.SpecClusterTemplate) error {
 
 	glog.Infof("Updating cluster template. %v", spec)
 
-	if a.rest == nil {
-		return errnos.RestNil
-	}
-
 	if spec == nil {
-		return api_errors.NewInvalidSpec("Spec is nil")
+		return errnos.SpecNil
 	}
 
 	err := spec.Validate()
@@ -196,10 +191,6 @@ func (a *TcaApi) UpdateClusterTemplate(spec *specs.SpecClusterTemplate) error {
 // DeleteTemplate deletes cluster template from TCA
 // template argument can be name or ID.
 func (a *TcaApi) DeleteTemplate(template string) error {
-
-	if a.rest == nil {
-		return errnos.RestNil
-	}
 
 	var templateId = ""
 

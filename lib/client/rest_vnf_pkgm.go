@@ -99,7 +99,7 @@ func (c *RestClient) GetAllCatalog() (*response.VnfPackages, error) {
 // GetVnfPkgm gets VNF/CNF catalog entity
 // pkgId is catalog id and filter is optional argument
 // is filter query
-func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPackages, error) {
+func (c *RestClient) GetVnfPkgm(filter string, catalogId string) (*response.VnfPackages, error) {
 
 	if c == nil {
 		return nil, fmt.Errorf("rest interface is nil")
@@ -113,16 +113,13 @@ func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPacka
 	}
 
 	var restReq = c.BaseURL + TcaVmwareTelcoPackages
-	if len(pkgId) != 0 {
-		restReq = c.BaseURL + TcaVmwareTelcoPackages + "/" + pkgId
+	if len(catalogId) != 0 {
+		restReq = c.BaseURL + TcaVmwareTelcoPackages + "/" + catalogId
 	}
 
 	// attach query filter
 	if len(filter) != 0 {
-		r.SetQueryParams(map[string]string{
-			"filter": filter,
-		},
-		)
+		r.SetQueryParams(map[string]string{"filter": filter})
 	}
 
 	resp, err := r.Get(restReq)
@@ -144,15 +141,15 @@ func (c *RestClient) GetVnfPkgm(filter string, pkgId string) (*response.VnfPacka
 	}
 
 	var pkgs response.VnfPackages
-	if len(pkgId) != 0 {
+	if len(catalogId) != 0 {
 		var pkg response.VnfPackage
 		if err := json.Unmarshal(resp.Body(), &pkg); err != nil {
 			glog.Errorf("failed unmarshal %v", err)
 			return nil, err
 		}
-		pkgs.Packages = append(pkgs.Packages, pkg)
+		pkgs.Entity = append(pkgs.Entity, pkg)
 	} else {
-		if err := json.Unmarshal(resp.Body(), &pkgs.Packages); err != nil {
+		if err := json.Unmarshal(resp.Body(), &pkgs.Entity); err != nil {
 			glog.Errorf("failed unmarshal %v", err)
 			return nil, err
 		}

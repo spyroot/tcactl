@@ -71,13 +71,13 @@ func TestTcaApiGetVnfPkgm(t *testing.T) {
 				return
 			}
 
-			for _, p := range catalog.Packages {
+			for _, p := range catalog.Entity {
 				pkgm, err := api.GetVnfPkgm("", p.PID)
 				if err != nil {
 					return
 				}
 
-				assert.NotNil(t, pkgm.Packages)
+				assert.NotNil(t, pkgm.Entity)
 			}
 		})
 	}
@@ -86,18 +86,27 @@ func TestTcaApiGetVnfPkgm(t *testing.T) {
 // TestTcaApiGetVnfPkgm
 func TestTcaApiGetCatalogAndVdu(t *testing.T) {
 	tests := []struct {
-		rest          *client.RestClient
-		name          string
-		wantErr       bool
-		isUserdefined bool
-		isPackageid   bool
+		rest               *client.RestClient
+		name               string
+		wantErr            bool
+		useCatalogId       bool // use catalog id
+		useUserDefineField bool // use user define name
+		CatalogName        string
 	}{
 		{
-			name:          "Get all packages shouldn't fail",
-			rest:          rest,
-			wantErr:       false,
-			isUserdefined: true,
-			isPackageid:   false,
+			name:               "Should resolve all catalog",
+			rest:               rest,
+			wantErr:            false,
+			useUserDefineField: true,
+			useCatalogId:       false,
+		},
+		{
+			name:               "Wrong catalog id",
+			rest:               rest,
+			wantErr:            false,
+			useUserDefineField: true,
+			useCatalogId:       false,
+			CatalogName:        "invalid",
 		},
 	}
 
@@ -108,19 +117,22 @@ func TestTcaApiGetCatalogAndVdu(t *testing.T) {
 			assert.NoError(t, err)
 
 			catalog, err := api.GetEntireCatalog()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetVnfPkgm() error = %v, wantOnGetErr %v", err, tt.wantErr)
+			assert.NoError(t, err)
+			assert.NotNil(t, catalog)
+
+			if tt.wantErr {
+				_, _, err := api.GetCatalogAndVdu(tt.CatalogName)
+				if err == nil {
+					t.Errorf("GetCatalogAndVdu() must return error")
+					return
+				}
 				return
 			}
 
-			if catalog == nil {
-				t.Errorf("GetVnfPkgm() shouldn't return nil")
-				return
-			}
-
-			for _, p := range catalog.Packages {
+			// for each catalog entity retrieve Catalog and Vdu bundle
+			for _, p := range catalog.Entity {
 				// search by catalog user defined name
-				if tt.isUserdefined {
+				if tt.useUserDefineField {
 					pkg, vdu, err2 := api.GetCatalogAndVdu(p.UserDefinedData.Name)
 					if !tt.wantErr {
 						assert.NoError(t, err2)

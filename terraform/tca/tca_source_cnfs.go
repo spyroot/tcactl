@@ -19,10 +19,8 @@ package tca
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"log"
 	"strconv"
@@ -75,19 +73,13 @@ func dataSourceCnfRead(ctx context.Context, d *schema.ResourceData, m interface{
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	tca := m.(*api.TcaApi)
-	if tca == nil {
-		return diag.FromErr(fmt.Errorf("nil client"))
-	}
-
-	_, err := tca.GetAuthorization()
+	tca, err := GetApi(m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	log.Println("[INFO] Getting list of cnfs")
 
-	cnfs, err := tca.GetCnfs()
+	cnfs, err := tca.GetAllInstances()
 	if err != nil {
 		return diag.FromErr(err)
 	}

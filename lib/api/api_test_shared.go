@@ -1,7 +1,13 @@
 package api
 
 import (
+	"flag"
+	"fmt"
+	"github.com/golang/glog"
 	"github.com/google/uuid"
+	"github.com/spyroot/tcactl/lib/client"
+	"github.com/spyroot/tcactl/lib/testutil"
+	"github.com/spyroot/tcactl/pkg/io"
 	"os"
 )
 
@@ -9,19 +15,19 @@ const (
 	// test name, if you already have cluster adjust or pass TCA_TEST_CLUSTER env
 	testWorkloadClusterName = "edge-test01"
 
-	// testMgmtClusterName
+	// testMgmtClusterName a cluster that must be defined int TCA
 	testMgmtClusterName = "edge-mgmt-test01"
 
-	// test cloud provider name
+	// testCloudName a test cloud provider that must be defined in TCA
 	testCloudName = "edge"
 
-	// test
+	// testPoolName a node pool that must be define and attached to test workload and mgmt cluster
 	testPoolName = "default-pool01"
 
-	// testCatalogName
+	// testCatalogName a test catalog entity
 	testCatalogName = "unit_test"
 
-	// testInstanceName
+	// testInstanceName a test instance
 	testInstanceName = "unit_test_instance"
 
 	//testRepoName
@@ -52,28 +58,120 @@ const (
 	testWorkloadTemplateId = "c3e006c1-e6aa-4591-950b-6f3bedd944d3"
 )
 
-func getTestClusterId() string {
-	testCluster := os.Getenv("TCA_TEST_CLUSTER_ID")
-	if len(testCluster) == 0 {
-		return testClusterID
+var (
+	rest = getAuthenticatedClient()
+)
+
+//
+func getAuthenticatedClient() *client.RestClient {
+
+	r := getClient()
+	ok, err := r.GetAuthorization()
+	if err != nil {
+		io.CheckErr(err)
 	}
-	return testCluster
+
+	if !ok {
+		io.PrintAndExit("failed authenticated")
+	}
+
+	r.SetTrace(false)
+
+	return r
 }
 
+//harbor = &client.RestClient{
+//	BaseURL:               os.Getenv("HARBOR_URL"),
+//	apiKey:                "",
+//	IsDebug:               true,
+//	Username:              os.Getenv("HARBOR_USERNAME"),
+//	Password:              os.Getenv("HARBOR_PASSWORD"),
+//	SkipSsl:               true,
+//}
+
+//GetTestAssetsDir return dir where test assets are
+//it call RunOnRootFolder that change dir
+func GetTestAssetsDir() string {
+
+	wd := testutil.RunOnRootFolder()
+	wd = wd + "/test_assets"
+
+	_, err := os.Stat(wd)
+	if os.IsNotExist(err) {
+		io.CheckErr(err)
+	}
+
+	return wd
+}
+
+// Sets logging flag for logging tracer
+func SetLoggingFlags() {
+
+	err := flag.Set("alsologtostderr", "true")
+	if err != nil {
+		io.CheckErr(err)
+	}
+
+	err = flag.Set("v", "3")
+	if err != nil {
+		io.CheckErr(err)
+	}
+
+	flag.Parse()
+	glog.Info("Logging configured")
+}
+
+// getClient() return tca client for unit testing
+func getClient() *client.RestClient {
+	tcaUrl := os.Getenv("TCA_URL")
+	if len(tcaUrl) == 0 {
+		io.PrintAndExit("TCA_URL not set")
+	}
+	tcaUsername := os.Getenv("TCA_USERNAME")
+	if len(tcaUrl) == 0 {
+		io.PrintAndExit("TCA_USERNAME not set")
+	}
+	tcaPassword := os.Getenv("TCA_PASSWORD")
+	if len(tcaUrl) == 0 {
+		io.PrintAndExit("TCA_PASSWORD not set")
+	}
+	r, err := client.NewRestClient(tcaUrl,
+		true,
+		tcaUsername,
+		tcaPassword)
+
+	fmt.Printf("Using tca endpoint %s and userame %s\n", tcaUrl, tcaPassword)
+	if err != nil {
+		io.CheckErr(err)
+	}
+
+	return r
+}
+
+// getTestClusterId() returns a
+func getTestClusterId() string {
+	e := os.Getenv("TCA_TEST_CLUSTER_ID")
+	if len(e) == 0 {
+		return testClusterID
+	}
+	return e
+}
+
+// return tenant id either default value or from env
 func getTenantId() string {
-	testTenantId := os.Getenv("TCA_TEST_TENANT_ID")
-	if len(testTenantId) == 0 {
+	e := os.Getenv("TCA_TEST_TENANT_ID")
+	if len(e) == 0 {
 		return testTenantId
 	}
-	return testTenantId
+	return e
 }
 
 func getTestWorkloadClusterName() string {
-	testCluster := os.Getenv("TCA_TEST_WORKLOAD_CLUSTER")
-	if len(testCluster) == 0 {
+	e := os.Getenv("TCA_TEST_WORKLOAD_CLUSTER")
+	if len(e) == 0 {
 		return testWorkloadClusterName
 	}
-	return testCluster
+	return e
 }
 
 func getTestMgmtClusterName() string {
@@ -84,22 +182,25 @@ func getTestMgmtClusterName() string {
 	return e
 }
 
+// return a default node pool name used for testing
 func getTestNodePoolName() string {
-	testCluster := os.Getenv("TCA_TEST_NODE_POOL")
-	if len(testCluster) == 0 {
+	e := os.Getenv("TCA_TEST_NODE_POOL")
+	if len(e) == 0 {
 		return testPoolName
 	}
-	return testCluster
+	return e
 }
 
+// returns a default repo used for testing
 func getTestRepoName() string {
-	v := os.Getenv("TCA_TEST_REPO_NAME")
-	if len(v) == 0 {
+	e := os.Getenv("TCA_TEST_REPO_NAME")
+	if len(e) == 0 {
 		return testRepoName
 	}
-	return v
+	return e
 }
 
+// returns a default instance name used for testing
 func getTestInstanceName() string {
 	v := os.Getenv("TCA_TEST_INSTANCE_NAME")
 	if len(v) == 0 {
@@ -108,36 +209,40 @@ func getTestInstanceName() string {
 	return v
 }
 
+// returns a default catalog name used for testing
 func getTestCatalogName() string {
-	v := os.Getenv("TCA_TEST_CATALOG_NAME")
-	if len(v) == 0 {
+	e := os.Getenv("TCA_TEST_CATALOG_NAME")
+	if len(e) == 0 {
 		return testCatalogName
 	}
-	return v
+	return e
 }
 
+// returns a default node pool id
 func getTestNodePoolId() string {
-	testCluster := os.Getenv("TCA_TEST_NODE_POOL_ID")
-	if len(testCluster) == 0 {
+	e := os.Getenv("TCA_TEST_NODE_POOL_ID")
+	if len(e) == 0 {
 		return testNodePoolId
 	}
-	return testCluster
+	return e
 }
 
+// returns a default mgmt cluster template id
 func getTestMgmtTemplateId() string {
-	env := os.Getenv("TCA_TEST_MGMT_TEMPLATE_ID")
-	if len(env) == 0 {
+	e := os.Getenv("TCA_TEST_MGMT_TEMPLATE_ID")
+	if len(e) == 0 {
 		return testMgmtTemplateId
 	}
-	return env
+	return e
 }
 
+// returns a default workload cluster template id
 func getTestWorkloadTemplateId() string {
-	env := os.Getenv("TCA_TEST_WORKLOAD_TEMPLATE_ID")
-	if len(env) == 0 {
+	e := os.Getenv("TCA_TEST_WORKLOAD_TEMPLATE_ID")
+	if len(e) == 0 {
 		return testWorkloadTemplateId
 	}
-	return env
+	return e
 }
 
 // getTestCloudProvider should return a cloud provider

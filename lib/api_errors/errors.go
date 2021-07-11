@@ -97,3 +97,49 @@ func NewVimNotFound(errMsg string) *VimNotFound {
 func (e *VimNotFound) Error() string {
 	return " vim '" + e.errMsg + "' not found."
 }
+
+type FileNotFound struct {
+	errMsg string
+}
+
+func NewFileNotFound(errMsg string) *FileNotFound {
+	return &FileNotFound{errMsg: errMsg}
+}
+
+func (e *FileNotFound) Error() string {
+	return " file '" + e.errMsg + "' not found."
+}
+
+type InvalidArgument struct {
+	errMsg string
+}
+
+func NewInvalidArgument(errMsg string) *InvalidArgument {
+	return &InvalidArgument{errMsg: errMsg}
+}
+
+func (e *InvalidArgument) Error() string {
+	return " invalid '" + e.errMsg + "' argument."
+}
+
+// InvalidVimFormat error must returned if client supplied incorrect format for vim ID
+type InvalidVimFormat struct {
+	errMsg string
+}
+
+func (m *InvalidVimFormat) Error() string {
+	return "vim id format " + m.errMsg + " invalid. Example vmware_FB40D3DE2967483FBF9033B451DC7571"
+}
+
+// InvalidTaskId error must returned if client supplied incorrect task id
+type InvalidTaskId struct {
+	errMsg string
+}
+
+func NewInvalidTaskId(errMsg string) *InvalidTaskId {
+	return &InvalidTaskId{errMsg: errMsg}
+}
+
+func (m *InvalidTaskId) Error() string {
+	return "invalid task id " + m.errMsg + ". Example 9411f70f-d24d-4842-ab56-b7214d39d1b1"
+}

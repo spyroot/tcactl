@@ -25,7 +25,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
-	"net/http"
 )
 
 // GetVnflcm - Retrieves information about a CNF/VNF instance by reading
@@ -36,25 +35,25 @@ import (
 func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 
 	var (
-		err     error
 		resp    *resty.Response
+		err     error
 		isArray = true
 	)
 
 	c.GetClient()
 
+	// no args will return entire list
 	if len(req) == 0 {
 		resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmExtensionVnfInstance)
 	}
-
+	// attach filter and dispatch
 	if len(req) == 1 {
-		// attach filter and dispatch
 		var queryFilter = req[0]
-		glog.Infof("Attaching request filter %v", queryFilter)
-		resp, err = c.Client.R().SetQueryParams(map[string]string{
-			"filter": queryFilter,
-		}).Get(c.BaseURL + TcaApiVnfLcmExtensionVnfInstance)
+		resp, err = c.Client.R().
+			SetQueryParams(map[string]string{"filter": queryFilter}).
+			Get(c.BaseURL + TcaApiVnfLcmExtensionVnfInstance)
 	}
+	// if two argument will retrieve particular catalog entity
 	if len(req) == 2 {
 		isArray = false
 		resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + req[1])
@@ -69,6 +68,7 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 		fmt.Println(string(resp.Body()))
 	}
 
+	//
 	if !resp.IsSuccess() {
 		var errRes response.CnfInstancesError
 		if err = json.Unmarshal(resp.Body(), &errRes); err == nil {
@@ -78,37 +78,46 @@ func (c *RestClient) GetVnflcm(req ...string) (interface{}, error) {
 	}
 
 	// for single cnf request, pack return result in array.
-	if isArray == false {
-		var cnflcm response.LcmInfo
+	if !isArray {
+		var (
+			cnflcm  response.LcmInfo
+			cnfslcm response.Cnfs
+		)
+
 		if err := json.Unmarshal(resp.Body(), &cnflcm); err != nil {
 			glog.Errorf("Failed parse servers respond. %v", err)
 			return nil, err
 		}
 
-		var cnfslcm response.Cnfs
 		cnfslcm.CnfLcms = append(cnfslcm.CnfLcms, cnflcm)
 		return &cnfslcm, nil
 	}
 
 	// default case
-	var cnfs response.CnfsExtended
-	if err := json.Unmarshal(resp.Body(), &cnfs.CnfLcms); err != nil {
+	var extended response.CnfsExtended
+	if err := json.Unmarshal(resp.Body(), &extended.CnfLcms); err != nil {
 		glog.Errorf("Failed parse servers respond. %v", err)
 		return nil, err
 	}
-	return &cnfs, nil
+
+	return &extended, nil
 }
 
-// GetRunningVnflcm return state of CNF
-func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
+// GetRunningVnflcm rest call return state of CNF or VNF
+// state described as response.LcmInfo
+func (c *RestClient) GetRunningVnflcm(instanceId string) (*response.LcmInfo, error) {
 
 	var (
-		err  error
 		resp *resty.Response
+		err  error
 	)
 
+	glog.Infof("Retrieving running instancing %v", instanceId)
+
 	c.GetClient()
-	resp, err = c.Client.R().Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + r)
+	resp, err = c.Client.R().
+		Get(c.BaseURL + TcaApiVnfLcmVnfInstance + "/" + instanceId)
+
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -129,20 +138,27 @@ func (c *RestClient) GetRunningVnflcm(r string) (*response.LcmInfo, error) {
 	}
 
 	//
-	var cnflcm response.LcmInfo
-	if err := json.Unmarshal(resp.Body(), &cnflcm); err != nil {
+	var lcmInfo response.LcmInfo
+	if err := json.Unmarshal(resp.Body(), &lcmInfo); err != nil {
+		glog.Errorf("Failed parse servers respond. %v", err)
 		return nil, err
 	}
 
-	return &cnflcm, nil
+	return &lcmInfo, nil
 }
 
-// TerminateInstance action
+// TerminateInstance rest call, terminates CNF/VNF
+// terminateReq *specs.LcmTerminateRequest describes
+// a request.
 func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *specs.LcmTerminateRequest) error {
 
-	glog.Infof("Terminating instancing %v", terminateUri)
-	c.GetClient()
+	if terminateReq == nil {
+		return fmt.Errorf("nil request")
+	}
 
+	glog.Infof("Terminating instancing %v", terminateUri)
+
+	c.GetClient()
 	resp, err := c.Client.R().
 		SetBody(terminateReq).
 		Post(terminateUri)
@@ -156,7 +172,7 @@ func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *specs.
 		fmt.Println(string(resp.Body()))
 	}
 
-	if resp.StatusCode() < http.StatusOK || resp.StatusCode() >= http.StatusBadRequest {
+	if !resp.IsSuccess() {
 		var errRes ErrorResponse
 		if err = json.NewDecoder(resp.RawResponse.Body).Decode(&errRes); err == nil {
 			return fmt.Errorf(errRes.Message)
@@ -167,7 +183,7 @@ func (c *RestClient) TerminateInstance(terminateUri string, terminateReq *specs.
 	return nil
 }
 
-// CnfRollback action
+// CnfRollback rest api action, rollback
 func (c *RestClient) CnfRollback(ctx context.Context, href string) error {
 
 	if c == nil {

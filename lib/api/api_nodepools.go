@@ -19,7 +19,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/api_errors"
@@ -29,24 +28,23 @@ import (
 	errnos "github.com/spyroot/tcactl/pkg/errors"
 )
 
-// GetNodePool return a Node pool for particular cluster
-func (a *TcaApi) GetNodePool(ctx context.Context, clusterId string) (*response.NodePool, error) {
+// GetNodePool api method returns a Node pool response.NodePool
+// lookup based on cluster id or cluster name
+func (a *TcaApi) GetNodePool(ctx context.Context, NameOrId string) (*response.NodePool, error) {
 
-	if a.rest == nil {
-		return nil, errnos.RestNil
-	}
+	resolvedId := NameOrId
 
 	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil || clusters == nil {
 		return nil, err
 	}
 
-	clusterId, err = clusters.GetClusterId(clusterId)
+	resolvedId, err = clusters.GetClusterId(resolvedId)
 	if err != nil {
 		return nil, err
 	}
 
-	pool, err := a.rest.GetClusterNodePools(clusterId)
+	pool, err := a.rest.GetClusterNodePools(resolvedId)
 	if err != nil {
 		return nil, err
 	}
@@ -54,15 +52,10 @@ func (a *TcaApi) GetNodePool(ctx context.Context, clusterId string) (*response.N
 	return pool, nil
 }
 
-// ResolvePoolAndCluster - resolve both cluster and node pool in pair
-// All cluster plus node pool require cluster and node pool id.
-// This method remove constrain on name but be careful for
-// name duplicates.
-func (a *TcaApi) ResolvePoolAndCluster(ctx context.Context, cluster string, nodePool string) (string, string, error) {
-
-	if a.rest == nil {
-		return "", "", errnos.RestNil
-	}
+// ResolvePoolAndCluster - api method resolves cluster and node pool in pair
+// return cluster id and pool id or error
+func (a *TcaApi) ResolvePoolAndCluster(ctx context.Context,
+	cluster string, nodePool string) (string, string, error) {
 
 	_clusterId := cluster
 	_nodepoolId := nodePool
@@ -108,13 +101,18 @@ func (a *TcaApi) ResolvePoolAndCluster(ctx context.Context, cluster string, node
 	return _clusterId, _nodepoolId, nil
 }
 
-// DeleteNodePool api call deletes node pool from given cluster name or id.
-// both cluster and node pool can be named or ids.
-// API call returns models.TcaTas that monitored.
+// DeleteNodePool api call deletes node pool from a tenant cluster,
+// cluster argument is cluster name or id.
+// API call returns models.TcaTask that hold operation id that can be used for
+// subsequent monitoring.
 func (a *TcaApi) DeleteNodePool(ctx context.Context, cluster string, nodePool string) (*models.TcaTask, error) {
 
-	if a.rest == nil {
-		return nil, errnos.RestNil
+	if len(cluster) == 0 {
+		return nil, api_errors.NewInvalidArgument("cluster")
+	}
+
+	if len(nodePool) == 0 {
+		return nil, api_errors.NewInvalidArgument("nodePool")
 	}
 
 	_clusterId, _nodepoolId, err := a.ResolvePoolAndCluster(ctx, cluster, nodePool)
@@ -129,9 +127,8 @@ func (a *TcaApi) DeleteNodePool(ctx context.Context, cluster string, nodePool st
 	return task, nil
 }
 
-// updateNodePoolValidator
-// specString Validator
-func (a *TcaApi) nodePoolValidator(spec *specs.SpecNodePool) error {
+// nodePoolReqValidator validate node pool spec
+func (a *TcaApi) nodePoolReqValidator(spec *specs.SpecNodePool) error {
 
 	if len(spec.PlacementParams) == 0 {
 		return api_errors.NewInvalidSpec("node pool spec must contain placement params")
@@ -166,19 +163,19 @@ func (a *TcaApi) nodePoolValidator(spec *specs.SpecNodePool) error {
 // isDry run provide capability only validate specs without creating actual node pool.
 func (a *TcaApi) CreateNewNodePool(ctx context.Context, req *NodePoolCreateApiReq) (*models.TcaTask, error) {
 
-	if a.rest == nil {
-		return nil, errnos.RestNil
+	if a == nil {
+		return nil, errnos.NilError
 	}
 
 	if req == nil {
-		return nil, fmt.Errorf("node pool request is empty")
+		return nil, errnos.ReqNil
 	}
 
 	if req.Spec == nil {
-		return nil, fmt.Errorf("node pool request must contain spec")
+		return nil, errnos.SpecNil
 	}
 
-	if err := a.nodePoolValidator(req.Spec); err != nil {
+	if err := a.nodePoolReqValidator(req.Spec); err != nil {
 		return &models.TcaTask{}, err
 	}
 
@@ -224,29 +221,33 @@ func (a *TcaApi) CreateNewNodePool(ctx context.Context, req *NodePoolCreateApiRe
 }
 
 // UpdateNodePool api call updates a node pool for a existing cluster or node pool.
-// Both cluster and node pool can be a named or ids.
+// Both cluster and node pool can be a pool name or pool ids.
 //
-// API call returns models.TcaTask that letter can monitored.
-// isDry run provide capability only validate specs without
-// creating actual node pool.
-// isBlocking will block and wait when all task
-// finish to run
-// Verbose flag will output glog info message during wait time.
+// API call returns models.TcaTask that hold operation id.
+// req *NodePoolCreateApiReq field
+// 	isDry run provide capability to validate specs without applying any changes.
+// 	isBlocking will block and wait when all task finish or fail.
+// 	isVerbose flag will output progress message during each pool interval.
 func (a *TcaApi) UpdateNodePool(ctx context.Context, req *NodePoolCreateApiReq) (*models.TcaTask, error) {
 
-	if a.rest == nil {
-		return nil, errnos.RestNil
-	}
-	if a.rest == nil {
-		return nil, errnos.RestNil
+	if a == nil {
+		return nil, errnos.NilError
 	}
 
-	if err := a.nodePoolValidator(req.Spec); err != nil {
+	if req == nil {
+		return nil, errnos.ReqNil
+	}
+
+	if req.Spec == nil {
+		return nil, errnos.SpecNil
+	}
+
+	if err := a.nodePoolReqValidator(req.Spec); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		return &models.TcaTask{}, validationErrors
 	}
 
-	_clusterId, _notebookId, err := a.ResolvePoolAndCluster(ctx, req.Cluster, req.Spec.Name)
+	_clusterId, _nodePoolId, err := a.ResolvePoolAndCluster(ctx, req.Cluster, req.Spec.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -257,14 +258,14 @@ func (a *TcaApi) UpdateNodePool(ctx context.Context, req *NodePoolCreateApiReq) 
 	}
 
 	// update node pool id
-	if len(req.Spec.Id) == 0 || IsValidUUID(req.Spec.Id) == false {
-		req.Spec.Id = _notebookId
+	if len(req.Spec.Id) == 0 || !IsValidUUID(req.Spec.Id) {
+		req.Spec.Id = _nodePoolId
 	}
 
 	specCopy := req.Spec
 	specCopy.SpecType = ""
 
-	task, err := a.rest.UpdateNodePool(req.Spec, _clusterId, _notebookId)
+	task, err := a.rest.UpdateNodePool(req.Spec, _clusterId, _nodePoolId)
 	if err != nil {
 		return nil, err
 	}

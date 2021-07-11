@@ -22,32 +22,32 @@ func resourceClusterTemplate() *schema.Resource {
 		DeleteContext: ClusterTemplateDelete,
 		//
 		Schema: map[string]*schema.Schema{
-			"last_updated": &schema.Schema{
+			"last_updated": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"templates": &schema.Schema{
+			"templates": {
 				Type:     schema.TypeList,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
+						"id": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 						},
-						"cluster_type": &schema.Schema{
+						"cluster_type": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 						},
-						"name": &schema.Schema{
+						"name": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 						},
-						"description": &schema.Schema{
+						"description": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
@@ -61,10 +61,11 @@ func resourceClusterTemplate() *schema.Resource {
 
 func ClusterTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	tca := m.(*api.TcaApi)
-	if tca == nil {
-		return diag.FromErr(fmt.Errorf("nil client"))
+	_, err := GetApi(m)
+	if err != nil {
+		return diag.FromErr(err)
 	}
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 	//
@@ -94,16 +95,15 @@ func ClusterTemplateCreate(ctx context.Context, d *schema.ResourceData, m interf
 	//d.SetId(strconv.Itoa(o.ID))
 
 	ClusterTemplateRead(ctx, d, m)
-
 	return diags
 }
 
 //
 func ClusterTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	tca := m.(*api.TcaApi)
-	if tca == nil {
-		return diag.FromErr(fmt.Errorf("nil client"))
+	tca, err := GetApi(m)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	// Warning or errors can be collected in a slice type
@@ -124,10 +124,11 @@ func ClusterTemplateRead(ctx context.Context, d *schema.ResourceData, m interfac
 	return diags
 }
 
+//
 func ClusterTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tca := m.(*api.TcaApi)
-	if tca == nil {
-		return diag.FromErr(fmt.Errorf("nil client"))
+	_, err := GetApi(m)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	//orderID := d.Id()

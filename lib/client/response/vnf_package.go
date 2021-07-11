@@ -113,21 +113,21 @@ func (p *VnfPackage) GetFields() (map[string]interface{}, error) {
 
 // VnfPackages - list of VnfPackage
 type VnfPackages struct {
-	Packages []VnfPackage
+	Entity []VnfPackage
 }
 
 // GetVnfdID - find by either VnfdID or ProductName, id
 // or user defined data, the main objective to resolve some name
 // to catalog entity.
-func (v *VnfPackages) GetVnfdID(IdOrName string) (*VnfPackage, error) {
+func (v *VnfPackages) GetVnfdID(NameOrId string) (*VnfPackage, error) {
 
 	if v == nil {
 		return nil, fmt.Errorf("nil object")
 	}
 
-	q := strings.ToLower(IdOrName)
+	q := strings.ToLower(NameOrId)
 
-	for _, p := range v.Packages {
+	for _, p := range v.Entity {
 		// by product name
 		if p.VnfProductName == q || p.VnfdID == q || p.PID == q {
 			return &p, nil
@@ -151,7 +151,7 @@ func (v *VnfPackages) FindByCatalogName(q string) (*VnfPackage, error) {
 		return nil, fmt.Errorf("nil object")
 	}
 
-	for _, p := range v.Packages {
+	for _, p := range v.Entity {
 		if p.UserDefinedData != nil {
 			if strings.ToLower(p.UserDefinedData.Name) == strings.ToLower(q) {
 				return &p, nil
@@ -166,7 +166,7 @@ func (v *VnfPackages) FindByCatalogName(q string) (*VnfPackage, error) {
 func (v *VnfPackages) Filter(q VnfdFilterType, f func(string) bool) ([]VnfPackage, error) {
 
 	filtered := make([]VnfPackage, 0)
-	for _, v := range v.Packages {
+	for _, v := range v.Entity {
 		if q == VnfProductName && f(v.VnfProductName) {
 			filtered = append(filtered, v)
 

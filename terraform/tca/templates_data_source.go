@@ -19,11 +19,9 @@ package tca
 
 import (
 	"context"
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/spyroot/tcactl/lib/api"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"log"
 	"strconv"
@@ -178,12 +176,7 @@ func dataSourceOrderRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	var diags diag.Diagnostics
 
-	tca := m.(*api.TcaApi)
-	if tca == nil {
-		return diag.FromErr(fmt.Errorf("nil client"))
-	}
-
-	_, err := tca.GetAuthorization()
+	tca, err := GetApi(m)
 	if err != nil {
 		return diag.FromErr(err)
 	}

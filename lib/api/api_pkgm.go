@@ -1,47 +1,44 @@
+// Package api
+// Copyright 2020-2021 Author.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+// Mustafa mbayramo@vmware.com
 package api
 
 import (
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/response"
 )
 
-// GetEntireCatalog - return all CNF/VNF packages
-// onboarded in TCA.
+// GetEntireCatalog - api call return entire TCA catalog.
 func (a *TcaApi) GetEntireCatalog() (*response.VnfPackages, error) {
-
-	glog.Infof("Retrieving vnf packages.")
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
+	glog.Infof("Fetching entire tca catalog")
 	return a.rest.GetAllCatalog()
 }
 
-// GetVnfPkgm - return packages
+// GetVnfPkgm - return catalog entity
 // pkgId is id of package in TCA
 // filter
 func (a *TcaApi) GetVnfPkgm(filter string, pkgId string) (*response.VnfPackages, error) {
-
-	glog.Infof("Retrieving vnf packages.")
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
+	glog.Infof("Fetching catalog entity id %s", pkgId)
 	return a.rest.GetVnfPkgm(filter, pkgId)
 }
 
 // GetCatalogId return vnf Package ID and VNFD ID
 func (a *TcaApi) GetCatalogId(catalogId string) (string, string, error) {
-
-	glog.Infof("Retrieving vnf packages.")
-
-	if a.rest == nil {
-		return "", "", fmt.Errorf("rest interface is nil")
-	}
-
+	glog.Infof("Retrieving vnf packages for catalog entity %s.", catalogId)
 	return a.rest.GetPackageCatalogId(catalogId)
 }
 
@@ -49,7 +46,7 @@ func (a *TcaApi) GetCatalogId(catalogId string) (string, string, error) {
 // catalog entity and vdu package.
 func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *response.VduPackage, error) {
 
-	glog.Infof("Acquiring catalog information for entity %s", nfdName)
+	glog.Infof("Fetching catalog entity %s", nfdName)
 
 	vnfCatalog, err := a.rest.GetVnfPkgm("", "")
 	if err != nil || vnfCatalog == nil {
@@ -64,6 +61,5 @@ func (a *TcaApi) GetCatalogAndVdu(nfdName string) (*response.VnfPackage, *respon
 	}
 
 	v, err := a.rest.GetVnfPkgmVnfd(catalogEntity.PID)
-
 	return catalogEntity, v, err
 }

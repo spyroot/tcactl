@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/csar"
@@ -30,7 +31,8 @@ import (
 	"path/filepath"
 )
 
-// GetAllPackages return all packages
+// GetAllPackages return all catalog entries
+// as response.CnfsExtended object
 func (a *TcaApi) GetAllPackages() (*response.CnfsExtended, error) {
 
 	respond, err := a.GetVnflcm()
@@ -46,13 +48,14 @@ func (a *TcaApi) GetAllPackages() (*response.CnfsExtended, error) {
 	return &pkgs, nil
 }
 
+//
 func (a *TcaApi) GetVnflcm(f ...string) (interface{}, error) {
 	return a.rest.GetVnflcm(f...)
 }
 
-// GetCnfs method return list of cnf instances in
+// GetAllInstances api method returns a list of CNF/VNF instances in
 // response.CnfsExtended that encapsulate in collection
-func (a *TcaApi) GetCnfs() (*response.CnfsExtended, error) {
+func (a *TcaApi) GetAllInstances() (*response.CnfsExtended, error) {
 
 	genericRespond, err := a.rest.GetVnflcm()
 	if err != nil {
@@ -83,8 +86,12 @@ func (a *TcaApi) CreateCatalogEntity(
 
 	glog.Infof("Create new package. Received substitution %v.", substitution)
 
-	if a.rest == nil {
-		return false, fmt.Errorf("rest interface is nil")
+	if len(fileName) == 0 {
+		return false, api_errors.NewFileNotFound(fileName)
+	}
+
+	if len(catalogName) == 0 {
+		return false, api_errors.NewInvalidArgument(catalogName)
 	}
 
 	// Apply transformation to a CSAR file
@@ -104,7 +111,7 @@ func (a *TcaApi) CreateCatalogEntity(
 		return false, err
 	}
 
-	// Read new CSAR file, to buffer
+	// Read  csar file, to buffer
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		glog.Errorf("Failed read generated csar %v", err)
@@ -115,7 +122,7 @@ func (a *TcaApi) CreateCatalogEntity(
 	uploadReq := client.NewPackageUpload(catalogName)
 	respond, err := a.rest.CreateVnfPkgmVnfd(uploadReq)
 	if err != nil {
-		glog.Errorf("Failed create cnf package entity generated csar %v", err)
+		glog.Errorf("Failed create catalog entity from generated csar %v", err)
 		return false, err
 	}
 
@@ -134,23 +141,21 @@ func (a *TcaApi) CreateCatalogEntity(
 	return ok, nil
 }
 
-// DeleteCatalogEntity method delete catalog entity
-func (a *TcaApi) DeleteCatalogEntity(
-	catalogName string) (bool, error) {
+// DeleteCatalogEntity api method deletes catalog entity
+func (a *TcaApi) DeleteCatalogEntity(catalogName string) (bool, error) {
 
 	glog.Infof("Delete catalog entity %v.", catalogName)
 
-	if a.rest == nil {
-		return false, fmt.Errorf("rest interface is nil")
+	if len(catalogName) == 0 {
+		return false, api_errors.NewInvalidArgument(catalogName)
 	}
 
-	pid, _, err := a.rest.GetPackageCatalogId(catalogName)
+	catalogId, _, err := a.rest.GetPackageCatalogId(catalogName)
 	if err != nil {
 		return false, err
 	}
 
-	// upload csar to a catalog
-	ok, err := a.rest.DeleteVnfPkgmVnfd(pid)
+	ok, err := a.rest.DeleteVnfPkgmVnfd(catalogId)
 	if err != nil {
 		return false, err
 	}

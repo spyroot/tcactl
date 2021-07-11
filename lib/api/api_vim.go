@@ -23,51 +23,48 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"strings"
 )
 
-// GetVim return vim
-func (a *TcaApi) GetVim(ctx context.Context, NameOrVimId string) (*response.TenantSpecs, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
+// GetVim return cloud provider.
+func (a *TcaApi) GetVim(ctx context.Context, NameOrId string) (*response.TenantSpecs, error) {
 
 	var (
-		vimId = NameOrVimId
-		err   error
+		providerId = NameOrId
+		err        error
 	)
 
+	glog.Infof("Retrieving vim specString vim id %s", providerId)
+
+	if len(NameOrId) == 0 {
+		return nil, api_errors.NewInvalidSpec("empty cloud provider id or name")
+	}
+
 	// vim id is format vmware_numeric
-	inputs := strings.Split(NameOrVimId, "_")
+	inputs := strings.Split(NameOrId, "_")
 
 	if len(inputs) != 2 {
 		// if we just string it a name
 		if len(inputs) == 1 {
-			vimId, err = a.ResolveVimId(ctx, NameOrVimId)
+			providerId, err = a.ResolveVimId(ctx, NameOrId)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			return nil, &InvalidVimFormat{errMsg: NameOrVimId}
+			return nil, api_errors.NewInvalidSpec(NameOrId)
 		}
 	}
 
-	glog.Infof("Retrieving vim specString vim id %s", vimId)
-
-	return a.rest.GetVim(ctx, vimId)
+	return a.rest.GetVim(ctx, providerId)
 }
 
 // GetVimComputeClusters - return compute cluster attached to VIM
 // For example VMware VIM is vCenter.
 func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*models.VMwareClusters, error) {
-
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
 
 	if len(cloudName) == 0 {
 		return nil, errors.New("empty cloud provider")
@@ -83,24 +80,18 @@ func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*
 		return nil, err
 	}
 
-	if tenant.IsVMware() {
-		//
-		glog.Infof("Retrieving list for cloud provider %v '%v'",
-			tenant.HcxUUID, tenant.VimURL)
-
-		f := specs.NewClusterFilterQuery(tenant.HcxUUID)
-		clusterInventory, err := a.rest.GetVmwareCluster(ctx, f)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return clusterInventory, nil
-	} else {
+	if !tenant.IsVMware() {
 		return nil, &UnsupportedCloudProvider{errMsg: cloudName}
 	}
 
-	return nil, &CloudProviderNotFound{errMsg: cloudName}
+	glog.Infof("Fetching list for cloud provider %v '%v'", tenant.HcxUUID, tenant.VimURL)
+	f := specs.NewClusterFilterQuery(tenant.HcxUUID)
+	clusterInventory, err := a.rest.GetVmwareCluster(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterInventory, nil
 }
 
 // GetVimNetworks - method return network attached
@@ -121,7 +112,7 @@ func (a *TcaApi) GetVimNetworks(ctx context.Context, cloudName string) (*models.
 		return nil, err
 	}
 
-	glog.Infof("Retrieving network list for cloud provider uuid %s, %s",
+	glog.Infof("Fetching network list for cloud provider uuid %s, %s",
 		tenant.HcxUUID, tenant.VimURL)
 
 	if !tenant.IsVMware() {

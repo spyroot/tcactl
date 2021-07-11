@@ -29,24 +29,32 @@ import (
 
 // New - return new instance
 func New() *schema.Provider {
+	//
 	return &schema.Provider{
+		//
 		Schema: map[string]*schema.Schema{
-			"tca_username": &schema.Schema{
+			"tca_username": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Optional:    false,
 				DefaultFunc: schema.EnvDefaultFunc("TCA_USERNAME", nil),
 			},
-			"tca_password": &schema.Schema{
+			"tca_password": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Optional:    false,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TCA_PASSWORD", nil),
 			},
-			"tca_url": &schema.Schema{
+			"tca_url": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Optional:    false,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TCA_URL", nil),
+			},
+			"tca_ssl_verify": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   false,
+				DefaultFunc: schema.EnvDefaultFunc("TCA_SSL_VERIFY", nil),
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
@@ -57,16 +65,21 @@ func New() *schema.Provider {
 			"tca_templates": dataSourceTemplates(),
 			"tca_clusters":  dataSourceClusters(),
 		},
-
 		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-//
+//providerConfigure configure tca provider
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
 	username := d.Get("tca_username").(string)
 	password := d.Get("tca_password").(string)
+	sslVerifyEnv := d.Get("tca_ssl_verify")
+	sslVerify := false
+	if sslVerifyEnv != nil {
+		sslVerify = sslVerifyEnv.(bool)
+	}
+
 	tcaUrl := d.Get("tca_url").(string)
 
 	log.Println("[INFO] Connecting")
@@ -84,31 +97,12 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diag.FromErr(fmt.Errorf("TCA_URL not set"))
 	}
 
-	if (username != "") && (password != "") {
-		c, err := api.NewTcaApi(&client.RestClient{
-			BaseURL:  tcaUrl,
-			SkipSsl:  true,
-			Client:   nil,
-			Username: username,
-			Password: password,
-		},
-		)
-
-		if err != nil {
-			return nil, diag.FromErr(err)
-		}
-
-		return c, diags
+	restClient, err := client.NewRestClient(tcaUrl, sslVerify, username, password)
+	if err != nil {
+		return nil, diag.FromErr(err)
 	}
 
-	c, err := api.NewTcaApi(&client.RestClient{
-		BaseURL:  "",
-		SkipSsl:  true,
-		Client:   nil,
-		Username: username,
-		Password: password,
-	},
-	)
+	c, err := api.NewTcaApi(restClient)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}

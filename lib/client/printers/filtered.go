@@ -26,7 +26,7 @@ import (
 // VnfPackageFilteredOutput output filter for VnfPackages
 func VnfPackageFilteredOutput(r *response.VnfPackages, style ui.PrinterStyle) {
 	fields := style.GetFields()
-	for _, vnfPackage := range r.Packages {
+	for _, vnfPackage := range r.Entity {
 		for _, f := range fields {
 			f = vnfPackage.GetField(f)
 			fmt.Println(f)
