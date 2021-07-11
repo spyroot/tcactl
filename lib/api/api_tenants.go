@@ -20,11 +20,12 @@ package api
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
+	errnos "github.com/spyroot/tcactl/pkg/errors"
 )
 
 // TenantFields method return all struct
@@ -92,19 +93,22 @@ func (a *TcaApi) DeleteTenantsProvider(ctx context.Context, tenantCluster string
 func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.TcaTask, error) {
 
 	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
+		return nil, errnos.RestNil
 	}
 
-	err := a.specValidator.Struct(spec)
+	if spec == nil {
+		return nil, errnos.SpecNil
+	}
+
+	err := spec.Validate()
 	if err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		return nil, validationErrors
+		return nil, err
 	}
 
 	// remove kind and encode password as base64
 	specCopy := spec
-	specCopy.SpecType = nil
-	//	specString.Password = b64.StdEncoding.EncodeToString([]byte(specString.Password))
+	specCopy.SpecType = ""
+	specCopy.Password = b64.StdEncoding.EncodeToString([]byte(spec.Password))
 
 	return a.rest.RegisterCloudProvider(specCopy)
 }

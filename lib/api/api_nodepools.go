@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
-	"github.com/pkg/errors"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
@@ -33,7 +33,7 @@ import (
 func (a *TcaApi) GetNodePool(ctx context.Context, clusterId string) (*response.NodePool, error) {
 
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 
 	clusters, err := a.rest.GetClusters(ctx)
@@ -61,7 +61,7 @@ func (a *TcaApi) GetNodePool(ctx context.Context, clusterId string) (*response.N
 func (a *TcaApi) ResolvePoolAndCluster(ctx context.Context, cluster string, nodePool string) (string, string, error) {
 
 	if a.rest == nil {
-		return "", "", errnos.RestNilError
+		return "", "", errnos.RestNil
 	}
 
 	_clusterId := cluster
@@ -114,7 +114,7 @@ func (a *TcaApi) ResolvePoolAndCluster(ctx context.Context, cluster string, node
 func (a *TcaApi) DeleteNodePool(ctx context.Context, cluster string, nodePool string) (*models.TcaTask, error) {
 
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 
 	_clusterId, _nodepoolId, err := a.ResolvePoolAndCluster(ctx, cluster, nodePool)
@@ -131,28 +131,31 @@ func (a *TcaApi) DeleteNodePool(ctx context.Context, cluster string, nodePool st
 
 // updateNodePoolValidator
 // specString Validator
-func (a *TcaApi) nodePoolValidator(spec *specs.NodePoolSpec) error {
+func (a *TcaApi) nodePoolValidator(spec *specs.SpecNodePool) error {
 
 	if len(spec.PlacementParams) == 0 {
-		return errors.New("node pool spec must contain placement params")
+		return api_errors.NewInvalidSpec("node pool spec must contain placement params")
 	}
 	if len(spec.Networks) == 0 {
-		return errors.New("node pool spec must network list")
+		return api_errors.NewInvalidSpec("node pool spec must network list")
 	}
 	if spec.Cpu == 0 {
-		return errors.New("node pool spec contain zero cpu. Spec must contain same number of cpu.")
+		return api_errors.NewInvalidSpec("node pool spec contain zero cpu. Spec must contain same number of cpu.")
 	}
 	if spec.Memory == 0 {
-		return errors.New("node pool spec contain zero memory. Spec must contain same memory value.")
+		return api_errors.NewInvalidSpec("node pool spec contain zero memory. Spec must contain same memory value.")
 	}
 	if spec.Storage == 0 {
-		return errors.New("node pool spec contain zero storage. Spec must contain same storage value")
+		return api_errors.NewInvalidSpec("node pool spec contain zero storage. Spec must contain same storage value")
 	}
 
-	err := a.specValidator.Struct(spec)
+	if spec == nil {
+		return api_errors.NewInvalidSpec("Spec is nil")
+	}
+
+	err := spec.Validate()
 	if err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		return validationErrors
+		return err
 	}
 
 	return nil
@@ -164,7 +167,7 @@ func (a *TcaApi) nodePoolValidator(spec *specs.NodePoolSpec) error {
 func (a *TcaApi) CreateNewNodePool(ctx context.Context, req *NodePoolCreateApiReq) (*models.TcaTask, error) {
 
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 
 	if req == nil {
@@ -203,7 +206,7 @@ func (a *TcaApi) CreateNewNodePool(ctx context.Context, req *NodePoolCreateApiRe
 	}
 
 	specCopy := req.Spec
-	specCopy.SpecType = nil
+	specCopy.SpecType = ""
 
 	task, err := a.rest.CreateNewNodePool(req.Spec, _clusterId)
 	if err != nil {
@@ -232,10 +235,10 @@ func (a *TcaApi) CreateNewNodePool(ctx context.Context, req *NodePoolCreateApiRe
 func (a *TcaApi) UpdateNodePool(ctx context.Context, req *NodePoolCreateApiReq) (*models.TcaTask, error) {
 
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 
 	if err := a.nodePoolValidator(req.Spec); err != nil {
@@ -259,7 +262,7 @@ func (a *TcaApi) UpdateNodePool(ctx context.Context, req *NodePoolCreateApiReq) 
 	}
 
 	specCopy := req.Spec
-	specCopy.SpecType = nil
+	specCopy.SpecType = ""
 
 	task, err := a.rest.UpdateNodePool(req.Spec, _clusterId, _notebookId)
 	if err != nil {

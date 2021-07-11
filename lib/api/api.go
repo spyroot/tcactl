@@ -21,7 +21,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"github.com/spyroot/tcactl/lib/api_errors"
@@ -79,7 +78,6 @@ type TcaApi struct {
 	rest *client.RestClient
 
 	// specString validator.
-	specValidator *validator.Validate
 }
 
 // NewTcaApi - return instance for API.
@@ -94,7 +92,6 @@ func NewTcaApi(r *client.RestClient) (*TcaApi, error) {
 		rest: r,
 	}
 
-	a.specValidator = validator.New()
 	return a, nil
 }
 

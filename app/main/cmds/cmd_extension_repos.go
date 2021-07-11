@@ -106,8 +106,14 @@ Command attaches cloud provider to TCA.`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			spec, err := specs.ExtensionSpecsFromFile(args[0])
+			_spec, err := specs.SpecExtension{}.SpecsFromFile(args[0])
 			CheckErrLogError(err)
+
+			spec, ok := (*_spec).(*specs.SpecExtension)
+			if !ok {
+				CheckErrLogError(fmt.Errorf("invalid spec"))
+				return
+			}
 
 			eid, err := ctl.tca.CreateExtension(ctx, spec)
 			CheckErrLogError(err)
@@ -175,8 +181,8 @@ func (ctl *TcaCtl) CmdUpdateExtension() *cobra.Command {
 		Short: "Command update extension.",
 		Long: templates.LongDesc(`
 
-Command updates extension.  For example update allow attach extension such as Harbor repository 
-to selected workload cluster`),
+Extension command updates extension.  For example, update extension allows attach extension such as 
+Harbor repository to selected workload cluster.`),
 
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -193,9 +199,16 @@ to selected workload cluster`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			spec, err := specs.ExtensionSpecsFromFile(args[0])
+			_spec, err := specs.SpecExtension{}.SpecsFromFile(args[0])
 			CheckErrLogError(err)
-			ok, err := ctl.tca.UpdateExtension(ctx, spec)
+
+			spec, ok := (*_spec).(*specs.SpecExtension)
+			if !ok {
+				CheckErrLogError(fmt.Errorf("invalid spec"))
+				return
+			}
+
+			ok, err = ctl.tca.UpdateExtension(ctx, spec)
 			CheckErrLogError(err)
 
 			if ok {

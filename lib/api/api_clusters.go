@@ -246,6 +246,11 @@ func (a *TcaApi) CreateClusters(ctx context.Context, req *ClusterCreateApiReq) (
 		return nil, api_errors.NewInvalidSpec("new cluster specString can't be nil")
 	}
 
+	err := req.Spec.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	// fix specString
 	normalizeSpec(req.Spec)
 

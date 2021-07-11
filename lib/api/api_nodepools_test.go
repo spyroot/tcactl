@@ -15,20 +15,32 @@ import (
 )
 
 // specNodePoolStringReaderHelper test helper return node specString
-func specNodePoolStringReaderHelper(s string) *specs.NodePoolSpec {
-	r, err := specs.ReadNodeSpecFromString(s)
+func specNodePoolStringReaderHelper(s string) *specs.SpecNodePool {
+
+	_spec, err := specs.SpecNodePool{}.SpecsFromString(s)
 	io.CheckErr(err)
-	return r
+
+	spec, ok := (*_spec).(*specs.SpecNodePool)
+	if !ok {
+		io.CheckErr("wrong instance")
+	}
+
+	return spec
 }
 
 // specNodePoolStringReaderHelper test helper return node specString
-func specNodePoolFromFile(spec string) *specs.NodePoolSpec {
+func specNodePoolFromFile(spec string) *specs.SpecNodePool {
 
 	tmpFile, err := ioutil.TempFile("", "tcactltest")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(tmpFile.Name())
 
 	// write to file,close it and read specString
 	if _, err = tmpFile.Write([]byte(spec)); err != nil {
@@ -40,8 +52,13 @@ func specNodePoolFromFile(spec string) *specs.NodePoolSpec {
 	}
 
 	// read from file
-	r, err := specs.ReadNodeSpecFromFile(tmpFile.Name())
+	_spec, err := specs.SpecNodePool{}.SpecsFromFile(tmpFile.Name())
 	io.CheckErr(err)
+
+	r, ok := (*_spec).(*specs.SpecNodePool)
+	if !ok {
+		io.CheckErr("wrong instance")
+	}
 
 	return r
 }
@@ -53,7 +70,7 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 	tests := []struct {
 		name         string
 		rest         *client.RestClient
-		spec         *specs.NodePoolSpec
+		spec         *specs.SpecNodePool
 		wantErr      bool
 		reset        bool
 		withoutlabel bool
@@ -160,7 +177,7 @@ func TestTcaUpdateNodePool(t *testing.T) {
 	tests := []struct {
 		name      string
 		rest      *client.RestClient
-		spec      *specs.NodePoolSpec
+		spec      *specs.SpecNodePool
 		wantErr   bool
 		reset     bool
 		doBlock   bool
@@ -606,42 +623,6 @@ var jsonNodeSpec = `
         }
     }
 }
-`
-
-var yamlNodeSpec = `
-id: ""
-clone_mode: ""
-cpu: 2
-labels:
-    - type=hub
-memory: 16384
-name: temp
-networks:
-    - label: MANAGEMENT
-      network_name: ""
-      nameservers:
-        - 10.246.2.9
-placement_params: []
-replica: 1
-storage: 50
-config:
-    cpu_manager_policy:
-        type: ""
-        policy: ""
-        properties:
-            kube_reserved:
-                cpu: 0
-                memoryInGiB: 0
-            system_reserved:
-                cpu: 0
-                memoryInGiB: 0
-    health_check:
-        nodeStartupTimeout: ""
-        unhealthy_conditions: []
-status: ""
-active_tasks_count: 0
-nodes: []
-is_node_customization_deprecated: false
 `
 
 var newNodePoolYamlWithoutLabel = `

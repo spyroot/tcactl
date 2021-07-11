@@ -19,16 +19,12 @@
 package api
 
 import (
-	"encoding/json"
-	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
+	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	errnos "github.com/spyroot/tcactl/pkg/errors"
-	"gopkg.in/yaml.v3"
-	"io"
-	"io/ioutil"
-	"os"
 	"strings"
 )
 
@@ -44,44 +40,45 @@ func TemplateFields() []string {
 	return keys
 }
 
-func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplateSpec, error) {
-
-	file, err := os.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	return ReadTemplateSpec(file)
-}
-
-// ReadTemplateSpecFromString read specString from reader
-func ReadTemplateSpecFromString(str string) (*response.ClusterTemplateSpec, error) {
-	r := strings.NewReader(str)
-	return ReadTemplateSpec(r)
-}
-
-// ReadTemplateSpec - Read Template Spec
-func ReadTemplateSpec(b io.Reader) (*response.ClusterTemplateSpec, error) {
-
-	var spec response.ClusterTemplateSpec
-
-	buffer, err := ioutil.ReadAll(b)
-	if err != nil {
-		return nil, err
-	}
-
-	err = yaml.Unmarshal(buffer, &spec)
-	if err == nil {
-		return &spec, nil
-	}
-
-	err = json.Unmarshal(buffer, &spec)
-	if err == nil {
-		return &spec, nil
-	}
-
-	return nil, &InvalidSpec{"unknown format"}
-}
+//
+//func ReadTemplateSpecFromFile(fileName string) (*response.ClusterTemplateSpec, error) {
+//
+//	file, err := os.Open(fileName)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return ReadTemplateSpec(file)
+//}
+//
+//// ReadTemplateSpecFromString read specString from reader
+//func ReadTemplateSpecFromString(str string) (*response.ClusterTemplateSpec, error) {
+//	r := strings.NewReader(str)
+//	return ReadTemplateSpec(r)
+//}
+//
+//// ReadTemplateSpec - Read Template Spec
+//func ReadTemplateSpec(b io.Reader) (*response.ClusterTemplateSpec, error) {
+//
+//	var spec response.ClusterTemplateSpec
+//
+//	buffer, err := ioutil.ReadAll(b)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	err = yaml.Unmarshal(buffer, &spec)
+//	if err == nil {
+//		return &spec, nil
+//	}
+//
+//	err = json.Unmarshal(buffer, &spec)
+//	if err == nil {
+//		return &spec, nil
+//	}
+//
+//	return nil, &InvalidSpec{"unknown format"}
+//}
 
 // GetClusterTemplates - return list of cluster templates
 func (a *TcaApi) GetClusterTemplates() (*response.ClusterTemplates, error) {
@@ -89,19 +86,28 @@ func (a *TcaApi) GetClusterTemplates() (*response.ClusterTemplates, error) {
 	glog.Infof("Retrieving vnf packages.")
 
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 
 	return a.rest.GetClusterTemplates()
 }
 
 // CreateClusterTemplate - create cluster template from initialSpec
-func (a *TcaApi) CreateClusterTemplate(spec *response.ClusterTemplateSpec) (string, error) {
+func (a *TcaApi) CreateClusterTemplate(spec *specs.SpecClusterTemplate) (string, error) {
 
 	glog.Infof("Retrieving vnf packages.")
 
 	if a.rest == nil {
-		return "", errnos.RestNilError
+		return "", errnos.RestNil
+	}
+
+	if spec == nil {
+		return "", api_errors.NewInvalidSpec("Spec is nil")
+	}
+
+	err := spec.Validate()
+	if err != nil {
+		return "", err
 	}
 
 	_id, err := a.ResolveTemplateId(spec.Name)
@@ -122,12 +128,6 @@ func (a *TcaApi) CreateClusterTemplate(spec *response.ClusterTemplateSpec) (stri
 		return "", &InvalidSpec{" worker node section not present."}
 	}
 
-	err = a.specValidator.Struct(spec)
-	if err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		return "", validationErrors
-	}
-
 	return spec.Name, a.rest.CreateClusterTemplate(spec)
 }
 
@@ -137,7 +137,7 @@ func (a *TcaApi) GetClusterTemplate(templateId string) (*response.ClusterTemplat
 	glog.Infof("Retrieving vnf packages.")
 
 	if a.rest == nil {
-		return nil, errnos.RestNilError
+		return nil, errnos.RestNil
 	}
 
 	var (
@@ -157,12 +157,21 @@ func (a *TcaApi) GetClusterTemplate(templateId string) (*response.ClusterTemplat
 
 // UpdateClusterTemplate - updates cluster template based
 // on input initialSpec
-func (a *TcaApi) UpdateClusterTemplate(spec *response.ClusterTemplateSpec) error {
+func (a *TcaApi) UpdateClusterTemplate(spec *specs.SpecClusterTemplate) error {
 
 	glog.Infof("Updating cluster template. %v", spec)
 
 	if a.rest == nil {
-		return errnos.RestNilError
+		return errnos.RestNil
+	}
+
+	if spec == nil {
+		return api_errors.NewInvalidSpec("Spec is nil")
+	}
+
+	err := spec.Validate()
+	if err != nil {
+		return err
 	}
 
 	if IsValidUUID(spec.Id) {
@@ -181,12 +190,6 @@ func (a *TcaApi) UpdateClusterTemplate(spec *response.ClusterTemplateSpec) error
 		spec.Id = id
 	}
 
-	err := a.specValidator.Struct(spec)
-	if err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		return validationErrors
-	}
-
 	return a.rest.UpdateClusterTemplate(spec)
 }
 
@@ -195,7 +198,7 @@ func (a *TcaApi) UpdateClusterTemplate(spec *response.ClusterTemplateSpec) error
 func (a *TcaApi) DeleteTemplate(template string) error {
 
 	if a.rest == nil {
-		return errnos.RestNilError
+		return errnos.RestNil
 	}
 
 	var templateId = ""

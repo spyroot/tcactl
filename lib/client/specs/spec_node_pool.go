@@ -64,8 +64,8 @@ func (m *InvalidPoolSpec) Error() string {
 	return m.errMsg
 }
 
-// NodePoolSpec - a request to create new node pool and attach to a target.
-type NodePoolSpec struct {
+// SpecNodePool - a request to create new node pool and attach to a target.
+type SpecNodePool struct {
 	SpecType                      SpecType                 `json:"kind,omitempty" yaml:"kind,omitempty" valid:"required~kind is mandatory spec field"`
 	Id                            string                   `json:"id,omitempty" yaml:"id,omitempty"`
 	Name                          string                   `json:"name" yaml:"name" validate:"required" valid:"required~name is mandatory spec field"`
@@ -87,13 +87,13 @@ type NodePoolSpec struct {
 	specError error
 }
 
-func (t *NodePoolSpec) validateCloneMode() bool {
+func (t *SpecNodePool) validateCloneMode() bool {
 	return strings.ToLower(t.CloneMode) == strings.ToLower(FullCloneMode) ||
 		strings.ToLower(t.CloneMode) == strings.ToLower(LinkedClone)
 }
 
 //GetKind return spec kind
-func (t *NodePoolSpec) GetKind() SpecType {
+func (t *SpecNodePool) GetKind() SpecType {
 	return t.SpecType
 }
 
@@ -102,21 +102,17 @@ type InvalidNodePoolSpec struct {
 	errMsg string
 }
 
-func isFullClone() {
-
-}
-
 //
 func (m *InvalidNodePoolSpec) Error() string {
 	return m.errMsg
 }
 
-func (t *NodePoolSpec) Kind() SpecType {
+func (t *SpecNodePool) Kind() SpecType {
 	return t.SpecType
 }
 
 //Default  sets all all optional parameter to default value
-func (t *NodePoolSpec) Default() error {
+func (t *SpecNodePool) Default() error {
 
 	// set default clone mode
 	t.CloneMode = LinkedClone
@@ -128,22 +124,22 @@ func (t *NodePoolSpec) Default() error {
 
 //SpecsFromString method read cluster spec from string
 //and return instance
-func (t NodePoolSpec) SpecsFromString(s string, f ...SpecFormatType) (*RequestSpec, error) {
-	return ReadSpecFromFromString(s, new(NodePoolSpec), f...)
+func (t SpecNodePool) SpecsFromString(s string, f ...SpecFormatType) (*RequestSpec, error) {
+	return ReadSpecFromFromString(s, new(SpecNodePool), f...)
 }
 
 //SpecsFromFile method reads instance form string
-func (t NodePoolSpec) SpecsFromFile(fileName string, f ...SpecFormatType) (*RequestSpec, error) {
-	return ReadSpecFromFromFile(fileName, new(NodePoolSpec), f...)
+func (t SpecNodePool) SpecsFromFile(fileName string, f ...SpecFormatType) (*RequestSpec, error) {
+	return ReadSpecFromFromFile(fileName, new(SpecNodePool), f...)
 }
 
 // SpecsFromReader reads node pool spec from io.Reader
-func (t NodePoolSpec) SpecsFromReader(r io.Reader, f ...SpecFormatType) (*RequestSpec, error) {
-	return ReadSpec(r, new(NodePoolSpec), f...)
+func (t SpecNodePool) SpecsFromReader(r io.Reader, f ...SpecFormatType) (*RequestSpec, error) {
+	return ReadSpec(r, new(SpecNodePool), f...)
 }
 
 // IsValid return false if validator set error
-func (t *NodePoolSpec) IsValid() bool {
+func (t *SpecNodePool) IsValid() bool {
 	if t.specError != nil {
 		return false
 	}
@@ -151,7 +147,7 @@ func (t *NodePoolSpec) IsValid() bool {
 }
 
 //Validate method validate node pool specs
-func (t *NodePoolSpec) Validate() error {
+func (t *SpecNodePool) Validate() error {
 
 	if t == nil {
 		return &InvalidPoolSpec{errMsg: "nil instance"}

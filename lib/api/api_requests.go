@@ -22,13 +22,13 @@ import "github.com/spyroot/tcactl/lib/client/specs"
 
 // NodePoolCreateApiReq api request issued to create new node pool
 type NodePoolCreateApiReq struct {
-	// Spec is a specs.NodePoolSpec spec
-	Spec *specs.NodePoolSpec
+	// Spec is a specs.SpecNodePool spec
+	Spec *specs.SpecNodePool
 
 	// Cluster is cluster name or cluster id
 	Cluster string
 
-	//
+	// dry run or apply change
 	IsDryRun bool
 
 	// if node pool creation needs to block

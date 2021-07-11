@@ -21,7 +21,6 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"github.com/golang/glog"
 	_ "github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/api_errors"
@@ -146,15 +145,19 @@ func (a *TcaApi) CreateExtension(ctx context.Context, spec *specs.SpecExtension)
 		return "", errors.NilError
 	}
 
-	err := a.specValidator.Struct(spec)
+	if spec == nil {
+		return "", api_errors.NewInvalidSpec("Spec is nil")
+	}
+
+	err := spec.Validate()
 	if err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		return "", validationErrors
+		return "", err
 	}
 
 	// remove kind and encode password as base64
 	specCopy := spec
-	specCopy.SpecType = nil
+	specCopy.SpecType = ""
+
 	if len(spec.AccessInfo.Password) > 0 {
 		spec.AccessInfo.Password = b64.StdEncoding.EncodeToString([]byte(spec.AccessInfo.Password))
 	}
@@ -208,10 +211,13 @@ func (a *TcaApi) UpdateExtension(ctx context.Context, spec *specs.SpecExtension)
 		return false, errors.NilError
 	}
 
-	err := a.specValidator.Struct(spec)
+	if spec == nil {
+		return false, api_errors.NewInvalidSpec("Spec is nil")
+	}
+
+	err := spec.Validate()
 	if err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		return false, validationErrors
+		return false, err
 	}
 
 	// remove kind and encode password as base64
@@ -230,7 +236,7 @@ func (a *TcaApi) UpdateExtension(ctx context.Context, spec *specs.SpecExtension)
 	}
 
 	specCopy := spec
-	specCopy.SpecType = nil
+	specCopy.SpecType = ""
 
 	err = a.resolveVimInfo(ctx, spec)
 	if err != nil {

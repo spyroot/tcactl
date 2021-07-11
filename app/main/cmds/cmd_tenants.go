@@ -41,10 +41,8 @@ func (ctl *TcaCtl) CmdVims() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "tenant [tenant vim or nothing for list]",
 		Short: "Command retrieves particular cloud provider or list of all providers.",
-		Long: `
-
-Command retrieves particular cloud provider or list of all providers.`,
-
+		Long: templates.LongDesc(`
+Tenant command retrieves particular cloud provider or lists all attached cloud providers.`),
 		//Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -176,9 +174,7 @@ func (ctl *TcaCtl) CmdCreateTenant() *cobra.Command {
 		Use:   "tenant [spec file]",
 		Short: "Command attaches cloud provider to TCA.",
 		Long: templates.LongDesc(`
-
-Command attaches cloud provider to TCA.`),
-
+tenant command attaches cloud provider to TCA.`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -192,8 +188,14 @@ Command attaches cloud provider to TCA.`),
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
-			spec, err := specs.ProviderSpecsFromFile(args[0])
+			_spec, err := specs.SpecCloudProvider{}.SpecsFromFile(args[0])
 			CheckErrLogError(err)
+
+			spec, ok := (*_spec).(*specs.SpecCloudProvider)
+			if !ok {
+				CheckErrLogError(fmt.Errorf("invalid spec"))
+				return
+			}
 
 			_, err = ctl.tca.CreateTenantProvider(spec)
 			CheckErrLogError(err)
@@ -219,9 +221,8 @@ func (ctl *TcaCtl) CmdUpdateTenant() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "tenant [spec file]",
 		Short: "Command update cloud provider details and trigger re-attach.",
-		Long: `
-
-Command update cloud provider details and trigger re-attach.`,
+		Long: templates.LongDesc(`
+Command update cloud provider details and trigger re-attach.`),
 
 		//Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

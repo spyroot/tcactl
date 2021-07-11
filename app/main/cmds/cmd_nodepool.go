@@ -42,9 +42,10 @@ func (ctl *TcaCtl) CmdDescClusterNodePools() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "pools [name or id]",
-		Short:   "Command describes all node pool",
-		Long:    templates.LongDesc(`Command describes all node pool, it outputs all node pool currently in a system`),
+		Use:   "pools [name or id]",
+		Short: "Command describes all node pool",
+		Long: templates.LongDesc(
+			`Command describes all node pool, it outputs all node pool currently in a system.`),
 		Example: "tcactl describe pools",
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -224,16 +225,22 @@ Command create additional node pool on target kubernetes cluster.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			nodePoolSpec, err := specs.ReadNodeSpecFromFile(args[1])
+			_spec, err := specs.SpecNodePool{}.SpecsFromFile(args[0])
 			CheckErrLogError(err)
 
-			if isDry && nodePoolSpec != nil {
-				err := io.YamlPrinter(nodePoolSpec, false)
+			spec, ok := (*_spec).(*specs.SpecNodePool)
+			if !ok {
+				CheckErrLogError(fmt.Errorf("invalid spec"))
+				return
+			}
+
+			if isDry && spec != nil {
+				err := io.YamlPrinter(spec, false)
 				CheckErrLogError(err)
 			}
 
 			task, err := ctl.tca.CreateNewNodePool(ctx, &api.NodePoolCreateApiReq{
-				Spec:       nodePoolSpec,
+				Spec:       spec,
 				Cluster:    args[0],
 				IsDryRun:   isDry,
 				IsVerbose:  showProgress,
@@ -298,16 +305,22 @@ Command update node pool for target kubernetes cluster.`),
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			nodePoolSpec, err := specs.ReadNodeSpecFromFile(args[1])
+			_spec, err := specs.SpecNodePool{}.SpecsFromFile(args[0])
 			CheckErrLogError(err)
 
-			if isDry && nodePoolSpec != nil {
-				err := io.YamlPrinter(nodePoolSpec, false)
+			spec, ok := (*_spec).(*specs.SpecNodePool)
+			if !ok {
+				CheckErrLogError(fmt.Errorf("invalid spec"))
+				return
+			}
+
+			if isDry && spec != nil {
+				err := io.YamlPrinter(spec, false)
 				CheckErrLogError(err)
 			}
 
 			task, err := ctl.tca.UpdateNodePool(ctx, &api.NodePoolCreateApiReq{
-				Spec:       nodePoolSpec,
+				Spec:       spec,
 				Cluster:    args[0],
 				IsDryRun:   isDry,
 				IsVerbose:  showProgress,

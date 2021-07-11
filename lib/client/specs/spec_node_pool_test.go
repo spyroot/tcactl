@@ -24,7 +24,7 @@ func TestNewNodePoolSpec_SpecsFromFile(t *testing.T) {
 
 			assetsDir := GetTestAssetsDir()
 			fileName := assetsDir + tt.file
-			spec, err := NodePoolSpec{}.SpecsFromFile(fileName)
+			spec, err := SpecNodePool{}.SpecsFromFile(fileName)
 			if tt.wantErr && err == nil {
 				t.Errorf("Test failed must not return error")
 				return
@@ -38,7 +38,7 @@ func TestNewNodePoolSpec_SpecsFromFile(t *testing.T) {
 				return
 			}
 
-			poolSpec, ok := (*spec).(*NodePoolSpec)
+			poolSpec, ok := (*spec).(*SpecNodePool)
 			if !ok {
 				t.Errorf("Test failed method return wrong type")
 				return
@@ -78,7 +78,7 @@ func TestNewNodePoolSpec_SpecsFromString(t *testing.T) {
 			b, err := ioutil.ReadFile(fileName)
 			assert.NoError(t, err)
 
-			spec, err := NodePoolSpec{}.SpecsFromString(string(b))
+			spec, err := SpecNodePool{}.SpecsFromString(string(b))
 			if tt.wantErr && err == nil {
 				t.Errorf("Test failed must not return error")
 				return
@@ -90,7 +90,7 @@ func TestNewNodePoolSpec_SpecsFromString(t *testing.T) {
 				t.Errorf("SpecsFromFile() return nil spec")
 				return
 			}
-			instanceSpec, ok := (*spec).(*NodePoolSpec)
+			instanceSpec, ok := (*spec).(*SpecNodePool)
 			if !ok {
 				t.Errorf("SpecsFromString() failed method return wrong type")
 				return

@@ -63,34 +63,43 @@ func TestCreateExtension(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			a := getTcaApi(t, rest, false)
-			spec, err := specs.ExtensionSpecFromFromString(tt.spec)
-			assert.NoError(t, err)
 			ctx := context.Background()
 
+			spec, err := specs.SpecExtension{}.SpecsFromString(tt.spec)
+			assert.NoError(t, err)
+			extensionSpec, ok := (*spec).(*specs.SpecExtension)
+			if !ok {
+				t.Errorf("SpecsFromString() failed method return wrong type")
+				return
+			}
+			assert.NotNil(t, spec)
+
 			if tt.randUser {
-				spec.AccessInfo.Username = testutil.RandString(8)
-			}
-			if tt.randRepoName {
-				spec.Name = testutil.RandString(8)
-			}
-			if len(tt.password) > 0 {
-				spec.AccessInfo.Password = tt.password
+				extensionSpec.AccessInfo.Username = testutil.RandString(8)
 			}
 
-			got, err := a.CreateExtension(ctx, spec)
+			if tt.randRepoName {
+				extensionSpec.Name = testutil.RandString(8)
+			}
+
+			if len(tt.password) > 0 {
+				extensionSpec.AccessInfo.Password = tt.password
+			}
+
+			got, err := a.CreateExtension(ctx, extensionSpec)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("TestCreateExtension() error = %v, vimErr %v", err, tt.wantErr)
+				t.Errorf("CreateExtension() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr {
 				if !IsValidUUID(got) {
-					t.Errorf("TestCreateExtension() failed create extension must return UUID")
+					t.Errorf("CreateExtension() failed create extension must return UUID")
 					return
 				}
 			}
 
-			extId, err := a.ResolveExtensionId(ctx, spec.Name)
+			extId, err := a.ResolveExtensionId(ctx, extensionSpec.Name)
 			if err != nil {
 				return
 			}
@@ -102,8 +111,8 @@ func TestCreateExtension(t *testing.T) {
 			}
 
 			if tt.verifyAttach {
-				assert.NotNil(t, spec.VimInfo)
-				for _, info := range spec.VimInfo {
+				assert.NotNil(t, extensionSpec.VimInfo)
+				for _, info := range extensionSpec.VimInfo {
 					assert.NotEmpty(t, info.VimId)
 					assert.NotEmpty(t, info.VimSystemUUID)
 					assert.NotEmpty(t, info.VimName)
@@ -121,6 +130,7 @@ func TestCreateExtension(t *testing.T) {
 	}
 }
 
+//
 func TestGetExtension(t *testing.T) {
 
 	tests := []struct {
@@ -161,8 +171,14 @@ func TestGetExtension(t *testing.T) {
 
 			ctx := context.Background()
 			api := getTcaApi(t, rest, false)
-			spec, err := specs.ExtensionSpecFromFromString(tt.spec)
+			_spec, err := specs.SpecExtension{}.SpecsFromString(tt.spec)
 			assert.NoError(t, err)
+			spec, ok := (*_spec).(*specs.SpecExtension)
+			if !ok {
+				t.Errorf("SpecsFromString() failed method return wrong type")
+				return
+			}
+			assert.NotNil(t, spec)
 
 			if tt.addBefore {
 				// set password if needed
@@ -256,8 +272,14 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 
 			ctx = context.Background()
 			api := getTcaApi(t, rest, false)
-			spec, err := specs.ExtensionSpecFromFromString(tt.specString)
+			_spec, err := specs.SpecExtension{}.SpecsFromString(tt.specString)
 			assert.NoError(t, err)
+			spec, ok := (*_spec).(*specs.SpecExtension)
+			if !ok {
+				t.Errorf("SpecsFromString() failed method return wrong type")
+				return
+			}
+			assert.NotNil(t, spec)
 
 			if len(tt.password) > 0 {
 				spec.AccessInfo.Password = tt.password
@@ -321,21 +343,16 @@ func TestExtensionQuery(t *testing.T) {
 			ctx := context.Background()
 			a := getTcaApi(t, rest, false)
 			got, err := a.ExtensionQuery(ctx)
-
-			if (err != nil) != tt.wantErr {
+			if tt.wantErr && err == nil {
 				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
-
-			if (got == nil) && tt.wantErr == false {
-				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
+			if tt.wantErr && err != nil {
 				return
 			}
-
-			if (got == nil) && tt.wantErr == true {
+			if got == nil {
 				return
 			}
-
 			if len(got.ExtensionsList) == 0 && tt.wantErr == false {
 				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
 				return

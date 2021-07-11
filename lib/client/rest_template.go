@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/response"
+	"github.com/spyroot/tcactl/lib/client/specs"
 	"net/http"
 	"strings"
 )
@@ -59,7 +60,7 @@ func (c *RestClient) GetClusterTemplates() (*response.ClusterTemplates, error) {
 
 // CreateClusterTemplate - creates cluster template from
 // json or yaml specs.
-func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplateSpec) error {
+func (c *RestClient) CreateClusterTemplate(spec *specs.SpecClusterTemplate) error {
 
 	c.GetClient()
 	resp, err := c.Client.R().SetBody(spec).Post(c.BaseURL + apiClusterTemplates)
@@ -93,7 +94,7 @@ func (c *RestClient) CreateClusterTemplate(spec *response.ClusterTemplateSpec) e
 // UpdateClusterTemplate - updates existing cluster template
 // Template must be already defined. Template id in a spec used
 // to update template
-func (c *RestClient) UpdateClusterTemplate(spec *response.ClusterTemplateSpec) error {
+func (c *RestClient) UpdateClusterTemplate(spec *specs.SpecClusterTemplate) error {
 
 	c.GetClient()
 	resp, err := c.Client.R().SetBody(spec).Put(c.BaseURL + apiClusterTemplates + "/" + spec.Id)

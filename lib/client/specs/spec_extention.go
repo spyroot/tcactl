@@ -27,7 +27,7 @@ import (
 
 // AdditionalFilters Filter for repo query
 type AdditionalFilters struct {
-	VimID string `json:"vimId" yaml:"vim_id"`
+	VimID string `json:"vimId" yaml:"vimId"`
 }
 
 type Filter struct {
@@ -84,11 +84,11 @@ type SpecExtension struct {
 	ExtensionSubtype     string                    `json:"extensionSubtype" yaml:"extensionSubtype" validate:"required"`
 	Products             []interface{}             `json:"products" yaml:"products"`
 	VimInfo              []VimInfo                 `json:"vimInfo" yaml:"vimInfo"`
-	InterfaceInfo        *SpecInterfaceInfo        `json:"interfaceInfo" yaml:"interfaceInfo"`
-	AdditionalParameters *SpecAdditionalParameters `json:"additionalParameters" yaml:"additionalParameters"`
+	InterfaceInfo        *SpecInterfaceInfo        `json:"interfaceInfo,omitempty" yaml:"interfaceInfo,omitempty"`
+	AdditionalParameters *SpecAdditionalParameters `json:"additionalParameters,omitempty" yaml:"additionalParameters,omitempty"`
 	AutoScaleEnabled     bool                      `json:"autoScaleEnabled" yaml:"autoScaleEnabled"`
 	AutoHealEnabled      bool                      `json:"autoHealEnabled" yaml:"autoHealEnabled"`
-	AccessInfo           *SpecAccessInfo           `json:"accessInfo" yaml:"accessInfo"`
+	AccessInfo           *SpecAccessInfo           `json:"accessInfo,omitempty" yaml:"accessInfo,omitempty"`
 	// hold specError
 	specError error
 }

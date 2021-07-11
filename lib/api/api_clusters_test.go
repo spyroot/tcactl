@@ -19,55 +19,17 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/nsf/jsondiff"
 	"github.com/spyroot/tcactl/lib/client"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/lib/testutil"
-	iotuils "github.com/spyroot/tcactl/pkg/io"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"io/ioutil"
-	"log"
-	"os"
 	"strings"
 	"testing"
 	"time"
 )
-
-// specNodePoolStringReaderHelper helper return node specString
-func specClusterStringReaderHelper(s string) *specs.SpecCluster {
-	r, err := specs.ClusterSpecsFromString(s)
-	iotuils.CheckErr(err)
-	return r
-}
-
-// specNodePoolStringReaderHelper helper return node specString
-func specClusterFromFile(spec string) *specs.NodePoolSpec {
-
-	tmpFile, err := ioutil.TempFile("", "tcactltest")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	// write to file,close it and read specString
-	if _, err = tmpFile.Write([]byte(spec)); err != nil {
-		iotuils.CheckErr(err)
-	}
-
-	if err := tmpFile.Close(); err != nil {
-		iotuils.CheckErr(err)
-	}
-
-	// read from file
-	r, err := specs.ReadNodeSpecFromFile(tmpFile.Name())
-	iotuils.CheckErr(err)
-
-	return r
-}
 
 func getTcaApi(t *testing.T, rest *client.RestClient, isLogEnabled bool) *TcaApi {
 	a, err := NewTcaApi(rest)
@@ -91,175 +53,6 @@ func getTestMgmtCluster(t *testing.T, api *TcaApi) *response.ClusterSpec {
 	c, err := api.GetCluster(context.Background(), getTestMgmtClusterName())
 	assert.NoError(t, err)
 	return c
-}
-
-// TestClusterSpecFromString read specString and validate parser
-func TestClusterSpecFromString(t *testing.T) {
-
-	tests := []struct {
-		name    string
-		spec    string
-		wantErr bool
-	}{
-		{
-			name:    "Read Yaml management cluster specString",
-			spec:    newManagementCluster,
-			wantErr: false,
-		},
-		{
-			name:    "Read Yaml workload cluster specString",
-			spec:    WorkloadCluster,
-			wantErr: false,
-		},
-		{
-			name:    "Read Yaml broken workload cluster specString",
-			spec:    YamlBrokenWorkload,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			got, err := specs.ReadNodeSpecFromString(tt.spec)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			if err != nil && tt.wantErr == false {
-				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			newJson, err := json.Marshal(got)
-			if err != nil {
-				return
-			}
-			oldJson, err := json.Marshal(got)
-			if err != nil {
-				return
-			}
-
-			opt := jsondiff.DefaultJSONOptions()
-			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
-
-			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			t.Logf("Compare tesd iff %d", diff)
-		})
-	}
-}
-
-// TestClusterSpecFromFile read specString and validate parser
-func TestClusterSpecFromFile(t *testing.T) {
-
-	tests := []struct {
-		name     string
-		fileName string
-		wantErr  bool
-	}{
-		{
-			name:     "Read  yaml management specString file",
-			fileName: testutil.SpecTempFileName(newManagementCluster),
-			wantErr:  false,
-		},
-		{
-			name:     "Read yaml workload specString file",
-			fileName: testutil.SpecTempFileName(WorkloadCluster),
-			wantErr:  false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			got, err := specs.ClusterSpecsFromFile(tt.fileName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			if err != nil && tt.wantErr == false {
-				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			newJson, err := json.Marshal(got)
-			if err != nil {
-				return
-			}
-			oldJson, err := json.Marshal(got)
-			if err != nil {
-				return
-			}
-
-			opt := jsondiff.DefaultJSONOptions()
-			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
-
-			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			t.Logf("diff %d", diff)
-		})
-	}
-}
-
-// Reads specString and validate parser
-func TestClusterSpecFromReader(t *testing.T) {
-
-	tests := []struct {
-		name    string
-		reader  io.Reader
-		wantErr bool
-	}{
-		{
-			name:    "Read yaml management specString from io.reader",
-			reader:  testutil.SpecTempReader(newManagementCluster),
-			wantErr: false,
-		},
-		{
-			name:    "Read Basic yaml workload specString from io.reader",
-			reader:  testutil.SpecTempReader(WorkloadCluster),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := specs.ReadClusterSpec(tt.reader)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			if err != nil && tt.wantErr == false {
-				t.Errorf("TestClusterSpecFromFile() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			newJson, err := json.Marshal(got)
-			if err != nil {
-				return
-			}
-			oldJson, err := json.Marshal(got)
-			if err != nil {
-				return
-			}
-
-			opt := jsondiff.DefaultJSONOptions()
-			diff, _ := jsondiff.Compare(newJson, oldJson, &opt)
-
-			if tt.wantErr != true && diff > 0 {
-				t.Errorf("ReadNodeSpecFromString() error = %v, vimErr %v", err, tt.wantErr)
-				return
-			}
-
-			t.Logf("diff %d", diff)
-		})
-	}
 }
 
 func NormalizeClusterIP(s string) string {
@@ -363,8 +156,11 @@ func TestAllocateNewClusterIp(t *testing.T) {
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
 			wCluster := getTestWorkloadCluster(t, a)
-			spec, err := specs.ReadClusterSpec(tt.reader)
+			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
+			assert.NotNil(t, _spec)
+			spec, ok := (*_spec).(*specs.SpecCluster)
+			assert.Equal(t, true, ok)
 
 			// create conflict
 			if tt.isConflict {
@@ -614,9 +410,11 @@ func TestGetCurrentClusterTask(t *testing.T) {
 			)
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
-			spec, err := specs.ReadClusterSpec(tt.reader)
-
+			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
+			assert.NotNil(t, _spec)
+			spec, ok := (*_spec).(*specs.SpecCluster)
+			assert.Equal(t, true, ok)
 			assert.NotNil(t, spec)
 
 			if spec.IsManagement() {
@@ -852,9 +650,11 @@ func TestCreateClusters(t *testing.T) {
 			)
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
-			spec, err := specs.ReadClusterSpec(tt.reader)
-
+			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
+			assert.NotNil(t, _spec)
+			spec, ok := (*_spec).(*specs.SpecCluster)
+			assert.Equal(t, true, ok)
 			assert.NotNil(t, spec)
 
 			if tt.useTestTemplate {
@@ -955,12 +755,12 @@ func TestCreateBlockDeleteCluster(t *testing.T) {
 			)
 
 			a := getTcaApi(t, rest, tt.isLogEnabled)
-			spec, err := specs.ReadClusterSpec(tt.reader)
+			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
-			if spec == nil {
-				t.Errorf("ReadClusterSpec() must not return nil")
-				return
-			}
+			assert.NotNil(t, _spec)
+			spec, ok := (*_spec).(*specs.SpecCluster)
+			assert.Equal(t, true, ok)
+			assert.NotNil(t, spec)
 
 			// adjust template id
 			if tt.useTestTemplate {
