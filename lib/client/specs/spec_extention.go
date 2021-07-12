@@ -74,16 +74,16 @@ type SpecAccessInfo struct {
 // SpecExtension extension such as Harbor registered in TCA
 type SpecExtension struct {
 	// SpecType indicate a spec type and meet Spec interface requirements.
-	SpecType SpecType `json:"kind,omitempty" yaml:"kind,omitempty" validate:"required"`
+	SpecType SpecType `json:"kind,omitempty" yaml:"kind,omitempty" valid:"required~kind is mandatory spec field"`
 	//Name is extension name
-	Name string `json:"name" yaml:"name" validate:"required"`
+	Name string `json:"name" yaml:"name" valid:"required~name is mandatory spec field"`
 	// Version for harbor it 1.x 2.x
-	Version              string                    `json:"version" yaml:"version" validate:"required"`
-	Type                 string                    `json:"type" yaml:"type" validate:"required"`
+	Version              string                    `json:"version" yaml:"version" valid:"required~version is mandatory spec field"`
+	Type                 string                    `json:"type" yaml:"type"  valid:"required~kind is mandatory spec field"`
 	ExtensionKey         string                    `json:"extensionKey,omitempty" yaml:"extensionKey,omitempty"`
-	ExtensionSubtype     string                    `json:"extensionSubtype" yaml:"extensionSubtype" validate:"required"`
-	Products             []interface{}             `json:"products" yaml:"products"`
-	VimInfo              []VimInfo                 `json:"vimInfo" yaml:"vimInfo"`
+	ExtensionSubtype     string                    `json:"extensionSubtype" yaml:"extensionSubtype"`
+	Products             []interface{}             `json:"products,omitempty" yaml:"products,omitempty"`
+	VimInfo              []VimInfo                 `json:"vimInfo,omitempty" yaml:"vimInfo,omitempty"`
 	InterfaceInfo        *SpecInterfaceInfo        `json:"interfaceInfo,omitempty" yaml:"interfaceInfo,omitempty"`
 	AdditionalParameters *SpecAdditionalParameters `json:"additionalParameters,omitempty" yaml:"additionalParameters,omitempty"`
 	AutoScaleEnabled     bool                      `json:"autoScaleEnabled" yaml:"autoScaleEnabled"`
@@ -107,7 +107,7 @@ func (t *SpecExtension) GetVim(name string) (*VimInfo, error) {
 		}
 	}
 
-	return nil, api_errors.NewVimNotFound("name")
+	return nil, api_errors.NewVimNotFound(name)
 }
 
 // Kind return spec kind
@@ -140,26 +140,30 @@ func (t *SpecExtension) Validate() error {
 
 	_, err := govalidator.ValidateStruct(t)
 	if err != nil {
+		t.specError = err
 		return err
 	}
 
 	if t.Kind() != SpecKindExtension {
-		return &InvalidExtensionSpec{errMsg: fmt.Sprintf(
+		t.specError = &InvalidExtensionSpec{errMsg: fmt.Sprintf(
 			"Invalid spec kind. Extension spec must use kind %s", SpecKindExtension)}
+		return t.specError
 	}
 
 	return nil
 }
 
-// TODO
+// Default TODO
 func (t *SpecExtension) Default() error {
 	return nil
 }
 
 // IsValid return false if validator set error
 func (t *SpecExtension) IsValid() bool {
+
 	if t.specError != nil {
 		return false
 	}
+
 	return true
 }

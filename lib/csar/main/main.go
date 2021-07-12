@@ -129,9 +129,9 @@ func initConfig() {
 	}
 
 	// update default after we read
-	tcaCtl.TcaClient.BaseURL = viper.GetString(cmds.ConfigTcaEndpoint)
-	tcaCtl.TcaClient.Username = viper.GetString(cmds.ConfigTcaUsername)
-	tcaCtl.TcaClient.Password = viper.GetString(cmds.ConfigTcaPassword)
+	tcaCtl.SetTcaBase(viper.GetString(cmds.ConfigTcaEndpoint))
+	tcaCtl.SetTcaUsername(viper.GetString(cmds.ConfigTcaUsername))
+	tcaCtl.SetPassword(viper.GetString(cmds.ConfigTcaPassword))
 
 	// default Cloud in TCA,  SpecCluster and node pool
 	tcaCtl.DefaultCloudName = viper.GetString(cmds.ConfigDefaultCloud)

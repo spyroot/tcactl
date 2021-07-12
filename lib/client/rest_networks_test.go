@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"os"
 	"testing"
 )
@@ -28,11 +29,7 @@ var (
 	}
 )
 
-func TestRestClient_GetInfrNetworks(t *testing.T) {
-
-	type args struct {
-		clusterId string
-	}
+func TestRestClient_GetInfraNetworks(t *testing.T) {
 
 	tests := []struct {
 		name   string
@@ -56,9 +53,16 @@ func TestRestClient_GetInfrNetworks(t *testing.T) {
 				return
 			}
 
-			tenants, err := tt.client.GetVimTenants()
+			tenants, err := tt.client.GetVimTenants(context.Background())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInfraNetworks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetVimTenants() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err != nil {
+				return
+			}
+			if tenants == nil {
+				t.Errorf("GetVimTenants() shouldn't return nil")
 				return
 			}
 
@@ -69,10 +73,6 @@ func TestRestClient_GetInfrNetworks(t *testing.T) {
 					return
 				}
 			}
-
-			//if !reflect.DeepEqual(got, tt.want) {
-			//	t.Errorf("GetInfraNetworks() got = %v, want %v", got, tt.want)
-			//}
 		})
 	}
 }

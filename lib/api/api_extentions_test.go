@@ -27,7 +27,7 @@ func TestCreateExtension(t *testing.T) {
 	}{
 		{
 			name:         "Create harbor extension from string",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			spec:         testHarborExt,
 			wantErr:      false,
 			wantDel:      true,
@@ -36,13 +36,13 @@ func TestCreateExtension(t *testing.T) {
 		},
 		{
 			name:    "Create duplicate extension must fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    testHarborExt,
 			wantErr: true,
 		},
 		{
 			name:         "Create harbor extension with vim attach",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			spec:         testHarborWithVim,
 			wantErr:      false,
 			wantDel:      true,
@@ -51,7 +51,7 @@ func TestCreateExtension(t *testing.T) {
 		},
 		{
 			name:         "Create harbor extension with wrong vim",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			spec:         testHarborWithInvalidVim,
 			wantErr:      true,
 			wantDel:      true,
@@ -62,7 +62,7 @@ func TestCreateExtension(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			ctx := context.Background()
 
 			spec, err := specs.SpecExtension{}.SpecsFromString(tt.spec)
@@ -130,7 +130,7 @@ func TestCreateExtension(t *testing.T) {
 	}
 }
 
-//
+// Test get extension
 func TestGetExtension(t *testing.T) {
 
 	tests := []struct {
@@ -148,7 +148,7 @@ func TestGetExtension(t *testing.T) {
 	}{
 		{
 			name:      "Get extension by wrong name",
-			rest:      rest,
+			rest:      getAuthenticatedClient(),
 			eid:       "not found",
 			wantErr:   true,
 			delAfter:  false,
@@ -156,7 +156,7 @@ func TestGetExtension(t *testing.T) {
 		},
 		{
 			name:         "Get extension by name",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			spec:         testGetExtention,
 			eid:          "gettest",
 			wantErr:      false,
@@ -170,7 +170,7 @@ func TestGetExtension(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			api := getTcaApi(t, rest, false)
+			api := getTcaApi(t, tt.rest, false)
 			_spec, err := specs.SpecExtension{}.SpecsFromString(tt.spec)
 			assert.NoError(t, err)
 			spec, ok := (*_spec).(*specs.SpecExtension)
@@ -237,6 +237,7 @@ func TestGetExtension(t *testing.T) {
 	}
 }
 
+// Create extension , wait and update
 func TestTcaApiCreateUpdate(t *testing.T) {
 
 	tests := []struct {
@@ -254,7 +255,7 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 	}{
 		{
 			name:       "Create and attach harbor extension to cluster",
-			rest:       rest,
+			rest:       getAuthenticatedClient(),
 			specString: testHarborCreateUpdate,
 			vimName:    getTestWorkloadClusterName(),
 			extName:    getTestRepoName(),
@@ -271,7 +272,7 @@ func TestTcaApiCreateUpdate(t *testing.T) {
 			)
 
 			ctx = context.Background()
-			api := getTcaApi(t, rest, false)
+			api := getTcaApi(t, tt.rest, false)
 			_spec, err := specs.SpecExtension{}.SpecsFromString(tt.specString)
 			assert.NoError(t, err)
 			spec, ok := (*_spec).(*specs.SpecExtension)
@@ -333,7 +334,7 @@ func TestExtensionQuery(t *testing.T) {
 	}{
 		{
 			name:    "Basic Parser",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 		},
 	}
@@ -341,7 +342,7 @@ func TestExtensionQuery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			got, err := a.ExtensionQuery(ctx)
 			if tt.wantErr && err == nil {
 				t.Errorf("ExtensionQuery() error = %v, vimErr %v", err, tt.wantErr)
@@ -371,13 +372,13 @@ func TestExtensionQueryFindRepo(t *testing.T) {
 	}{
 		{
 			name:     "Basic Find must return ok",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			wantErr:  false,
 			repoName: getTestRepoName(),
 		},
 		{
 			name:     "Basic Find must return error",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			wantErr:  true,
 			repoName: "notfound",
 		},
@@ -386,7 +387,7 @@ func TestExtensionQueryFindRepo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 
 			got, err := a.ExtensionQuery(ctx)
 			assert.NoError(t, err)

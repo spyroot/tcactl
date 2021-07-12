@@ -31,6 +31,7 @@ import (
 	"time"
 )
 
+// Return tca api instance
 func getTcaApi(t *testing.T, rest *client.RestClient, isLogEnabled bool) *TcaApi {
 	a, err := NewTcaApi(rest)
 	assert.NoError(t, err)
@@ -41,6 +42,7 @@ func getTcaApi(t *testing.T, rest *client.RestClient, isLogEnabled bool) *TcaApi
 	return a
 }
 
+//
 func getTestWorkloadCluster(t *testing.T, api *TcaApi) *response.ClusterSpec {
 	assert.NotNil(t, api)
 	c, err := api.GetCluster(context.Background(), getTestWorkloadClusterName())
@@ -48,6 +50,7 @@ func getTestWorkloadCluster(t *testing.T, api *TcaApi) *response.ClusterSpec {
 	return c
 }
 
+//
 func getTestMgmtCluster(t *testing.T, api *TcaApi) *response.ClusterSpec {
 	assert.NotNil(t, api)
 	c, err := api.GetCluster(context.Background(), getTestMgmtClusterName())
@@ -70,6 +73,7 @@ func NormalizeClusterIP(s string) string {
 	return u
 }
 
+// Test cluster IP overlap
 func TestGetClusterIPs(t *testing.T) {
 
 	tests := []struct {
@@ -81,7 +85,7 @@ func TestGetClusterIPs(t *testing.T) {
 	}{
 		{
 			name:    "Test cluster IP must be resolved",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 			reader:  testutil.SpecTempReader(newManagementCluster),
 		},
@@ -90,7 +94,7 @@ func TestGetClusterIPs(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 
-			a := getTcaApi(t, rest, tt.isLogEnabled)
+			a := getTcaApi(t, tt.rest, tt.isLogEnabled)
 			wCluster := getTestWorkloadCluster(t, a)
 			mCluster := getTestMgmtCluster(t, a)
 
@@ -151,21 +155,21 @@ func TestAllocateNewClusterIp(t *testing.T) {
 	}{
 		{
 			name:       "Check IP overlap mgmt cluster must generate new ip ",
-			rest:       rest,
+			rest:       getAuthenticatedClient(),
 			wantErr:    false,
 			reader:     testutil.SpecTempReader(newManagementCluster),
 			isConflict: true,
 		},
 		{
 			name:       "Check IP overlap workload cluster must generate new ip ",
-			rest:       rest,
+			rest:       getAuthenticatedClient(),
 			wantErr:    false,
 			reader:     testutil.SpecTempReader(newTestWorkloadCluster),
 			isConflict: true,
 		},
 		{
 			name:       "Check IP overlap workload cluster must not generate new ip ",
-			rest:       rest,
+			rest:       getAuthenticatedClient(),
 			wantErr:    false,
 			reader:     testutil.SpecTempReader(newTestWorkloadCluster),
 			isConflict: false,
@@ -176,7 +180,7 @@ func TestAllocateNewClusterIp(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 
-			a := getTcaApi(t, rest, tt.isLogEnabled)
+			a := getTcaApi(t, tt.rest, tt.isLogEnabled)
 			wCluster := getTestWorkloadCluster(t, a)
 			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
@@ -232,28 +236,28 @@ func TestGetCluster(t *testing.T) {
 	}{
 		{
 			name:    "Get cluster by name must not fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			cluster: getTestWorkloadClusterName(),
 			expect:  getTestClusterId(),
 			wantErr: false,
 		},
 		{
 			name:    "Get cluster by cluster id must not fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			cluster: getTestClusterId(),
 			expect:  getTestClusterId(),
 			wantErr: false,
 		},
 		{
 			name:    "Get cluster wrong id must fail.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			cluster: "868636c9-868f-49fb-a6df-6a0d2d137141",
 			expect:  getTestClusterId(),
 			wantErr: true,
 		},
 		{
 			name:    "Get cluster wrong cluster name must fail.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			cluster: "test",
 			expect:  getTestClusterId(),
 			wantErr: true,
@@ -262,7 +266,7 @@ func TestGetCluster(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			a := getTcaApi(t, rest, tt.isLogEnabled)
+			a := getTcaApi(t, tt.rest, tt.isLogEnabled)
 
 			actual, err := a.GetCluster(context.Background(), tt.cluster)
 			if (err != nil) != tt.wantErr {
@@ -298,7 +302,7 @@ func TestGetClusterNodePool(t *testing.T) {
 	}{
 		{
 			name:     "Must resolve from cluster name and pool name.",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			cluster:  getTestWorkloadClusterName(),
 			nodepool: getTestNodePoolName(),
 			expect:   getTestNodePoolId(),
@@ -307,7 +311,7 @@ func TestGetClusterNodePool(t *testing.T) {
 		},
 		{
 			name:     "Must resolve from cluster id and pool name.",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			cluster:  getTestClusterId(),
 			nodepool: getTestNodePoolName(),
 			expect:   getTestNodePoolId(),
@@ -316,7 +320,7 @@ func TestGetClusterNodePool(t *testing.T) {
 		},
 		{
 			name:     "Must resolve from cluster id and pool id.",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			cluster:  getTestClusterId(),
 			nodepool: getTestNodePoolId(), // this must be adjust based on deployment
 			expect:   getTestNodePoolId(), // this must be adjust based on deployment
@@ -325,7 +329,7 @@ func TestGetClusterNodePool(t *testing.T) {
 		},
 		{
 			name:     "Wrong cluster id valid pool id must fail.",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			cluster:  "test123213",
 			nodepool: getTestNodePoolName(),
 			expect:   getTestNodePoolId(),
@@ -334,7 +338,7 @@ func TestGetClusterNodePool(t *testing.T) {
 		},
 		{
 			name:     "Correct cluster id wrong pool name must fail.",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			cluster:  getTestClusterId(),
 			nodepool: "asdasd",
 			expect:   getTestNodePoolId(),
@@ -343,7 +347,7 @@ func TestGetClusterNodePool(t *testing.T) {
 		},
 		{
 			name:     "Correct cluster id wrong pool id must fail.",
-			rest:     rest,
+			rest:     getAuthenticatedClient(),
 			cluster:  getTestClusterId(),
 			nodepool: "3acf9b79-f8e5-4155-997b-58792d395555",
 			expect:   getTestNodePoolId(),
@@ -400,7 +404,7 @@ func TestGetCurrentClusterTask(t *testing.T) {
 	}{
 		{
 			name:    "Create mgmt cluster must not fail.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			reader:  testutil.SpecTempReader(newManagementCluster),
 			wantErr: false,
 			trace:   false,
@@ -408,7 +412,7 @@ func TestGetCurrentClusterTask(t *testing.T) {
 		},
 		{
 			name:    "Create workload cluster must not fail.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			reader:  testutil.SpecTempReader(newTestWorkloadCluster),
 			wantErr: false,
 			trace:   false,
@@ -416,7 +420,7 @@ func TestGetCurrentClusterTask(t *testing.T) {
 		},
 		{
 			name:    "Create workload cluster must fail.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			reader:  testutil.SpecTempReader(InvalidWorkerNodeFolder),
 			wantErr: true,
 			trace:   false,
@@ -431,7 +435,7 @@ func TestGetCurrentClusterTask(t *testing.T) {
 				task *models.TcaTask
 			)
 
-			a := getTcaApi(t, rest, tt.isLogEnabled)
+			a := getTcaApi(t, tt.rest, tt.isLogEnabled)
 			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
 			assert.NotNil(t, _spec)
@@ -523,7 +527,7 @@ func TestCreateClusters(t *testing.T) {
 	}{
 		{
 			name:            "Create mgmt dryRun run.",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(newManagementCluster),
 			wantErr:         false,
 			dryRun:          true,
@@ -533,7 +537,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create mgmt dryRun run - wrong template01 no template id.",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(NewManagementClusterFailCase01),
 			wantErr:         true,
 			dryRun:          true,
@@ -543,7 +547,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create mgmt dryRun run - wrong template02 no cloud id.",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(NewManagementClusterFailCase02),
 			wantErr:         true,
 			dryRun:          true,
@@ -553,7 +557,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong mgmt cluster should fail",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidMgmtCluster),
 			wantErr:         true,
 			dryRun:          true,
@@ -563,7 +567,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong template id should fail",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(WrongMgmtTemplateId),
 			wantErr:         true,
 			dryRun:          true,
@@ -573,7 +577,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong datastore",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidDatastoreGlobal),
 			wantErr:         true,
 			dryRun:          true,
@@ -583,7 +587,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong datastore",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidDatastoreWorker),
 			wantErr:         true,
 			dryRun:          true,
@@ -592,7 +596,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong datastore",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidDatastoreMasterNode),
 			wantErr:         true,
 			dryRun:          true,
@@ -601,7 +605,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong folder",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidFolderGlobal),
 			wantErr:         true,
 			dryRun:          true,
@@ -610,7 +614,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong master node folder",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidMasterNodeFolder),
 			wantErr:         true,
 			dryRun:          true,
@@ -619,7 +623,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong master node folder",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidWorkerNodeFolder),
 			wantErr:         true,
 			dryRun:          true,
@@ -628,7 +632,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong master node folder",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidDatastoreUrl),
 			wantErr:         true,
 			dryRun:          true,
@@ -638,7 +642,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create cluster with wrong master node folder",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(InvalidDatastoreUrl),
 			wantErr:         true,
 			dryRun:          true,
@@ -648,7 +652,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create mgmt cluster must not fail",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(newManagementCluster),
 			useTestTemplate: true,
 			wantDelete:      true,
@@ -656,7 +660,7 @@ func TestCreateClusters(t *testing.T) {
 		},
 		{
 			name:            "Create workload cluster must not fail",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(newTestWorkloadCluster),
 			useTestTemplate: true,
 			wantDelete:      true,
@@ -671,7 +675,7 @@ func TestCreateClusters(t *testing.T) {
 				task *models.TcaTask
 			)
 
-			a := getTcaApi(t, rest, tt.isLogEnabled)
+			a := getTcaApi(t, tt.rest, tt.isLogEnabled)
 			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
 			assert.NotNil(t, _spec)
@@ -758,7 +762,7 @@ func TestCreateBlockDeleteCluster(t *testing.T) {
 	}{
 		{
 			name:            "Create block and Delete a new tenant cluster.",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			reader:          testutil.SpecTempReader(newManagementCluster),
 			wantErr:         false,
 			dryRun:          false,
@@ -776,7 +780,7 @@ func TestCreateBlockDeleteCluster(t *testing.T) {
 				deleteTask *models.TcaTask
 			)
 
-			a := getTcaApi(t, rest, tt.isLogEnabled)
+			a := getTcaApi(t, tt.rest, tt.isLogEnabled)
 			_spec, err := specs.SpecCluster{}.SpecsFromReader(tt.reader)
 			assert.NoError(t, err)
 			assert.NotNil(t, _spec)

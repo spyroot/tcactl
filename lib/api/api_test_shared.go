@@ -2,7 +2,6 @@ package api
 
 import (
 	"flag"
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"github.com/spyroot/tcactl/lib/client"
@@ -58,10 +57,6 @@ const (
 	testWorkloadTemplateId = "c3e006c1-e6aa-4591-950b-6f3bedd944d3"
 )
 
-var (
-	rest = getAuthenticatedClient()
-)
-
 //
 func getAuthenticatedClient() *client.RestClient {
 
@@ -104,7 +99,7 @@ func GetTestAssetsDir() string {
 	return wd
 }
 
-// Sets logging flag for logging tracer
+// SetLoggingFlags Sets logging flag for logging tracer
 func SetLoggingFlags() {
 
 	err := flag.Set("alsologtostderr", "true")
@@ -123,24 +118,27 @@ func SetLoggingFlags() {
 
 // getClient() return tca client for unit testing
 func getClient() *client.RestClient {
+
 	tcaUrl := os.Getenv("TCA_URL")
 	if len(tcaUrl) == 0 {
 		io.PrintAndExit("TCA_URL not set")
 	}
+
 	tcaUsername := os.Getenv("TCA_USERNAME")
 	if len(tcaUrl) == 0 {
 		io.PrintAndExit("TCA_USERNAME not set")
 	}
+
 	tcaPassword := os.Getenv("TCA_PASSWORD")
 	if len(tcaUrl) == 0 {
 		io.PrintAndExit("TCA_PASSWORD not set")
 	}
+
 	r, err := client.NewRestClient(tcaUrl,
 		true,
 		tcaUsername,
 		tcaPassword)
 
-	fmt.Printf("Using tca endpoint %s and userame %s\n", tcaUrl, tcaPassword)
 	if err != nil {
 		io.CheckErr(err)
 	}
@@ -434,6 +432,7 @@ workerNodes:
 `
 
 var yamlWorkloadTemplate = `
+kind: template
 clusterType: WORKLOAD
 clusterConfig:
     cni:

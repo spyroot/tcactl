@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	version string = "dev"
+	version = "dev"
 )
 
 func main() {

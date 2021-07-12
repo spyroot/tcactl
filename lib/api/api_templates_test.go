@@ -55,43 +55,43 @@ func TestTcaApi_CreateClusterTemplate(t *testing.T) {
 	}{
 		{
 			name:    "Create From File mgmt template",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlMgmtTemplate),
 			wantErr: false,
 		},
 		{
 			name:    "Invalid template no master",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlInvalidMgmtTemplate),
 			wantErr: true,
 		},
 		{
 			name:    "Invalid template no worker",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlInvalidMgmtTemplate2),
 			wantErr: true,
 		},
 		{
 			name:    "Invalid template no template type",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlInvalidMgmtTemplate3),
 			wantErr: true,
 		},
 		{
 			name:    "Invalid template no template no network label",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlInvalidMgmtTemplate4),
 			wantErr: true,
 		},
 		{
 			name:    "Empty",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlWorkloadEmpty),
 			wantErr: true,
 		},
 		{
 			name:    "Nil rest",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specStringReaderHelper(yamlWorkloadEmpty),
 			wantErr: true,
 			reset:   true,
@@ -166,7 +166,7 @@ func TestTcaApi_GetClusterTemplate(t *testing.T) {
 	}{
 		{
 			name:    "Create cluster and check list",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			specs:   specStringReaderHelper(yamlWorkloadTemplate),
 			repeat:  3,
 			wantErr: false,
@@ -208,7 +208,9 @@ func TestTcaApi_GetClusterTemplate(t *testing.T) {
 	}
 }
 
+//
 func TestTcaApi_GetClusterTemplates(t *testing.T) {
+
 	tests := []struct {
 		name    string
 		rest    *client.RestClient
@@ -218,7 +220,7 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 	}{
 		{
 			name:    "Create cluster and check list",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			specs:   specStringReaderHelper(yamlWorkloadTemplate),
 			repeat:  3,
 			wantErr: false,
@@ -263,7 +265,6 @@ func TestTcaApi_GetClusterTemplates(t *testing.T) {
 					t.Errorf("GetClusterTemplates() error = %v, vimErr %v", err, tt.wantErr)
 				}
 			}
-
 		})
 	}
 }
@@ -315,7 +316,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 	}{
 		{
 			name:        "Update Description",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			initialSpec: specStringReaderHelper(yamlMgmtTemplate),
 			wantErr:     false,
 			transformer: changeDescription,
@@ -324,7 +325,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 		},
 		{
 			name:        "Update replica",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			initialSpec: specStringReaderHelper(yamlMgmtTemplate),
 			wantErr:     false,
 			transformer: changeReplica,
@@ -333,7 +334,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 		},
 		{
 			name:        "Use name instead if in update",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			initialSpec: specStringReaderHelper(yamlMgmtTemplate),
 			wantErr:     false,
 			transformer: changeTemplateId,
@@ -342,7 +343,7 @@ func TestTcaApi_UpdateClusterTemplate(t *testing.T) {
 		},
 		{
 			name:        "Use invalid id",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			initialSpec: specStringReaderHelper(yamlMgmtTemplate),
 			wantErr:     true,
 			transformer: changeInvalidTemplateId,
@@ -421,14 +422,14 @@ func TestTcaApi_DeleteClusterTemplate(t *testing.T) {
 	}{
 		{
 			name:    "Should produce error.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    nil,
 			tid:     "",
 			wantErr: true,
 		},
 		{
 			name:    "Should produce error.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    nil,
 			tid:     "abc",
 			wantErr: true,

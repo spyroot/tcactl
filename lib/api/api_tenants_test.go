@@ -21,7 +21,7 @@ func TestTenantsCloudProvider(t *testing.T) {
 	}{
 		{
 			name:              "Basic get tenant positive case",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           false,
 			dumpJson:          true,
 			cloudProviderName: getTenantCluster(),
@@ -29,7 +29,7 @@ func TestTenantsCloudProvider(t *testing.T) {
 		},
 		{
 			name:              "Basic get tenant negative case",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           true,
 			dumpJson:          true,
 			cloudProviderName: "test123",
@@ -40,7 +40,7 @@ func TestTenantsCloudProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			if tt.reset {
 				a.rest = nil
 			}

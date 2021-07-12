@@ -28,7 +28,7 @@ type CSAR struct {
 	ToscaDefinitionsVersion string                `yaml:"tosca_definitions_version"`
 	Description             string                `yaml:"description"`
 	Imports                 []string              `yaml:"imports"`
-	Node_Type               map[string]ToscaNodes `yaml:"node_types"`
+	NodeType                map[string]ToscaNodes `yaml:"node_types"`
 	TopologyTemplate        TopologyTemplate      `yaml:"topology_template"`
 }
 
@@ -128,12 +128,11 @@ type KernelType struct {
 	Version string `yaml:"version"`
 }
 
-//
+// Infra infrastructure requirement section
 type Infra struct {
 	InfraRequirements InfraRequirements `yaml:"infra_requirements"`
 }
 
-// AdditionalVnfcScalableProperties
 type AdditionalVnfcScalableProperties struct {
 }
 

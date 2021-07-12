@@ -34,18 +34,18 @@ func (m *InvalidTemplateSpec) Error() string {
 }
 
 type CniSpec struct {
-	Name       string `json:"name" yaml:"name" yaml:"name"`
+	Name       string `json:"name" yaml:"name"`
 	Properties struct {
-	} `json:"properties" yaml:"name" yaml:"properties"`
+	} `json:"properties,omitempty" yaml:"properties,omitempty"`
 }
 
 type CsiSpec struct {
-	Name       string `json:"name" yaml:"name" yaml:"name"`
+	Name       string `json:"name" yaml:"name"`
 	Properties struct {
-		Name      string `json:"name" yaml:"name" yaml:"name"`
-		IsDefault bool   `json:"isDefault" yaml:"name" yaml:"isDefault"`
-		Timeout   string `json:"timeout" yaml:"name" yaml:"timeout"`
-	} `json:"properties" yaml:"name" yaml:"properties"`
+		Name      string `json:"name" yaml:"name"`
+		IsDefault bool   `json:"isDefault" yaml:"isDefault"`
+		Timeout   string `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	} `json:"properties" yaml:"properties"`
 }
 
 type ToolsSpec struct {
@@ -53,19 +53,18 @@ type ToolsSpec struct {
 	Version string `json:"version" yaml:"version"`
 }
 
+type CpuMemoryReservation struct {
+	Cpu         int `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+	MemoryInGiB int `json:"memoryInGiB,omitempty" yaml:"memoryInGiB,omitempty"`
+}
+
 //SpecCpuManagerPolicy cluster template parameter cpu manager policy
 type SpecCpuManagerPolicy struct {
 	Type       string `json:"type,omitempty" yaml:"type,omitempty"`
 	Policy     string `json:"policy,omitempty" yaml:"policy,omitempty"`
 	Properties struct {
-		KubeReserved struct {
-			Cpu         int `json:"cpu" yaml:"cpu"`
-			MemoryInGiB int `json:"memoryInGiB" yaml:"memoryInGiB"`
-		} `json:"kubeReserved" yaml:"kubeReserved"`
-		SystemReserved struct {
-			Cpu         int `json:"cpu" yaml:"cpu"`
-			MemoryInGiB int `json:"memoryInGiB" yaml:"memoryInGiB"`
-		} `json:"systemReserved" yaml:"systemReserved"`
+		KubeReserved   *CpuMemoryReservation `json:"kubeReserved,omitempty" yaml:"kubeReserved,omitempty"`
+		SystemReserved *CpuMemoryReservation `json:"systemReserved,omitempty" yaml:"systemReserved,omitempty"`
 	} `json:"properties,omitempty" yaml:"properties,omitempty"`
 }
 
@@ -99,19 +98,22 @@ type SpecNodeTemplate struct {
 	Config    *SpecNodeConfig `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
+// SpecClusterConfig cluster config spec is workload cluster config template
 type SpecClusterConfig struct {
 	KubernetesVersion string      `json:"kubernetesVersion,omitempty" yaml:"kubernetesVersion,omitempty"`
 	Cni               []CniSpec   `json:"cni,omitempty" yaml:"cni,omitempty"`
 	Csi               []CsiSpec   `json:"csi,omitempty" yaml:"csi,omitempty"`
 	Tools             []ToolsSpec `json:"tools,omitempty" yaml:"tools,omitempty"`
 }
+
+// SpecClusterTemplate Cluster template spec
 type SpecClusterTemplate struct {
-	SpecType          SpecType           `json:"kind,omitempty" yaml:"kind,omitempty" valid:"required"`
+	SpecType          SpecType           `json:"kind,omitempty" yaml:"kind,omitempty" valid:"required~kind is mandatory spec field"`
 	Id                string             `json:"id,omitempty" yaml:"id,omitempty"`
-	Name              string             `json:"name" yaml:"name" valid:"required"`
-	ClusterType       string             `json:"clusterType" yaml:"clusterType" valid:"required"`
+	Name              string             `json:"name" yaml:"name" valid:"required~name is mandatory spec field"`
+	ClusterType       string             `json:"clusterType" yaml:"clusterType" valid:"required~clusterType is mandatory spec field"`
 	KubernetesVersion string             `json:"kubernetesVersion,omitempty" yaml:"kubernetesVersion,omitempty"`
-	ClusterConfig     *SpecNodeConfig    `json:"clusterConfig,omitempty" yaml:"clusterConfig,omitempty"`
+	ClusterConfig     *SpecClusterConfig `json:"clusterConfig,omitempty" yaml:"clusterConfig,omitempty"`
 	Description       string             `json:"description,omitempty" yaml:"description,omitempty"`
 	MasterNodes       []SpecNodeTemplate `json:"masterNodes" yaml:"masterNodes"`
 	WorkerNodes       []SpecNodeTemplate `json:"workerNodes" yaml:"workerNodes"`
@@ -122,6 +124,27 @@ type SpecClusterTemplate struct {
 	specError error
 }
 
+// IsManagement return true if spec if management cluster spec
+func (t *SpecClusterTemplate) IsManagement() bool {
+
+	if t == nil {
+		return false
+	}
+
+	return strings.ToLower(t.ClusterType) == strings.ToLower(string(ClusterManagement))
+}
+
+// IsWorkload return if spec is for workload cluster
+func (t *SpecClusterTemplate) IsWorkload() bool {
+
+	if t == nil {
+		return false
+	}
+
+	return strings.ToLower(t.ClusterType) == strings.ToLower(string(ClusterWorkload))
+}
+
+// Kind must return kind "template" SpecType
 func (t *SpecClusterTemplate) Kind() SpecType {
 	return t.SpecType
 }
@@ -151,7 +174,6 @@ func (t *SpecClusterTemplate) IsValid() bool {
 }
 
 // Default set optional template values
-//TODO
 func (t *SpecClusterTemplate) Default() error {
 	return nil
 }
@@ -178,17 +200,37 @@ func (t *SpecClusterTemplate) Validate() error {
 		return &InvalidTemplateSpec{errMsg: "nil instance"}
 	}
 
+	_, err := govalidator.ValidateStruct(t)
+	if err != nil {
+		t.specError = err
+		return err
+	}
+
 	if t.Kind() != SpecKindTemplate {
-		return &InvalidTemplateSpec{errMsg: "spec must contain kind field"}
+		t.specError = &InvalidTemplateSpec{errMsg: "spec must contain kind field"}
+		return t.specError
 	}
 
 	if !t.validateCloneMode() {
-		return &InvalidTemplateSpec{errMsg: "spec contains unknown clone mode type field"}
+		t.specError = &InvalidTemplateSpec{errMsg: "spec contains unknown clone mode type field"}
+		return t.specError
 	}
 
-	_, err := govalidator.ValidateStruct(t)
-	if err != nil {
-		return err
+	if !t.IsManagement() && !t.IsWorkload() {
+		t.specError = &InvalidTemplateSpec{errMsg: "cluster type must be either workload or management"}
+		return t.specError
+	}
+
+	if t.IsWorkload() && t.ClusterConfig == nil {
+		t.specError = &InvalidTemplateSpec{errMsg: "workload template must contain cluster config spec"}
+		return t.specError
+	}
+
+	if t.IsWorkload() && t.ClusterConfig != nil {
+		if len(t.ClusterConfig.Cni) == 0 {
+			t.specError = &InvalidTemplateSpec{errMsg: "workload template must contain a cni config"}
+		}
+		return t.specError
 	}
 
 	return nil

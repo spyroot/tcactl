@@ -160,3 +160,29 @@ type ResetInstanceApiReq struct {
 	// if a request is blocking, and caller requires output progress
 	IsVerbose bool
 }
+
+// NewInstanceRequestSpec return new instance request spec
+func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
+	repo string, instanceName string, nodePoolName string) (*specs.InstanceRequestSpec, error) {
+	i := &specs.InstanceRequestSpec{
+		CloudName:        cloudName,
+		ClusterName:      clusterName,
+		VimType:          vimType,
+		NfdName:          nfdName,
+		Repo:             repo,
+		InstanceName:     instanceName,
+		NodePoolName:     nodePoolName,
+		UseLinkedRepo:    true,
+		AdditionalParams: specs.AdditionalParams{}}
+
+	i.FlavorName = DefaultNamespace
+	i.Description = ""
+	i.Namespace = DefaultFlavor
+
+	err := i.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return i, nil
+}

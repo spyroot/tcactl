@@ -16,7 +16,7 @@ func TestTcaApiGetEntireCatalog(t *testing.T) {
 	}{
 		{
 			name:    "Get entire catalog shouldn't fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 			vduName: "",
 		},
@@ -48,7 +48,7 @@ func TestTcaApiGetVnfPkgm(t *testing.T) {
 	}{
 		{
 			name:    "Get all packages shouldn't fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 			vduName: "",
 		},
@@ -95,14 +95,14 @@ func TestTcaApiGetCatalogAndVdu(t *testing.T) {
 	}{
 		{
 			name:               "Should resolve all catalog",
-			rest:               rest,
+			rest:               getAuthenticatedClient(),
 			wantErr:            false,
 			useUserDefineField: true,
 			useCatalogId:       false,
 		},
 		{
 			name:               "Wrong catalog id",
-			rest:               rest,
+			rest:               getAuthenticatedClient(),
 			wantErr:            false,
 			useUserDefineField: true,
 			useCatalogId:       false,

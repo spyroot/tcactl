@@ -95,11 +95,7 @@ func (a *TcaApi) GetClusterTemplates() (*response.ClusterTemplates, error) {
 // CreateClusterTemplate - create cluster template from initialSpec
 func (a *TcaApi) CreateClusterTemplate(spec *specs.SpecClusterTemplate) (string, error) {
 
-	glog.Infof("Retrieving vnf packages.")
-
-	if a.rest == nil {
-		return "", errnos.RestNil
-	}
+	glog.Infof("Create %s cluster template.", spec.Name)
 
 	if spec == nil {
 		return "", api_errors.NewInvalidSpec("Spec is nil")

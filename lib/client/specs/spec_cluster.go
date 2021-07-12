@@ -273,14 +273,14 @@ func (c *SpecCluster) Kind() SpecType {
 }
 
 // IsValid return false if validator set error
-func (t *SpecCluster) IsValid() bool {
-	if t.specError != nil {
+func (c *SpecCluster) IsValid() bool {
+	if c.specError != nil {
 		return false
 	}
 	return true
 }
 
-// TODO
+// Default TODO
 func (c *SpecCluster) Default() error {
 	return nil
 }

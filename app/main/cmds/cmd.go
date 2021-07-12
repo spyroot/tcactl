@@ -79,7 +79,7 @@ func Chunks(s string, chunkSize int, sep byte) []string {
 		return []string{s}
 	}
 
-	var chunks []string = make([]string, 0, (len(s)-1)/chunkSize+1)
+	var chunks = make([]string, 0, (len(s)-1)/chunkSize+1)
 	currentLen := 0
 	currentStart := 0
 	for i := range s {
@@ -176,7 +176,6 @@ func (ctl *TcaCtl) CmdCreate() *cobra.Command {
 
 // BuildCmd build all commands and attaches to root cmd
 // in case you need add sub-command you can, add to plugin dir.
-//(TODO) add dynamic loading plugin
 func (ctl *TcaCtl) BuildCmd() {
 
 	var describe = &cobra.Command{
@@ -196,6 +195,9 @@ Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entiti
 		},
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			if ctl.IsTrace {
+				ctl.GetApi().SetTrace(ctl.IsTrace)
+			}
 		},
 	}
 
@@ -204,15 +206,17 @@ Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entiti
 		Use:   "get [cnfi, cnfc, clusters, pools]",
 		Short: "Command retrieves tca entity (cnf, catalog, cluster) etc",
 		Long: templates.LongDesc(`
-
-Command retrieves tca entity from. CNFI is CNFI in the inventory, CNFC Catalog entities.`),
-
+Command retrieves tca entities. Cnfs, Cluster Catalog etc.`),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// get authentication token
 			err := ctl.Authorize()
 			if err != nil {
 				CheckErrLogError(err)
 			}
-
+			// set trace
+			if ctl.IsTrace {
+				ctl.GetApi().SetTrace(ctl.IsTrace)
+			}
 		},
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -235,6 +239,9 @@ Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node
 			if err != nil {
 				CheckErrLogError(err)
 			}
+			if ctl.IsTrace {
+				ctl.GetApi().SetTrace(ctl.IsTrace)
+			}
 		},
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -254,6 +261,9 @@ Command creates a new object in TCA. For example new CNF instance, cluster , clu
 			if err != nil {
 				CheckErrLogError(err)
 			}
+			if ctl.IsTrace {
+				ctl.GetApi().SetTrace(ctl.IsTrace)
+			}
 		},
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -265,9 +275,7 @@ Command creates a new object in TCA. For example new CNF instance, cluster , clu
 		Use:   "set",
 		Short: "Command sets config variables (Username, Password etc) for tcactl.",
 		Long: templates.LongDesc(`
-
 Command sets config variables (Username, Password etc) for tcactl.`),
-
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 		},
@@ -275,14 +283,18 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 
 	// delete root command
 	var cmdDelete = &cobra.Command{
-		Use:     "delete",
-		Short:   "Command deletes object (template,cluster,cnf etc).",
-		Long:    `Command deletes object (template,cluster,cnf etc).`,
+		Use:   "delete",
+		Short: "Command deletes object (template,cluster,cnf etc).",
+		Long: templates.LongDesc(
+			`Command deletes object in tca, (template,cluster,cnf etc).`),
 		Aliases: []string{"del"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := ctl.Authorize()
 			if err != nil {
 				return
+			}
+			if ctl.IsTrace {
+				ctl.GetApi().SetTrace(ctl.IsTrace)
 			}
 		},
 		Args: cobra.MinimumNArgs(1),

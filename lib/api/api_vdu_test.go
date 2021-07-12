@@ -36,25 +36,25 @@ func TestGetVdu(t *testing.T) {
 	}{
 		{
 			name:    "Wrong name must fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: true,
 			vduName: "",
 		},
 		{
 			name:    "Wrong name must fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: true,
 			vduName: "abc",
 		},
 		{
 			name:    "Valid user defined name must be resolved",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 			vduName: "app",
 		},
 		{
 			name:             "Valid user defined name and simulated failure",
-			rest:             rest,
+			rest:             getAuthenticatedClient(),
 			wantErr:          true,
 			vduName:          "app",
 			simulateFailure:  true,
@@ -62,7 +62,7 @@ func TestGetVdu(t *testing.T) {
 		},
 		{
 			name:             "Valid user defined name and simulated failure",
-			rest:             rest,
+			rest:             getAuthenticatedClient(),
 			wantErr:          true,
 			vduName:          "app",
 			simulateFailure:  true,

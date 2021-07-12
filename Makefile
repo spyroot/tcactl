@@ -8,13 +8,18 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 APP_NAME=tcactl
 BINARY=tcactl
-VERSION=0.6.0
+VERSION=0.7.0
 PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
 
 LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.Build=${BUILD}"
 
 default: build
+
+clean:
+	$(GOCLEAN)
 
 .PHONY: all
 all: clean build_all install

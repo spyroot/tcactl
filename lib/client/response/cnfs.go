@@ -267,3 +267,22 @@ func (c *CnfsExtended) ResolveFromName(name string) (*CnfLcmExtended, error) {
 
 	return nil, &CnfNotFound{name}
 }
+
+// GetByCatalogName - tries to find all instance based on catalog name
+func (c *CnfsExtended) GetByCatalogName(name string) ([]CnfLcmExtended, error) {
+
+	if c == nil {
+		return nil, fmt.Errorf("cnfs instance is nil")
+	}
+
+	var searchResult []CnfLcmExtended
+
+	q := strings.ToLower(name)
+	for _, cnf := range c.CnfLcms {
+		if strings.ToLower(cnf.VnfCatalogName) == q || cnf.CID == q {
+			searchResult = append(searchResult, cnf)
+		}
+	}
+
+	return searchResult, nil
+}

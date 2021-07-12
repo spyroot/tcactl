@@ -1,3 +1,20 @@
+// Package app
+// Copyright 2020-2021 Author.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+// Mustafa mbayramo@vmware.com
 package api
 
 import (
@@ -9,7 +26,7 @@ import (
 )
 
 // TestGetVim tests basic retrieval vim
-//and vims tenant details
+// and vims tenant details
 func TestGetVim(t *testing.T) {
 
 	tests := []struct {
@@ -24,7 +41,7 @@ func TestGetVim(t *testing.T) {
 	}{
 		{
 			name:        "Get vim and tenant by id",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			vimErr:      false,
 			dumpJson:    true,
 			provideName: getTestWorkloadClusterName(),
@@ -32,7 +49,7 @@ func TestGetVim(t *testing.T) {
 		},
 		{
 			name:        "Get vim and tenant by name provider k8s",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			vimErr:      false,
 			dumpJson:    false,
 			provideName: getTestWorkloadClusterName(),
@@ -40,45 +57,49 @@ func TestGetVim(t *testing.T) {
 		},
 		{
 			name:        "Get vim and tenant by name provider vc",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			vimErr:      false,
 			dumpJson:    false,
 			provideName: getTestCloudProvider(),
 		},
 		{
 			name:        "Get invalid vim",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			vimErr:      true,
 			dumpJson:    false,
 			provideName: "invalid",
 		},
 		{
 			name:        "Get invalid test",
-			rest:        rest,
+			rest:        getAuthenticatedClient(),
 			vimErr:      false,
 			errTenant:   true,
 			dumpJson:    false,
 			provideName: getTestCloudProvider(),
 			tenantName:  "invalid",
 		},
+		{
+			name:        "Get empty name test",
+			rest:        getAuthenticatedClient(),
+			vimErr:      true,
+			errTenant:   false,
+			dumpJson:    false,
+			provideName: "",
+			tenantName:  "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
-			if a == nil {
-				t.Errorf("clinet must not be nil")
-				return
-			}
-
-			if tt.reset {
-				a.rest = nil
-			}
+			a := getTcaApi(t, tt.rest, false)
 
 			provider, err := a.GetVim(ctx, tt.provideName)
 			if err != nil != tt.vimErr {
-				t.Errorf("GetVimComputeClusters() error = %v, vimErr %v", err, tt.vimErr)
+				t.Errorf("GetVim() error = %v, vimErr %v", err, tt.vimErr)
+				return
+			}
+			if tt.vimErr && err != nil {
 				return
 			}
 
@@ -107,12 +128,11 @@ func TestGetVim(t *testing.T) {
 					}
 				}
 			}
-
-			//			io.PrettyPrint(provider)
 		})
 	}
 }
 
+// test vim computer clusters
 func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 
 	tests := []struct {
@@ -125,24 +145,31 @@ func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 	}{
 		{
 			name:              "Basic positive get list vim details",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           false,
 			dumpJson:          true,
 			cloudProviderName: getTestCloudProvider(),
 		},
 		{
 			name:              "Basic error invalid cloud provider",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           true,
 			dumpJson:          false,
 			cloudProviderName: "test",
+		},
+		{
+			name:              "Empty cloud provider",
+			rest:              getAuthenticatedClient(),
+			wantErr:           true,
+			dumpJson:          false,
+			cloudProviderName: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			if a == nil {
 				t.Errorf("clinet must not be nil")
 				return
@@ -190,7 +217,7 @@ func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 			}
 
 			if tt.wantErr && err == nil {
-				t.Errorf("CreateClusterTemplate() error is nil, vimErr %v", tt.wantErr)
+				t.Errorf("GetVimComputeClusters() error is nil, vimErr %v", tt.wantErr)
 				return
 			}
 
@@ -202,6 +229,7 @@ func TestTcaApi_GetVimComputeClusters(t *testing.T) {
 	}
 }
 
+// Test vim network fetching
 func TestTcaApi_GetVimNetworks(t *testing.T) {
 
 	tests := []struct {
@@ -214,14 +242,14 @@ func TestTcaApi_GetVimNetworks(t *testing.T) {
 	}{
 		{
 			name:              "Basic get list network details",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           false,
 			dumpJson:          true,
 			cloudProviderName: getTestCloudProvider(),
 		},
 		{
 			name:              "Basic error case bogus cloud provider",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           true,
 			dumpJson:          false,
 			cloudProviderName: "test",
@@ -231,7 +259,7 @@ func TestTcaApi_GetVimNetworks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			if tt.reset {
 				a.rest = nil
 			}
@@ -241,29 +269,27 @@ func TestTcaApi_GetVimNetworks(t *testing.T) {
 				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
-
 			if !tt.wantErr && got == nil {
 				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
-
 			// we want err and got not nil instance
 			if tt.wantErr && got != nil {
 				t.Errorf("GetVimNetworks() error = %v, vimErr %v", err, tt.wantErr)
 				return
 			}
+			if !tt.wantErr && got == nil {
+				return
+			}
 
-			if tt.wantErr && got == nil {
+			if got == nil {
+				t.Errorf("GetVimNetworks() return nil with no error")
 				return
 			}
 
 			// if we got at least something in list we are ok
-			if !tt.wantErr && len(got.Network) > 0 {
+			if len(got.Network) > 0 {
 				return
-			}
-
-			if got != nil {
-				t.Log(got.Network)
 			}
 
 			if tt.dumpJson {
@@ -272,20 +298,11 @@ func TestTcaApi_GetVimNetworks(t *testing.T) {
 					return
 				}
 			}
-
-			if tt.wantErr && err == nil {
-				t.Errorf("GetVimNetworks() error is nil, vimErr %v", tt.wantErr)
-				return
-			}
-
-			if tt.wantErr && err != nil {
-				t.Logf("Recieved correct error %v", err)
-				return
-			}
 		})
 	}
 }
 
+// test vim network
 func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 
 	tests := []struct {
@@ -298,14 +315,14 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 	}{
 		{
 			name:              "Basic get list network details",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           false,
 			dumpJson:          true,
 			cloudProviderName: getTestCloudProvider(),
 		},
 		{
 			name:              "Basic error case bogus cloud provider",
-			rest:              rest,
+			rest:              getAuthenticatedClient(),
 			wantErr:           true,
 			dumpJson:          false,
 			cloudProviderName: "test",
@@ -315,7 +332,7 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			if tt.reset {
 				a.rest = nil
 			}
@@ -370,74 +387,3 @@ func TestTcaApi_GetVimNetworksAdv(t *testing.T) {
 		})
 	}
 }
-
-//
-//func TestTcaApi_GetVimComputeClusters1(t *testing.T) {
-//	type fields struct {
-//		rest          *client.RestClient
-//		specValidator *validator.Validate
-//	}
-//	type args struct {
-//		CloudName string
-//	}
-//	tests := []struct {
-//		name    string
-//		fields  fields
-//		args    args
-//		want    *models.VMwareClusters
-//		wantOnGetErr bool
-//	}{
-//		// TODO: Add test cases.
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			a := &tcaApi{
-//				rest:          tt.fields.rest,
-//				specValidator: tt.fields.specValidator,
-//			}
-//			got, err := a.GetVimComputeClusters(tt.args.CloudName)
-//			if (err != nil) != tt.wantOnGetErr {
-//				t.Errorf("GetVimComputeClusters() error = %v, wantOnGetErr %v", err, tt.wantOnGetErr)
-//				return
-//			}
-//			if !reflect.DeepEqual(got, tt.want) {
-//				t.Errorf("GetVimComputeClusters() got = %v, want %v", got, tt.want)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTcaApi_GetVimNetworks1(t *testing.T) {
-//	type fields struct {
-//		rest          *client.RestClient
-//		specValidator *validator.Validate
-//	}
-//	type args struct {
-//		CloudName string
-//	}
-//	tests := []struct {
-//		name    string
-//		fields  fields
-//		args    args
-//		want    *models.CloudNetworks
-//		wantOnGetErr bool
-//	}{
-//		// TODO: Add test cases.
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			a := &tcaApi{
-//				rest:          tt.fields.rest,
-//				specValidator: tt.fields.specValidator,
-//			}
-//			got, err := a.GetVimNetworks(tt.args.CloudName)
-//			if (err != nil) != tt.wantOnGetErr {
-//				t.Errorf("GetVimNetworks() error = %v, wantOnGetErr %v", err, tt.wantOnGetErr)
-//				return
-//			}
-//			if !reflect.DeepEqual(got, tt.want) {
-//				t.Errorf("GetVimNetworks() got = %v, want %v", got, tt.want)
-//			}
-//		})
-//	}
-//}

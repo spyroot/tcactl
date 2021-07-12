@@ -46,14 +46,14 @@ func (ctl *TcaCtl) CmdGetClusters() *cobra.Command {
 	var _cmdClusters = &cobra.Command{
 		Use:   "clusters",
 		Short: "Command retrieves cluster related information.",
-		Long: `
+		Long: templates.LongDesc(`
 
 Command retrieves cluster-related information. Each sub-command 
 require either cluster name or cluster id.
 
-`,
-		Example: "\t- tcactl get clusters info mycluster\n" +
-			"\t -tcactl get clusters pool mycluster",
+`),
+		Example: "\t - tcactl get clusters info mycluster\n" +
+			"\t - tcactl get clusters pool mycluster",
 		Args:    cobra.MinimumNArgs(1),
 		Aliases: []string{"cluster", "cl"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -132,24 +132,19 @@ func (ctl *TcaCtl) CmdGetCluster() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "cluster [name or id]",
-		Short:   "Command describes kubernetes cluster or clusters information",
-		Long:    `Command returns kubernetes cluster or cluster information.`,
-		Example: "- tcactl describe clusters 794a675c-777a-47f4-8edb-36a686ef4065 -o json",
+		Use:   "cluster [name or id]",
+		Short: "Command describes kubernetes cluster or clusters information",
+		Long: templates.LongDesc(
+			`Command returns kubernetes cluster or cluster information.`),
+		Example: "\t - tcactl describe clusters 794a675c-777a-47f4-8edb-36a686ef4065 -o json",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
-				ctx        = context.Background()
-				_clusterId string
-				err        error
+				ctx = context.Background()
+				cid string
+				err error
 			)
-
-			_clusterId = args[0]
-			if !IsValidUUID(args[0]) {
-				_clusterId, err = ctl.ResolveClusterName(args[0])
-				CheckErrLogError(err)
-			}
 
 			// global output type
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
@@ -158,8 +153,20 @@ func (ctl *TcaCtl) CmdGetCluster() *cobra.Command {
 			CheckErrLogError(err)
 			_defaultStyler.SetWide(_isWide)
 
-			cluster, err := ctl.tca.GetCluster(ctx, _clusterId)
-			CheckErrLogError(err)
+			cid = args[0]
+
+			cluster, err := ctl.tca.GetCluster(ctx, cid)
+			if err != nil {
+				clusters, err := ctl.tca.GetClusters(ctx)
+				if err != nil {
+					return
+				}
+				fmt.Println("Unknown cluster, current cluster list:")
+				for _, spec := range clusters.Clusters {
+					fmt.Println(" * ", spec.ClusterName)
+				}
+				return
+			}
 
 			if printer, ok := ctl.ClusterPrinter[_defaultPrinter]; ok {
 				printer(cluster, _defaultStyler)
@@ -189,8 +196,9 @@ func (ctl *TcaCtl) CmdGetClustersPoolNodes() *cobra.Command {
 		Long: templates.LongDesc(
 			`Command returns a list kubernetes node pool for a given cluster name.`),
 
-		Example: "- tcactl get clusters nodes 794a675c-777a-47f4-8edb-36a686ef4065\n - tcactl get clusters nodes edge",
-		Args:    cobra.MinimumNArgs(1),
+		Example: "\t - tcactl get clusters nodes 794a675c-777a-47f4-8edb-36a686ef4065\n " +
+			"\t - tcactl get clusters nodes edge",
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctx := context.Background()
@@ -240,10 +248,11 @@ func (ctl *TcaCtl) CmdDescClusterNodePool() *cobra.Command {
 	)
 
 	var _cmd = &cobra.Command{
-		Use:     "pool [name or id]",
-		Short:   "Command describes kubernetes node pool",
-		Long:    `Command describes kubernetes node pool for a given or default cluster name.`,
-		Example: "tcactl describe pool 794a675c-777a-47f4-8edb-36a686ef4065",
+		Use:   "pool [name or id]",
+		Short: "Command describes kubernetes node pool",
+		Long: templates.LongDesc(
+			`Command describes kubernetes node pool for a given or default cluster name.`),
+		Example: "\t - tcactl describe pool 794a675c-777a-47f4-8edb-36a686ef4065",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -343,12 +352,14 @@ func (ctl *TcaCtl) CmdGetClustersList() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "info [optional cluster name]",
 		Short: "Command returns kubernetes cluster or cluster information.",
-		Long:  `Command returns kubernetes cluster or cluster information.`,
+		Long: templates.LongDesc(
+			`Command returns kubernetes clusters or cluster information.`),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
 			ctx := context.Background()
 			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
@@ -390,8 +401,9 @@ func (ctl *TcaCtl) CmdGetClustersK8SConfig() *cobra.Command {
 	var _cmd = &cobra.Command{
 		Use:   "kubeconfig [cluster name]",
 		Short: "Command returns cluster kubeconfig",
-		Long:  `Command returns cluster kubeconfig.`,
-		Args:  cobra.MinimumNArgs(1),
+		Long: templates.LongDesc(
+			`Command returns cluster kubeconfig.`),
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctx := context.Background()

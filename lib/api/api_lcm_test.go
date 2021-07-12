@@ -8,7 +8,9 @@ import (
 	"testing"
 )
 
+// Fetch all instance
 func TestGetInstance(t *testing.T) {
+
 	tests := []struct {
 		name         string
 		rest         *client.RestClient
@@ -20,7 +22,7 @@ func TestGetInstance(t *testing.T) {
 	}{
 		{
 			name:         "Must return test instance",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			wantErr:      false,
 			instanceName: "unit_test_instance",
 			poolName:     getTestNodePoolName(),
@@ -29,13 +31,15 @@ func TestGetInstance(t *testing.T) {
 		},
 		{
 			name:         "Must return error",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			wantErr:      true,
 			instanceName: "unit_test_instance01",
 		},
 	}
+	//
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			var (
 				instance *response.LcmInfo
 				err      error
@@ -81,7 +85,7 @@ func TestCreateCnfInstance(t *testing.T) {
 	}{
 		{
 			name:            "Create unit_test instance must fail",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			wantOnGetErr:    false,
 			wantOnCreateErr: true,
 			instanceName:    "unit_test_instance",
@@ -91,7 +95,7 @@ func TestCreateCnfInstance(t *testing.T) {
 		},
 		{
 			name:            "Create unit_test instance",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			wantOnGetErr:    false,
 			wantOnCreateErr: true,
 			instanceName:    "unit_test_instance",
@@ -101,7 +105,7 @@ func TestCreateCnfInstance(t *testing.T) {
 		},
 		{
 			name:            "Create unit_test instance must pass",
-			rest:            rest,
+			rest:            getAuthenticatedClient(),
 			wantOnGetErr:    false,
 			wantOnCreateErr: false,
 			instanceName:    "unit_test_instance",
@@ -161,6 +165,7 @@ func TestCreateCnfInstance(t *testing.T) {
 	}
 }
 
+// Update CNF instance
 func TestCnfUpdateState(t *testing.T) {
 
 	tests := []struct {
@@ -176,7 +181,7 @@ func TestCnfUpdateState(t *testing.T) {
 	}{
 		{
 			name:         "Update unit_test instance",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			instanceName: "unit_test_instance",
 			wantErr:      false,
 		},
@@ -252,7 +257,7 @@ func TestDeleteCnf(t *testing.T) {
 	}{
 		{
 			name:         "Instance not found",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			wantErr:      true,
 			instanceName: "invalid name",
 		},
@@ -304,7 +309,7 @@ func TestRollbackCnf(t *testing.T) {
 	}{
 		{
 			name:         "rollback cnf",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			instanceName: getTestInstanceName(),
 			doBlock:      true,
 			doVerbose:    true,
@@ -335,13 +340,13 @@ func TestTerminateCnfInstance(t *testing.T) {
 	}{
 		{
 			name:         "Instance not found",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			wantErr:      true,
 			instanceName: "invalid name",
 		},
 		{
 			name:         "Instance must terminate",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			wantErr:      false,
 			instanceName: getTestInstanceName(),
 			clusterName:  getTestWorkloadClusterName(),

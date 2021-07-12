@@ -1,12 +1,14 @@
 package specs
 
 import (
+	ioutils "github.com/spyroot/tcactl/pkg/io"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"testing"
 )
 
+// Read template spec from file and test
 func TestSpecClusterTemplate_SpecsFromFile(t *testing.T) {
 
 	tests := []struct {
@@ -19,6 +21,11 @@ func TestSpecClusterTemplate_SpecsFromFile(t *testing.T) {
 			file:    "/template/positive/template.mgmt.yaml",
 			wantErr: false,
 		},
+		{
+			name:    "Read cluster template spec from yaml",
+			file:    "/template/positive/template.workload.yaml",
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -27,7 +34,7 @@ func TestSpecClusterTemplate_SpecsFromFile(t *testing.T) {
 			fileName := assetsDir + tt.file
 			spec, err := SpecClusterTemplate{}.SpecsFromFile(fileName)
 			if tt.wantErr && err == nil {
-				t.Errorf("Test failed must not return error")
+				t.Errorf("SpecsFromFile() failed must not return error")
 				return
 			}
 			if tt.wantErr && err != nil {
@@ -39,7 +46,7 @@ func TestSpecClusterTemplate_SpecsFromFile(t *testing.T) {
 			}
 			templateSpec, ok := (*spec).(*SpecClusterTemplate)
 			if !ok {
-				t.Errorf("Test failed method return wrong type")
+				t.Errorf("SpecsFromFile() failed method return wrong type")
 				return
 			}
 			err = templateSpec.Validate()
@@ -48,10 +55,13 @@ func TestSpecClusterTemplate_SpecsFromFile(t *testing.T) {
 					"return error for positive case err %v file %s", err, fileName)
 				return
 			}
+
+			ioutils.YamlPrinter(templateSpec)
 		})
 	}
 }
 
+// Read template spec from reader
 func TestClusterTemplateSpec_SpecsFromReader(t *testing.T) {
 
 	tests := []struct {

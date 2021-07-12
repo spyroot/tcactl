@@ -28,8 +28,8 @@ import (
 	"strings"
 )
 
-// CmdGetVim - get VIM root command.
-// each sub-command gets particular facts about attached VIM, Cloud provider.
+// CmdGetVim - Get's VIM root command.
+// - Each sub-command gets particular facts about attached VIM, Cloud provider.
 func (ctl *TcaCtl) CmdGetVim() *cobra.Command {
 
 	// cloud - tenants
@@ -38,10 +38,10 @@ func (ctl *TcaCtl) CmdGetVim() *cobra.Command {
 		Aliases: []string{"vims"},
 		Short:   "Command retrieves a vim-cloud provider information.",
 		Long: templates.LongDesc(`
-
 Command retrieves a vim-cloud provider information.`),
-
-		Example: " - tcactl describe vim compute my_cloud_provider",
+		Example: "\t - tcactl get vim compute my_cloud_provider\n " +
+			"\t - tcactl get vim datastore my_cloud_provider\n" +
+			"\t - tcactl get vim folders my_cloud_provider",
 		//Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("%s requires a subcommand", cmd.Name())
@@ -58,8 +58,8 @@ Command retrieves a vim-cloud provider information.`),
 	return _cmd
 }
 
-// CmdDescribeVim - command describe VIM , Cloud Provider
-// attached to system.
+// CmdDescribeVim - command describe VIM ,
+// Cloud Provider , attached to system.
 func (ctl *TcaCtl) CmdDescribeVim() *cobra.Command {
 
 	var (
@@ -75,9 +75,7 @@ func (ctl *TcaCtl) CmdDescribeVim() *cobra.Command {
 		Aliases: []string{"vims"},
 		Short:   "Command retrieves a vim-cloud provider information.",
 		Long: templates.LongDesc(`
-
 Command retrieves a list of cloud providers.
-
 `),
 		Example: " - tcactl describe vim vmware_FB40D3DE2967483FBF9033B451DC7571",
 		Args:    cobra.MinimumNArgs(1),

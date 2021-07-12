@@ -40,15 +40,15 @@ func (a *TcaApi) GetAllPackages() (*response.CnfsExtended, error) {
 		return nil, err
 	}
 
-	pkgs, ok := respond.(response.CnfsExtended)
+	pkgs, ok := respond.(*response.CnfsExtended)
 	if !ok {
 		return nil, errors.New("rest vnflcm return wrong type")
 	}
 
-	return &pkgs, nil
+	return pkgs, nil
 }
 
-//
+// GetVnflcm return lcm state
 func (a *TcaApi) GetVnflcm(f ...string) (interface{}, error) {
 	return a.rest.GetVnflcm(f...)
 }

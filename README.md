@@ -23,11 +23,11 @@ tcactl tool provider.
 
 * Ability to leverage tosca policy to scale, upgrade CNF or VNF.
 
-* tcactl has build in Tosca parser, tool allow you apply transformation 
+* tcactl has build in Tosca parser, tool allow you to apply transformation 
   to existing CSAR and upload to a system.
 
 * tcactl resolve most of the name in all artifact. For example instead of using
-  ID and execute multiply command tool allow indicate just name.
+  ID and execute multiply command tool allow to indicate just name.
   
 ## Build
 

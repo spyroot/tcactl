@@ -63,9 +63,8 @@ func specNodePoolFromFile(spec string) *specs.SpecNodePool {
 	return r
 }
 
-//  Test create a new node pool
-//
-func TestTcaCreateNewNodePool(t *testing.T) {
+//  Test must return list of all pools.
+func TestGetAllNodePool(t *testing.T) {
 
 	tests := []struct {
 		name         string
@@ -77,44 +76,80 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 	}{
 		{
 			name:    "Create node pool from json spec",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
+			spec:    specNodePoolStringReaderHelper(jsonNodeSpec),
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			a := getTcaApi(t, tt.rest, false)
+			assert.NotNil(t, tt.spec)
+
+			pool, err := a.GetAllNodePool(context.Background())
+			if err != nil {
+				return
+			}
+
+			assert.NotNil(t, pool)
+			assert.NotEqual(t, 0, len(pool.Pools))
+		})
+	}
+}
+
+//  Test create a new node pool
+func TestTcaCreateNewNodePool(t *testing.T) {
+
+	tests := []struct {
+		name         string
+		rest         *client.RestClient
+		spec         *specs.SpecNodePool
+		wantErr      bool
+		reset        bool
+		withoutLabel bool
+	}{
+		{
+			name:    "Create node pool from json spec",
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(jsonNodeSpec),
 			wantErr: false,
 		},
 		{
 			name:    "Create node pool from yaml spec",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(newNodePoolYaml),
 			wantErr: false,
 		},
 		{
 			name:    "Wrong specString no CPU",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoCPU),
 			wantErr: true,
 		},
 		{
 			name:    "Wrong specString no replica",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoReplica),
 			wantErr: true,
 		},
 		{
 			name:    "Wrong specString no network",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlNoNetwork),
 			wantErr: true,
 		},
 		{
 			name:         "Wrong specString without label",
-			rest:         rest,
+			rest:         getAuthenticatedClient(),
 			spec:         specNodePoolStringReaderHelper(newNodePoolYamlWithoutLabel),
 			wantErr:      true,
-			withoutlabel: true,
+			withoutLabel: true,
 		},
 		{
 			name:    "Wrong specString without config",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(newNodePoolYamlWithoutConfig),
 			wantErr: true,
 		},
@@ -129,12 +164,12 @@ func TestTcaCreateNewNodePool(t *testing.T) {
 				task *models.TcaTask
 			)
 
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 			assert.NotNil(t, tt.spec)
 
 			tt.spec.CloneMode = specs.LinkedClone
 
-			if tt.spec != nil && tt.withoutlabel == false {
+			if tt.spec != nil && tt.withoutLabel == false {
 				tt.spec.Name = generateName()
 				tt.spec.Labels[0] = "type=" + tt.spec.Name
 			}
@@ -186,49 +221,49 @@ func TestTcaUpdateNodePool(t *testing.T) {
 	}{
 		{
 			name:    "Yaml template wrong cpu count.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(updateMustWrongCPUCount),
 			wantErr: true,
 		},
 		{
 			name:    "Yaml template no cpu value.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(updateMustFailNoCPU),
 			wantErr: true,
 		},
 		{
 			name:    "Yaml without pool id.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(updateMinYamlNoID),
 			wantErr: false,
 		},
 		{
 			name:    "Read from yaml file without node pool id.",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolFromFile(updateMinYamlNoID),
 			wantErr: false,
 		},
 		{
 			name:    "Read from yaml file and add label",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolFromFile(updatePoolAddLabel),
 			wantErr: false,
 		},
 		{
 			name:    "Yaml updates node pool replica",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(updateYamlPoolSpec),
 			wantErr: false,
 		},
 		{
 			name:    "Yaml min update replica",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(updateMinYamlPoolSpec),
 			wantErr: false,
 		},
 		{
 			name:    "Json updates node pool replica",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			spec:    specNodePoolStringReaderHelper(updateJsonPoolSpec),
 			wantErr: false,
 		},
@@ -242,7 +277,7 @@ func TestTcaUpdateNodePool(t *testing.T) {
 			)
 
 			ctx := context.Background()
-			a := getTcaApi(t, rest, false)
+			a := getTcaApi(t, tt.rest, false)
 
 			if tt.reset {
 				a.rest = nil

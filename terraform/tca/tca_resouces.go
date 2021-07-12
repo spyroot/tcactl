@@ -98,7 +98,7 @@ func ClusterTemplateCreate(ctx context.Context, d *schema.ResourceData, m interf
 	return diags
 }
 
-//
+// ClusterTemplateRead
 func ClusterTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	tca, err := GetApi(m)

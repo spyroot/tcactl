@@ -46,26 +46,6 @@ const (
 	DefaultFlavor = "default"
 )
 
-func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
-	repo string, instanceName string, nodePoolName string) *specs.InstanceRequestSpec {
-	i := &specs.InstanceRequestSpec{
-		CloudName:        cloudName,
-		ClusterName:      clusterName,
-		VimType:          vimType,
-		NfdName:          nfdName,
-		Repo:             repo,
-		InstanceName:     instanceName,
-		NodePoolName:     nodePoolName,
-		UseLinkedRepo:    true,
-		AdditionalParams: specs.AdditionalParams{}}
-
-	i.FlavorName = DefaultNamespace
-	i.Description = ""
-	i.Namespace = DefaultFlavor
-
-	return i
-}
-
 // TcaApi - TCA Api interface
 // Called need to use NewTcaApi to get instance before
 type TcaApi struct {
@@ -112,10 +92,6 @@ func (m *UnsupportedCloudProvider) Error() string {
 // in all other cases it efficient to use direct call for cluster.
 func (a *TcaApi) GetAllNodePool(ctx context.Context) (*response.NodePool, error) {
 
-	if a.rest == nil {
-		return nil, fmt.Errorf("rest interface is nil")
-	}
-
 	clusters, err := a.rest.GetClusters(ctx)
 	if err != nil {
 		return nil, err
@@ -124,11 +100,10 @@ func (a *TcaApi) GetAllNodePool(ctx context.Context) (*response.NodePool, error)
 	var pools response.NodePool
 	// get all nodes pools
 	for _, cluster := range clusters.Clusters {
-
 		glog.Infof("Retrieving pool for a cluster name: '%v' uuid: '%v' state '%v'",
 			cluster.ClusterName, cluster.Id, cluster.Status)
 
-		// if cluster in failed state we have no pool.s
+		// if cluster in failed state we have no pool.
 		if len(cluster.Id) == 0 {
 			glog.Infof("SpecCluster id empty value")
 			continue
@@ -977,12 +952,6 @@ func (a *TcaApi) GetTenantsQuery(tenantId string, nfType string) (*response.Tena
 	// attach tenant id if need
 	if len(tenantId) > 0 {
 		reqFilter.Filter.NfdId = tenantId
-		//cid, vnfdId, err := a.GetCatalogId(tenantId)
-		//if err != nil {
-		//	return nil, nil
-		//}
-		//glog.Infof("Acquired catalog id '%v', for vnfId '%v'", cid, vnfdId)
-		//reqFilter.Filter.NfdId = vnfdId
 	}
 
 	return a.rest.GetTenantsQuery(&reqFilter)

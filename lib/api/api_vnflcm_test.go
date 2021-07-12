@@ -34,7 +34,7 @@ func TestGetAllPackages(t *testing.T) {
 	}{
 		{
 			name:    "Get all packages",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 			vduName: "",
 		},
@@ -45,18 +45,118 @@ func TestGetAllPackages(t *testing.T) {
 			a, err := NewTcaApi(tt.rest)
 			assert.NoError(t, err)
 
-			got, err := a.GetAllPackages()
-
+			entireCatalog, err := a.GetAllPackages()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAllPackages() error = %v, wantOnGetErr %v", err, tt.wantErr)
 				return
 			}
 
-			assert.NotNil(t, got)
+			assert.NotEqual(t, 0, len(entireCatalog.CnfLcms))
 		})
 	}
 }
 
+//TestGetByCatalogName get entire catalog and search for unit_test catalog entities.
+func TestGetByCatalogName(t *testing.T) {
+
+	tests := []struct {
+		rest    *client.RestClient
+		name    string
+		wantErr bool
+		vduName string
+	}{
+		{
+			name:    "Get by catalog name",
+			rest:    getAuthenticatedClient(),
+			wantErr: false,
+			vduName: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			a, err := NewTcaApi(tt.rest)
+			assert.NoError(t, err)
+
+			entireCatalog, err := a.GetAllPackages()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAllPackages() error = %v, wantOnGetErr %v", err, tt.wantErr)
+				return
+			}
+
+			if entireCatalog == nil {
+				t.Errorf("GetAllPackages() shouldn't return nil")
+				return
+			}
+
+			catalogEntities, err := entireCatalog.GetByCatalogName(getTestCatalogName())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAllPackages() error = %v, wantOnGetErr %v", err, tt.wantErr)
+				return
+			}
+
+			assert.NotEqual(t, 0, len(catalogEntities))
+		})
+	}
+}
+
+//TestTcaGetAllPackages Basic catalog getter test
+func TestResolveFromName(t *testing.T) {
+
+	tests := []struct {
+		rest    *client.RestClient
+		name    string
+		wantErr bool
+		vduName string
+	}{
+		{
+			name:    "Resolve by name unit test catalog",
+			rest:    getAuthenticatedClient(),
+			wantErr: false,
+			vduName: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			a, err := NewTcaApi(tt.rest)
+			assert.NoError(t, err)
+
+			entireCatalog, err := a.GetAllPackages()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAllPackages() error = %v, wantOnGetErr %v", err, tt.wantErr)
+				return
+			}
+
+			if entireCatalog == nil {
+				t.Errorf("GetAllPackages() shouldn't return nil")
+				return
+			}
+
+			catalogEntities, err := entireCatalog.GetByCatalogName(getTestCatalogName())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAllPackages() error = %v, wantOnGetErr %v", err, tt.wantErr)
+				return
+			}
+
+			for _, entity := range catalogEntities {
+				name, err := entireCatalog.ResolveFromName(entity.CID)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("ResolveFromName() error = %v, wantOnGetErr %v", err, tt.wantErr)
+					return
+				}
+				if name == nil {
+					t.Errorf("ResolveFromName() should not return nil")
+					return
+				}
+				assert.NotEqual(t, 0, len(name.VnfCatalogName))
+			}
+			assert.NotEqual(t, 0, len(catalogEntities))
+		})
+	}
+}
+
+// Create catalog entity
 func TestCreateCatalogEntity(t *testing.T) {
 
 	tests := []struct {
@@ -67,7 +167,7 @@ func TestCreateCatalogEntity(t *testing.T) {
 	}{
 		{
 			name:    "Get all packages shouldn't fail",
-			rest:    rest,
+			rest:    getAuthenticatedClient(),
 			wantErr: false,
 			vduName: "",
 		},

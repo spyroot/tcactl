@@ -192,8 +192,9 @@ and node pool.
 				return
 			}
 
-			var newInstanceReq = api.NewInstanceRequestSpec(ctl.DefaultCloudName,
+			newInstanceReq, err := api.NewInstanceRequestSpec(ctl.DefaultCloudName,
 				ctl.DefaultClusterName, vimType, args[0], ctl.DefaultRepoName, args[1], ctl.DefaultNodePoolName)
+			CheckErrLogError(err)
 
 			newInstanceReq.AdditionalParams.DisableAutoRollback = disableAutoRollback
 			newInstanceReq.AdditionalParams.IgnoreGrantFailure = ignoreGrantFailure
@@ -238,7 +239,7 @@ and node pool.
 	return cmdCreate
 }
 
-//
+//CmdReconfigure command reconfigures lcm instance
 func (ctl *TcaCtl) CmdReconfigure() *cobra.Command {
 
 	var (

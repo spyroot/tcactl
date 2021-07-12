@@ -22,12 +22,12 @@ import (
 	"io"
 )
 
-// InvalidCloudSpec error if specs invalid
+// InvalidCloudSpec error if cloud provider specs is invalid
 type InvalidCloudSpec struct {
 	errMsg string
 }
 
-//
+// Error return error msg
 func (m *InvalidCloudSpec) Error() string {
 	return m.errMsg
 }
@@ -56,10 +56,12 @@ type SpecCloudProvider struct {
 	specError error
 }
 
+// Kind must return "provider" SpecType
 func (c *SpecCloudProvider) Kind() SpecType {
 	return c.SpecType
 }
 
+// Default set default values
 func (c *SpecCloudProvider) Default() error {
 	c.TenantName = ""
 	return nil
@@ -73,20 +75,23 @@ func (c *SpecCloudProvider) IsValid() bool {
 	return true
 }
 
-//Validate method validate node pool specs
+//Validate method validates cloud provider spec.
+//and if mandatory field not set return error.
 func (c *SpecCloudProvider) Validate() error {
 
 	if c == nil {
 		return &InvalidCloudSpec{errMsg: "nil instance"}
 	}
 
-	if c.Kind() != SpecKindProvider {
-		return &InvalidCloudSpec{errMsg: "spec must contain kind field"}
-	}
-
 	_, err := govalidator.ValidateStruct(c)
 	if err != nil {
+		c.specError = err
 		return err
+	}
+
+	if c.Kind() != SpecKindProvider {
+		c.specError = &InvalidCloudSpec{errMsg: "spec must contain kind field"}
+		return c.specError
 	}
 
 	return nil

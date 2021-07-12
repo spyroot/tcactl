@@ -111,6 +111,7 @@ type RestClient struct {
 
 // NewRestClient return a new rest client.
 func NewRestClient(baseURL string, skipSsl bool, username string, password string) (*RestClient, error) {
+
 	if len(baseURL) == 0 {
 		return nil, errors.New("base url is empty string")
 	}

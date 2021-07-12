@@ -164,6 +164,8 @@ func TestSpecCluster_SpecsFromString(t *testing.T) {
 	}
 }
 
+// Read cluster spec , creates reader and test
+// validation
 func TestSpecCluster_SpecsReader(t *testing.T) {
 
 	tests := []struct {

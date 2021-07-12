@@ -7,7 +7,7 @@ import (
 )
 
 //Read spec from file and test
-func TestSpecExtension_SpecsFromFile(t *testing.T) {
+func TestExtensionSpecsFromFile(t *testing.T) {
 
 	tests := []struct {
 		name    string
@@ -68,6 +68,30 @@ func TestSpecExtension_SpecsFromString(t *testing.T) {
 			file:    "/extension/positive/harbor.yaml",
 			wantErr: false,
 		},
+		{
+			name:          "No kind",
+			file:          "/extension/negative/no_kind.yaml",
+			wantErr:       false,
+			wantValidaErr: true,
+		},
+		{
+			name:          "Wrong kind",
+			file:          "/extension/negative/wrong_kind.yaml",
+			wantErr:       false,
+			wantValidaErr: true,
+		},
+		{
+			name:          "No name",
+			file:          "/extension/negative/no_name.yaml",
+			wantErr:       false,
+			wantValidaErr: true,
+		},
+		{
+			name:          "No version",
+			file:          "/extension/negative/no_ver.yaml",
+			wantErr:       false,
+			wantValidaErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -90,20 +114,23 @@ func TestSpecExtension_SpecsFromString(t *testing.T) {
 				t.Errorf("SpecsFromFile() return nil spec")
 				return
 			}
-			instanceSpec, ok := (*spec).(*SpecExtension)
+			extensionSpec, ok := (*spec).(*SpecExtension)
 			if !ok {
 				t.Errorf("SpecsFromString() failed method return wrong type")
 				return
 			}
-			err = instanceSpec.Validate()
+			err = extensionSpec.Validate()
 			if tt.wantValidaErr && err == nil {
 				t.Errorf("SpecsFromString() failed spec validator return no error for negative case %v", err)
 				return
 			}
 			if tt.wantValidaErr && err != nil {
+				assert.Equal(t, false, extensionSpec.IsValid())
 				t.Log(err)
 				return
 			}
+
+			assert.Equal(t, true, extensionSpec.IsValid())
 		})
 	}
 }

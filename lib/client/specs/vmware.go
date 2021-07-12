@@ -85,7 +85,7 @@ type VMwareTemplateQuery struct {
 	} `json:"filter"`
 }
 
-//
+// NewVMwareTemplateQuery
 func NewVMwareTemplateQuery(cloudId string, templateType string, ver string) *VMwareTemplateQuery {
 
 	v := VMwareTemplateQuery{}

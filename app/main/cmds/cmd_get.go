@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-//
+//CmdGetExtensions command get extensions from TCA
 func (ctl *TcaCtl) CmdGetExtensions() *cobra.Command {
 
 	var (

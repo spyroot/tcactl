@@ -437,6 +437,11 @@ func (ctl *TcaCtl) SetPassword(password string) {
 	}
 }
 
+// GetApi returns TcaApi api.TcaApi
+func (ctl *TcaCtl) GetApi() *api.TcaApi {
+	return ctl.tca
+}
+
 // CheckErrLogError , print error and log error
 func CheckErrLogError(msg interface{}) {
 	if msg != nil {

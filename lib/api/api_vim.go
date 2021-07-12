@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/pkg/errors"
 	"github.com/spyroot/tcactl/lib/api_errors"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
@@ -67,7 +66,7 @@ func (a *TcaApi) GetVim(ctx context.Context, NameOrId string) (*response.TenantS
 func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*models.VMwareClusters, error) {
 
 	if len(cloudName) == 0 {
-		return nil, errors.New("empty cloud provider")
+		return nil, api_errors.NewInvalidArgument("cloudName is empty")
 	}
 
 	tenants, err := a.rest.GetVimTenants(ctx)

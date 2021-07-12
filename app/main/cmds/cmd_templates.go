@@ -186,8 +186,16 @@ func (ctl *TcaCtl) CmdDescribeTemplate() *cobra.Command {
 
 			var templateId = args[0]
 			t, err := ctl.tca.GetNamedClusterTemplate(templateId)
-			CheckErrLogError(err)
-
+			if err != nil {
+				fmt.Println("Unknown template name or id. List of templates")
+				clusterTemplates, err := ctl.tca.GetClusterTemplates()
+				CheckErrLogError(err)
+				for _, template := range clusterTemplates.ClusterTemplates {
+					fmt.Println("* ", template.Name)
+				}
+				return
+			}
+			//
 			if printer, ok := ctl.TemplatePrinter[_defaultPrinter]; ok {
 				printer(t, _defaultStyler)
 			}

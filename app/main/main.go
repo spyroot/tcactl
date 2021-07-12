@@ -102,17 +102,19 @@ func init() {
 	// TODO enable for all command
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsTrace,
 		cmds.ConfigTrace, "x", false,
-		"enables trace.")
+		"Flag enables client-server trace.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborPassword,
 		cmds.ConfigHarborPassword, "",
-		"overwrites harbor password.")
+		"Flag Overwrites Harbor password.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsColorTerm,
-		cmds.FlagCliTerm, "t", false, "disables color output.")
+		cmds.FlagCliTerm, "t", true,
+		"Flag Disables color output.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsWideTerm,
-		cmds.FlagCliWide, "w", false, "wide terminal output.")
+		cmds.FlagCliWide, "w", false,
+		"Flag set wide terminal output.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&userLicense,
 		"license", "l", "", "license type")
@@ -184,7 +186,7 @@ func initConfig() {
 	}
 
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		glog.Infof("Using config file: %s", viper.ConfigFileUsed())
 	}
 
 	// update default after we read
@@ -213,10 +215,6 @@ func initConfig() {
 	tcaCtl.SetTcaBase(viper.GetString(cmds.ConfigTcaEndpoint))
 	tcaCtl.SetTcaUsername(viper.GetString(cmds.ConfigTcaUsername))
 	tcaCtl.SetPassword(viper.GetString(cmds.ConfigTcaPassword))
-
-	//tcaCtl.TcaClient.BaseURL = viper.GetString(cmds.ConfigTcaEndpoint)
-	//tcaCtl.TcaClient.Username = viper.GetString(cmds.ConfigTcaUsername)
-	//tcaCtl.TcaClient.Password = viper.GetString(cmds.ConfigTcaPassword)
 
 	// default Cloud in TCA,  SpecCluster and node pool
 	tcaCtl.DefaultCloudName = viper.GetString(cmds.ConfigDefaultCloud)
