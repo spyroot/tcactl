@@ -54,6 +54,7 @@ node pool.
 	cmdUpdateCnf.AddCommand(ctl.CmdUpdateInstances())
 	cmdUpdateCnf.AddCommand(ctl.CmdRollbackInstances())
 	cmdUpdateCnf.AddCommand(ctl.CmdReconfigure())
+	cmdUpdateCnf.AddCommand(ctl.CmdResetInstances())
 
 	return cmdUpdateCnf
 }
@@ -193,7 +194,9 @@ and node pool.
 			}
 
 			newInstanceReq, err := api.NewInstanceRequestSpec(ctl.DefaultCloudName,
-				ctl.DefaultClusterName, vimType, args[0], ctl.DefaultRepoName, args[1], ctl.DefaultNodePoolName)
+				ctl.DefaultClusterName, vimType, args[0],
+				&api.Repo{RepoUrl: ctl.DefaultRepoName, Username: ctl.HarborUsername, Password: ctl.HarborPassword},
+				args[1], ctl.DefaultNodePoolName)
 			CheckErrLogError(err)
 
 			newInstanceReq.AdditionalParams.DisableAutoRollback = disableAutoRollback
@@ -332,6 +335,7 @@ The command terminates active CNF or VNF instances.
 			CheckErrLogError(err)
 
 			ctl.checkDefaultsConfig()
+
 			err = ctl.tca.TerminateCnfInstance(context.Background(),
 				&api.TerminateInstanceApiReq{
 					InstanceName: args[0],
@@ -522,4 +526,38 @@ func (ctl *TcaCtl) CmdRollbackInstances() *cobra.Command {
 		"Blocks and Pool the operations status.")
 
 	return cmdTerminate
+}
+
+// CmdResetInstances resets instance state
+func (ctl *TcaCtl) CmdResetInstances() *cobra.Command {
+
+	var (
+		_doBlock = false
+	)
+
+	var cmdReset = &cobra.Command{
+		Use:   "reset [instance name or id]",
+		Short: "Command rollback CNF or VNF instance",
+		Long: templates.LongDesc(
+			`Rollback CNF instance, caller need to provide valid instance id or a name.`),
+		Args: cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			ctl.checkDefaultsConfig()
+
+			err := ctl.tca.ResetState(context.Background(), &api.ResetInstanceApiReq{
+				InstanceName: args[0],
+				ClusterName:  ctl.DefaultClusterName,
+			})
+			CheckErrLogError(err)
+
+			fmt.Println("Successfully updated state.")
+		},
+	}
+
+	// blocking flag
+	cmdReset.Flags().BoolVarP(&_doBlock, CliBlock, "b", false,
+		"Blocks and Pool the operations status.")
+
+	return cmdReset
 }

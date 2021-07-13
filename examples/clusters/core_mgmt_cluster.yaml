@@ -1,10 +1,11 @@
 ---
-name: min-mgmt
+kind: cluster
+name: test-core-mgmt
 clusterPassword: Vk13YXJlMSE=
 clusterTemplateId: 55e69a3c-d92b-40ca-be51-9c6585b89ad7
 clusterType: MANAGEMENT
 hcxCloudUrl: https://tca-cp03.cnfdemo.io
-endpointIP: 10.247.7.60
+endpointIP: 10.247.7.66
 vmTemplate: /Datacenter/vm/templates/photon-3-kube-v1.20.4+vmware.1
 masterNodes:
     - name: master
@@ -12,7 +13,7 @@ masterNodes:
         - label: MANAGEMENT
           networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
           nameservers:
-            - 10.246.2.9
+            - 10.241.28.1
       placementParams:
         - name: Discovered virtual machine
           type: Folder
@@ -28,7 +29,7 @@ workerNodes:
         - label: MANAGEMENT
           networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
           nameservers:
-            - 10.246.2.9
+            - 10.241.28.1
       placementParams:
         - name: Discovered virtual machine
           type: Folder

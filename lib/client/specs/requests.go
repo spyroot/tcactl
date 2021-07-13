@@ -28,9 +28,9 @@ type VduParam struct {
 
 type AdditionalParams struct {
 	VduParams           []VduParam `json:"vduParams,omitempty" yaml:"vduParams,omitempty"`
-	DisableGrant        bool       `json:"disableGrant,omitempty" yaml:"disableGrant,omitempty"`
-	IgnoreGrantFailure  bool       `json:"ignoreGrantFailure,omitempty" yaml:"ignoreGrantFailure,omitempty"`
-	DisableAutoRollback bool       `json:"disableAutoRollback,omitempty" yaml:"disableAutoRollback,omitempty"`
+	DisableGrant        bool       `json:"disableGrant" yaml:"disableGrant"`
+	IgnoreGrantFailure  bool       `json:"ignoreGrantFailure" yaml:"ignoreGrantFailure"`
+	DisableAutoRollback bool       `json:"disableAutoRollback" yaml:"disableAutoRollback"`
 }
 
 type PoolExtra struct {

@@ -25,6 +25,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
+	ioutils "github.com/spyroot/tcactl/pkg/io"
 )
 
 // GetVnflcm - Retrieves information about a CNF/VNF instance by reading
@@ -287,7 +288,55 @@ func (c *RestClient) CreateInstance(ctx context.Context, req *specs.LcmCreateReq
 	return &vnfCreateResp, nil
 }
 
+//Request URL: https://tca-vip03.cnfdemo.io/hybridity/api/vnflcm/v1/vnf_instances/f6dbcd54-a5b8-4e52-968f-ff0a7a6c9776/vnf_lcm_op_occs?pageNumber=1&pageSize=1
 // InstanceInstantiate - instantiate CNF or VNF
+//
+//type T struct {
+//	Items []struct {
+//		EntityDetails struct {
+//			Id   string `json:"id"`
+//			Type string `json:"type"`
+//			Name string `json:"name"`
+//		} `json:"entityDetails"`
+//		Type      string `json:"type"`
+//		Status    string `json:"status"`
+//		Progress  int    `json:"progress"`
+//		Message   string `json:"message"`
+//		StartTime int64  `json:"startTime"`
+//		Request   struct {
+//			FlavourId        string `json:"flavourId"`
+//			AdditionalParams struct {
+//				VimId               string `json:"vimId"`
+//				NodePoolId          string `json:"nodePoolId"`
+//				SkipGrant           bool   `json:"skipGrant"`
+//				IgnoreGrantFailure  bool   `json:"ignoreGrantFailure"`
+//				DisableAutoRollback bool   `json:"disableAutoRollback"`
+//				DisableGrant        bool   `json:"disableGrant"`
+//				UnitTest02          struct {
+//					Namespace string `json:"namespace"`
+//					RepoUrl   string `json:"repoUrl"`
+//					Username  string `json:"username"`
+//					Password  string `json:"password"`
+//				} `json:"unit_test02"`
+//				UseVAppTemplates bool `json:"useVAppTemplates"`
+//			} `json:"additionalParams"`
+//			VimId        string `json:"vimId"`
+//			NfInstanceId string `json:"nfInstanceId"`
+//			Id           string `json:"id"`
+//		} `json:"request"`
+//		Steps []struct {
+//			Title     string        `json:"title"`
+//			Status    string        `json:"status"`
+//			Progress  int           `json:"progress"`
+//			StartTime int64         `json:"startTime"`
+//			EndTime   int64         `json:"endTime,omitempty"`
+//			Message   string        `json:"message"`
+//			Children  []interface{} `json:"children"`
+//		} `json:"steps"`
+//		TaskId string `json:"taskId"`
+//	} `json:"items"`
+//}
+
 // Note instance state must be terminated.
 func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string, req specs.LcmInstantiateRequest) error {
 
@@ -296,6 +345,11 @@ func (c *RestClient) InstanceInstantiate(ctx context.Context, instanceId string,
 	}
 
 	c.GetClient()
+
+	if c.isTrace {
+		fmt.Println(ioutils.PrettyString(req))
+	}
+
 	resp, err := c.Client.R().SetContext(ctx).
 		SetBody(req).
 		Post(c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmInstantiate, instanceId))

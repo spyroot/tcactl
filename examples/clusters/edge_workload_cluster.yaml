@@ -1,5 +1,7 @@
 ---
+kind: cluster
 name: edge-test01
+  # notice mgmt cluster resolved from name
 managementClusterId: edge-mgmt-test01
 clusterPassword: VMware1!
 # we can use name or id c3e006c1-e6aa-4591-950b-6f3bedd944d3
@@ -17,7 +19,7 @@ clusterConfig:
             datastoreUrl: ds:///vmfs/volumes/vsan:528724284ea01639-d098d64191b96c2a/
             datastoreName: "vsanDatastore"
 hcxCloudUrl: https://tca-pod03-cp.cnfdemo.io
-endpointIP: 10.241.7.192
+endpointIP: 10.241.7.198
 vmTemplate: photon-3-kube-v1.20.4+vmware.1
 # you will need adjust all placement
 masterNodes:
@@ -26,7 +28,7 @@ masterNodes:
         - label: MANAGEMENT
           networkName: tkg-dhcp-vlan1007-10.241.7.0
           nameservers:
-            - 10.246.2.9
+            - 10.241.28.1
       placementParams:
         - name: tkg
           type: Folder
@@ -35,14 +37,14 @@ masterNodes:
         - name: k8s
           type: ResourcePool
         - name: hubsite
-          type: ClusterComputeResourcel
+          type: ClusterComputeResource
 workerNodes:
     - name: default-pool01
       networks:
         - label: MANAGEMENT
           networkName: tkg-dhcp-vlan1007-10.241.7.0
           nameservers:
-            - 10.246.2.9
+            - 10.241.28.1 
       placementParams:
         - name: tkg
           type: Folder

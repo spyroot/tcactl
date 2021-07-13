@@ -161,15 +161,24 @@ type ResetInstanceApiReq struct {
 	IsVerbose bool
 }
 
+type Repo struct {
+	RepoUrl  string
+	Username string
+	Password string
+}
+
 // NewInstanceRequestSpec return new instance request spec
 func NewInstanceRequestSpec(cloudName string, clusterName string, vimType string, nfdName string,
-	repo string, instanceName string, nodePoolName string) (*specs.InstanceRequestSpec, error) {
+	repo *Repo, instanceName string, nodePoolName string) (*specs.InstanceRequestSpec, error) {
 	i := &specs.InstanceRequestSpec{
+		SpecType:         specs.SpecKindInstance,
 		CloudName:        cloudName,
 		ClusterName:      clusterName,
 		VimType:          vimType,
 		NfdName:          nfdName,
-		Repo:             repo,
+		Repo:             repo.RepoUrl,
+		RepoUsername:     repo.Username,
+		RepoPassword:     repo.Password,
 		InstanceName:     instanceName,
 		NodePoolName:     nodePoolName,
 		UseLinkedRepo:    true,

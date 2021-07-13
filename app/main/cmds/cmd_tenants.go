@@ -197,10 +197,12 @@ tenant command attaches cloud provider to TCA.`),
 				return
 			}
 
-			_, err = ctl.tca.CreateTenantProvider(spec)
+			registration, err := ctl.tca.CreateTenantProvider(spec)
 			CheckErrLogError(err)
 
-			//fmt.Printf("Cloud provider %s registered\n", args[0])
+			fmt.Printf("Cloud provider %s registered, cloud provider %s, location %s, %s",
+				registration.TenantName, registration.ProviderType(),
+				registration.Location.City, registration.Location.CityAscii)
 		},
 	}
 

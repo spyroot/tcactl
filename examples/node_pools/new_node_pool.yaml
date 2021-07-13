@@ -1,13 +1,14 @@
-name: test-cluster02
+kind: node_pool
+name: second 
 cpu: 2
 labels:
-  - type=test_cluster02
+  - type=second
 memory: 16384
 networks:
   - label: MANAGEMENT
     networkName: /Datacenter/network/tkg-dhcp-vlan1007-10.241.7.0
     nameservers:
-      - 10.246.2.9
+      - 10.241.28.1
 placementParams:
   - name: hubsite
     type: ClusterComputeResource

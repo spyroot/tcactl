@@ -1,3 +1,4 @@
+kind: template
 clusterType: WORKLOAD
 clusterConfig:
     cni:
@@ -28,7 +29,7 @@ masterNodes:
       replica: 1
       labels: []
       cloneMode: linkedClone
-name: myworkload 
+name: test123
 workerNodes:
     - cpu: 4 
       memory: 131072

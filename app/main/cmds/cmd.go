@@ -228,9 +228,7 @@ Command retrieves tca entities. Cnfs, Cluster Catalog etc.`),
 		Use:   "update [cnfi or cnfc]",
 		Short: "Command updates or apply changes tca entity cnf, cnf catalog , cluster or node pool.",
 		Long: templates.LongDesc(`
-
 Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node pool.)
-
 `),
 		Aliases: []string{"apply"},
 

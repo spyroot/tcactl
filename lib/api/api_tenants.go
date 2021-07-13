@@ -20,7 +20,6 @@ package api
 
 import (
 	"context"
-	b64 "encoding/base64"
 	"fmt"
 	"github.com/spyroot/tcactl/lib/client/response"
 	"github.com/spyroot/tcactl/lib/client/specs"
@@ -83,7 +82,7 @@ func (a *TcaApi) DeleteTenantsProvider(ctx context.Context, tenantCluster string
 
 // CreateTenantProvider method create, registers new target cloud provider
 // as tenant infrastructure in TCA.
-func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.TcaTask, error) {
+func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.RegistrationRespond, error) {
 
 	if spec == nil {
 		return nil, errnos.SpecNil
@@ -97,7 +96,7 @@ func (a *TcaApi) CreateTenantProvider(spec *specs.SpecCloudProvider) (*models.Tc
 	// remove kind and encode password as base64
 	specCopy := spec
 	specCopy.SpecType = ""
-	specCopy.Password = b64.StdEncoding.EncodeToString([]byte(spec.Password))
+	//specCopy.Password = b64.StdEncoding.EncodeToString([]byte(spec.Password))
 
 	return a.rest.RegisterCloudProvider(specCopy)
 }

@@ -1,4 +1,6 @@
+#kind template 
 kind: template
+  # notice min already defined in TCA, tool will generate name
 name: min
 clusterType: MANAGEMENT
 clusterConfig:

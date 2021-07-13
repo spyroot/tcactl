@@ -144,6 +144,7 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiRe
 			repoUrl   = entry.RepoURL
 			username  = entry.Username
 			password  = entry.Password
+			//b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
 			//	req.Spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
 		)
 		namespace = entry.Namespace
@@ -373,6 +374,7 @@ func (a *TcaApi) TerminateCnfInstance(ctx context.Context, req *TerminateInstanc
 		return fmt.Errorf("instance not found in %v cluster", req.ClusterName)
 	}
 
+	instance.IsInstantiated()
 	glog.Infof("terminating cnfName %v instance ID %v.", req.InstanceName, instance.CID)
 	if strings.Contains(instance.Meta.LcmOperationState, "STARTING") {
 		return fmt.Errorf("'%v' instance ID %v "+

@@ -97,7 +97,7 @@ func (ctl *TcaCtl) CmdGetPoolNodes() *cobra.Command {
 		Long: templates.LongDesc(
 			`Command returns a list kubernetes node pool for a given cluster name.`),
 		Example: "tcactl get clusters pool 794a675c-777a-47f4-8edb-36a686ef4065",
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctx := context.Background()
@@ -205,7 +205,7 @@ func (ctl *TcaCtl) CmdCreatePoolNodes() *cobra.Command {
 		Long: templates.LongDesc(`
 Command create additional node pool on target kubernetes cluster.
 `),
-		Example: "tcactl create node-pool my_cluster example/node-pool.yaml",
+		Example: "tcactl create node-pool example/node-pool.yaml",
 		Aliases: []string{"pools", "pool"},
 		Args:    cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -225,7 +225,7 @@ Command create additional node pool on target kubernetes cluster.
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
-			_spec, err := specs.SpecNodePool{}.SpecsFromFile(args[0])
+			_spec, err := specs.SpecNodePool{}.SpecsFromFile(args[1])
 			CheckErrLogError(err)
 
 			spec, ok := (*_spec).(*specs.SpecNodePool)
@@ -260,7 +260,7 @@ Command create additional node pool on target kubernetes cluster.
 		"Blocks and wait task to finish.")
 
 	//
-	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "p", true,
+	_cmd.Flags().BoolVar(&showProgress, CliProgress, true,
 		"Show task progress.")
 
 	return _cmd
@@ -287,7 +287,7 @@ func (ctl *TcaCtl) CmdUpdatePoolNodes() *cobra.Command {
 Command update node pool for target kubernetes cluster.`),
 		Example: "tcactl update node-pool my_cluster example/node-pool.yaml",
 		Aliases: []string{"pools", "pool"},
-		Args:    cobra.MinimumNArgs(2),
+		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctx := context.Background()

@@ -175,7 +175,6 @@ func (e *CnfLcmExtended) IsInCluster(vimName string) bool {
 		if strings.ToLower(info.Extra.VimName) == strings.ToLower(vimName) {
 			return true
 		}
-		fmt.Println(info.Extra.VimName, vimName)
 	}
 	return false
 }
@@ -190,6 +189,14 @@ func (e *CnfLcmExtended) IsInstantiated() bool {
 
 func (e *CnfLcmExtended) IsStarting() bool {
 	return e.LcmOperationState == "STARTING"
+}
+
+func (e *CnfLcmExtended) LastOperation() string {
+	return e.LcmOperation
+}
+
+func (e *CnfLcmExtended) IsFailed() bool {
+	return e.LcmOperationState == "FAILED_TEMP"
 }
 
 // CnfsExtended - list of CNF LCM respond

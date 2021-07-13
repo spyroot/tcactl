@@ -117,7 +117,7 @@ func (c *RestClient) GetTenantsQuery(f *specs.TenantsNfFilter) (*response.Tenant
 }
 
 // RegisterCloudProvider method register new cloud provider.
-func (c *RestClient) RegisterCloudProvider(r *specs.SpecCloudProvider) (*models.TcaTask, error) {
+func (c *RestClient) RegisterCloudProvider(r *specs.SpecCloudProvider) (*models.RegistrationRespond, error) {
 
 	glog.Infof("Cloud provider registration request %s", r.HcxCloudUrl)
 
@@ -136,13 +136,13 @@ func (c *RestClient) RegisterCloudProvider(r *specs.SpecCloudProvider) (*models.
 		return nil, c.checkErrors(resp)
 	}
 
-	var task models.TcaTask
-	if err := json.Unmarshal(resp.Body(), &task); err != nil {
+	var registration models.RegistrationRespond
+	if err := json.Unmarshal(resp.Body(), &registration); err != nil {
 		glog.Error("Failed parse server respond.")
 		return nil, err
 	}
 
-	return &task, nil
+	return &registration, nil
 }
 
 // DeleteTenant delete tenant cluster
