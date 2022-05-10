@@ -1,4 +1,4 @@
-Using config file: /Users/spyroot/.tcactl/config.yaml
+kind: cluster
 clusterPassword: VMware1!
 clusterTemplateId: 06060d88-5b85-4ebb-b9f6-615096d294be
 clusterType: WORKLOAD

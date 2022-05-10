@@ -44,6 +44,7 @@ func (ctl *TcaCtl) CmdVims() *cobra.Command {
 		Long: templates.LongDesc(`
 Tenant command retrieves particular cloud provider or lists all attached cloud providers.`),
 		//Args:  cobra.MinimumNArgs(1),
+		Aliases: []string{"tenants"},
 		Run: func(cmd *cobra.Command, args []string) {
 
 			var (
@@ -165,9 +166,9 @@ Command delete cloud provider. Note all entity must be removed.`),
 func (ctl *TcaCtl) CmdCreateTenant() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//_defaultPrinter = ctl.Printer
+		//_defaultStyler  = ctl.DefaultStyle
+		_outputFilter string
 	)
 
 	var _cmd = &cobra.Command{
@@ -179,13 +180,13 @@ tenant command attaches cloud provider to TCA.`),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
-				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
-				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+				//outputFields := strings.Split(_outputFilter, ",")
+				//_defaultPrinter = FilteredOutFilter
+				//_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
 			_spec, err := specs.SpecCloudProvider{}.SpecsFromFile(args[0])

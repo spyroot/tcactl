@@ -137,11 +137,10 @@ Command retrieves a list of CNFs or VNFs catalog entities or single element if -
 func (ctl *TcaCtl) CmdCreatePackage() *cobra.Command {
 
 	var (
-		filter    string
-		packageId string
-
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
+		filter string
+		//packageId string
+		//_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
 
 		substitution                    = map[string]string{}
 		_propertyDescriptorId           = ""
@@ -181,12 +180,11 @@ Command allow to overwrite some of CSAR Tosca values. Check flags.
 		Run: func(cmd *cobra.Command, args []string) {
 
 			if len(args) > 0 {
-				packageId = args[0]
+				//				packageId = args[0]
 			}
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
-
+			//	_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
 
@@ -316,9 +314,7 @@ Command allow to overwrite some of CSAR Tosca values. Check flags.
 func (ctl *TcaCtl) CmdDeleteCatalog() *cobra.Command {
 
 	var (
-		packageId       string
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
+		_defaultStyler = ctl.DefaultStyle
 	)
 
 	var _cmd = &cobra.Command{
@@ -334,27 +330,17 @@ Command delete a CNF or VNF package.`),
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
-			if len(args) > 0 {
-				packageId = args[0]
-			}
-
-			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
-
 			_defaultStyler.SetColor(ctl.IsColorTerm)
 			_defaultStyler.SetWide(ctl.IsWideTerm)
-
 			ok, err := ctl.tca.DeleteCatalogEntity(args[0])
 			if err != nil {
 				glog.Errorf("Failed create new package. Error: %v", err)
 				return
 			}
-
 			if ok {
 				fmt.Println("Package created.")
 			}
 		},
 	}
-
 	return _cmd
 }

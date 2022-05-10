@@ -101,6 +101,8 @@ const (
 	// TcaVmwareVnflcmInstance operation on instance
 	TcaVmwareVnflcmInstance = "/telco/api/vnflcm/v2/vnf_instances/%s"
 
+	TcaVmwareVnflcmInstanceScale = "/telco/api/vnflcm/v2/vnf_instances/%s/scale"
+
 	//TcaVmwareVnflcmInstantiate instantiate
 	TcaVmwareVnflcmInstantiate = "/telco/api/vnflcm/v2/vnf_instances/%s/instantiate"
 

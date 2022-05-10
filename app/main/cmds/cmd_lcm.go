@@ -31,6 +31,22 @@ import (
 	"strings"
 )
 
+// checkDefaultsConfig - checks all default variables set.
+func (ctl *TcaCtl) checkDefaultsConfig() {
+	if len(ctl.DefaultClusterName) == 0 {
+		panic("Please indicate cloud provider, default is empty.")
+	}
+	if len(ctl.DefaultClusterName) == 0 {
+		panic("Please indicate cluster name, default is empty.")
+	}
+	if len(ctl.DefaultRepoName) == 0 {
+		panic("Please indicate repository, default is empty.")
+	}
+	if len(ctl.DefaultNodePoolName) == 0 {
+		panic("Please indicate node pool, default is empty.")
+	}
+}
+
 // CmdUpdateInstance root command
 func (ctl *TcaCtl) CmdUpdateInstance() *cobra.Command {
 
@@ -55,8 +71,36 @@ node pool.
 	cmdUpdateCnf.AddCommand(ctl.CmdRollbackInstances())
 	cmdUpdateCnf.AddCommand(ctl.CmdReconfigure())
 	cmdUpdateCnf.AddCommand(ctl.CmdResetInstances())
+	cmdUpdateCnf.AddCommand(ctl.CmdMove())
 
 	return cmdUpdateCnf
+}
+
+// PrintRunningInstances Prints instance name
+func (ctl *TcaCtl) PrintRunningInstances() error {
+
+	var (
+		err            error
+		genericRespond interface{}
+	)
+
+	// rest call
+	genericRespond, err = ctl.tca.GetVnflcm("")
+	if err != nil {
+		return err
+	}
+
+	// for extension request we route to correct printer
+	cnfsExt, ok := genericRespond.(*response.CnfsExtended)
+	fmt.Println("Running instances")
+	if ok {
+		for _, lcm := range cnfsExt.CnfLcms {
+			fmt.Println("\t * ", lcm.VnfInstanceName, strings.ToLower(lcm.LcmOperation))
+		}
+		return nil
+	}
+
+	return nil
 }
 
 // CmdGetInstances Get CNF/VNF active instances
@@ -254,8 +298,9 @@ func (ctl *TcaCtl) CmdReconfigure() *cobra.Command {
 	)
 
 	var cmdCreate = &cobra.Command{
-		Use:   "reconfigure [instance name, vdu name, values.yaml]",
-		Short: "Command reconfigures existing cnf instance.",
+		Use:     "reconfigure [instance name, vdu name, values.yaml]",
+		Short:   "Command reconfigures existing cnf instance.",
+		Aliases: []string{"config"},
 		Long: templates.LongDesc(`
 The command reconfigures the existing CNF active instance.
 `),
@@ -325,16 +370,21 @@ func (ctl *TcaCtl) CmdTerminateInstances() *cobra.Command {
 		Use:   "terminate [instance name or id]",
 		Short: "Command terminates CNF or VNF instance",
 		Long: templates.LongDesc(`
-The command terminates active CNF or VNF instances.
+The command terminates active CNF or VNF instances
 `),
 		Aliases: []string{"down"},
-		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			doBlock, err := cmd.Flags().GetBool(CliBlock)
 			CheckErrLogError(err)
 
 			ctl.checkDefaultsConfig()
+
+			if len(args) == 0 {
+				err = ctl.PrintRunningInstances()
+				CheckErrLogError(err)
+				return
+			}
 
 			err = ctl.tca.TerminateCnfInstance(context.Background(),
 				&api.TerminateInstanceApiReq{
@@ -343,8 +393,8 @@ The command terminates active CNF or VNF instances.
 					IsBlocking:   doBlock,
 					IsVerbose:    showProgress,
 				})
-			CheckErrLogError(err)
 
+			CheckErrLogError(err)
 			fmt.Println("Successfully updated state.")
 		},
 	}
@@ -388,7 +438,6 @@ wait when task will finished.
 		Example: "\t - tcactl update cnf up testapp\n" +
 			"\t - tcactl update cnf up --stderrthreshold INFO --block --pool my_pool01\n",
 		Aliases: []string{"up"},
-		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctl.checkDefaultsConfig()
@@ -396,6 +445,12 @@ wait when task will finished.
 			// block or not call
 			doBlock, err := cmd.Flags().GetBool(CliBlock)
 			CheckErrLogError(err)
+
+			if len(args) == 0 {
+				err = ctl.PrintRunningInstances()
+				CheckErrLogError(err)
+				return
+			}
 
 			// resolve pool id, if client indicated target pool
 			poolName := cmd.Flags().Lookup(CliPool)
@@ -416,7 +471,7 @@ wait when task will finished.
 			err = ctl.tca.CreateCnfInstance(context.Background(), &req)
 			CheckErrLogError(err)
 
-			fmt.Println("Successfully updated state.")
+			fmt.Println("Successfully updated state. Scheduled in node pool", poolName.Value.String())
 		},
 	}
 
@@ -481,30 +536,14 @@ The instance must be in a  active state.
 	return updateInstance
 }
 
-// checkDefaultsConfig - checks all default variables set.
-func (ctl *TcaCtl) checkDefaultsConfig() {
-	if len(ctl.DefaultClusterName) == 0 {
-		panic("Please indicate cloud provider, default is empty.")
-	}
-	if len(ctl.DefaultClusterName) == 0 {
-		panic("Please indicate cluster name, default is empty.")
-	}
-	if len(ctl.DefaultRepoName) == 0 {
-		panic("Please indicate repository, default is empty.")
-	}
-	if len(ctl.DefaultNodePoolName) == 0 {
-		panic("Please indicate node pool, default is empty.")
-	}
-}
-
-// CmdRollbackInstances command to update CNF state. i.e terminate
+// CmdRollbackInstances command to update CNF state. i.e rollback
 func (ctl *TcaCtl) CmdRollbackInstances() *cobra.Command {
 
 	var (
 		_doBlock = false
 	)
 
-	var cmdTerminate = &cobra.Command{
+	var ctlcmd = &cobra.Command{
 		Use:   "rollback [instance name or id]",
 		Short: "Command rollback CNF or VNF instance",
 		Long: templates.LongDesc(
@@ -522,10 +561,10 @@ func (ctl *TcaCtl) CmdRollbackInstances() *cobra.Command {
 	}
 
 	// blocking flag
-	cmdTerminate.Flags().BoolVarP(&_doBlock, CliBlock, "b", false,
+	ctlcmd.Flags().BoolVarP(&_doBlock, CliBlock, "b", false,
 		"Blocks and Pool the operations status.")
 
-	return cmdTerminate
+	return ctlcmd
 }
 
 // CmdResetInstances resets instance state
@@ -540,7 +579,7 @@ func (ctl *TcaCtl) CmdResetInstances() *cobra.Command {
 		Short: "Command rollback CNF or VNF instance",
 		Long: templates.LongDesc(
 			`Rollback CNF instance, caller need to provide valid instance id or a name.`),
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctl.checkDefaultsConfig()
@@ -550,7 +589,6 @@ func (ctl *TcaCtl) CmdResetInstances() *cobra.Command {
 				ClusterName:  ctl.DefaultClusterName,
 			})
 			CheckErrLogError(err)
-
 			fmt.Println("Successfully updated state.")
 		},
 	}
@@ -560,4 +598,82 @@ func (ctl *TcaCtl) CmdResetInstances() *cobra.Command {
 		"Blocks and Pool the operations status.")
 
 	return cmdReset
+}
+
+//CmdMove command move instance
+func (ctl *TcaCtl) CmdMove() *cobra.Command {
+
+	var (
+		namespace           string
+		disableGrantFlag    bool
+		disableAutoRollback bool
+		ignoreGrantFailure  bool
+		isDryRun            bool
+	)
+
+	var lcmCmd = &cobra.Command{
+		Use:     "move [instance name, pool name]",
+		Short:   "Command move existing cnf instance.",
+		Aliases: []string{"config"},
+		Long: templates.LongDesc(`
+
+The command moves the existing CNF instance to designate target node pool.
+
+`),
+		Args: cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+
+			glog.Infof("Using cloud provider name='%s' cluster name='%s' repo name='%s' node pool name='%s'",
+				ctl.DefaultCloudName,
+				ctl.DefaultClusterName,
+				ctl.DefaultRepoName,
+				ctl.DefaultNodePoolName)
+
+			if len(ctl.DefaultClusterName) == 0 {
+				fmt.Println("Please indicate cloud provider, default is empty.")
+				return
+			}
+			if len(ctl.DefaultClusterName) == 0 {
+				fmt.Println("Please indicate cluster name, default is empty.")
+				return
+			}
+			if len(ctl.DefaultRepoName) == 0 {
+				fmt.Println("Please indicate repository, default is empty.")
+				return
+			}
+			if len(ctl.DefaultNodePoolName) == 0 {
+				fmt.Println("Please indicate node pool, default is empty.")
+				return
+			}
+			err := ctl.tca.CnfMove(context.Background(), args[0], &api.CnfMoveReq{
+				NodeSelector: api.HelmNodeSelector{
+					Label: args[1],
+				},
+			}, isDryRun)
+			CheckErrLogError(err)
+		},
+	}
+
+	lcmCmd.Flags().BoolVar(&disableGrantFlag,
+		"disable_grant", false,
+		"disable grant validation.")
+
+	lcmCmd.Flags().BoolVar(&disableAutoRollback,
+		"rollback", false,
+		"disables auto Rollback.")
+
+	lcmCmd.Flags().BoolVar(&ignoreGrantFailure,
+		"ignore_failure", false,
+		"disable grant failure.")
+
+	// namespace
+	lcmCmd.Flags().StringVarP(&namespace,
+		"namespace", "n", "default",
+		"cnf namespace.")
+
+	lcmCmd.Flags().BoolVar(&isDryRun,
+		"dry", false,
+		"Flag instructs to run command in dry run.")
+
+	return lcmCmd
 }

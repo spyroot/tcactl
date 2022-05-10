@@ -423,9 +423,10 @@ func (c *RestClient) InstanceUpdateState(ctx context.Context,
 func (c *RestClient) InstanceReconfigure(ctx context.Context, r *specs.LcmReconfigureRequest, id string) error {
 
 	c.GetClient()
+	req := c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmInstanceScale, id)
+	glog.Infof("Sending scale/reconfigure request %v", req)
 
-	resp, err := c.Client.R().SetContext(ctx).SetBody(r).Post(c.BaseURL + TcaVmwareVnflcmInstance + id + "/scale")
-
+	resp, err := c.Client.R().SetContext(ctx).SetBody(r).Post(req)
 	if err != nil {
 		glog.Error(err)
 		return err
@@ -453,11 +454,9 @@ func (c *RestClient) DeleteInstance(ctx context.Context, id string) error {
 
 	c.GetClient()
 	req := c.BaseURL + fmt.Sprintf(TcaVmwareVnflcmInstance, id)
-
 	glog.Infof("Sending Delete %v", req)
 
 	resp, err := c.Client.R().SetContext(ctx).Delete(req)
-
 	if err != nil {
 		glog.Error(err)
 		return err

@@ -31,9 +31,9 @@ import (
 func (ctl *TcaCtl) CmdGetRepos() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//	_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
+		_outputFilter  string
 	)
 
 	// cnf instances
@@ -46,12 +46,12 @@ func (ctl *TcaCtl) CmdGetRepos() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			ctx := context.Background()
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//	_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
 				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
+				//	_defaultPrinter = FilteredOutFilter
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
@@ -80,9 +80,9 @@ func (ctl *TcaCtl) CmdGetRepos() *cobra.Command {
 func (ctl *TcaCtl) CmdCreateExtension() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//_defaultPrinter = ctl.Printer
+		//_defaultStyler  = ctl.DefaultStyle
+		_outputFilter string
 	)
 
 	var _cmd = &cobra.Command{
@@ -97,13 +97,13 @@ Command attaches cloud provider to TCA.`),
 
 			ctx := context.Background()
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			//	_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
-				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
-				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+				//	outputFields := strings.Split(_outputFilter, ",")
+				//	_defaultPrinter = FilteredOutFilter
+				//	_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
 			_spec, err := specs.SpecExtension{}.SpecsFromFile(args[0])
@@ -129,9 +129,9 @@ Command attaches cloud provider to TCA.`),
 func (ctl *TcaCtl) CmdDeleteExtension() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//_defaultPrinter = ctl.Printer
+		//_defaultStyler  = ctl.DefaultStyle
+		_outputFilter string
 	)
 
 	var _cmd = &cobra.Command{
@@ -147,13 +147,13 @@ Command delete extension from TCA.`),
 			ctx := context.Background()
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			//	_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
-				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
-				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+				//	outputFields := strings.Split(_outputFilter, ",")
+				//		_defaultPrinter = FilteredOutFilter
+				//		_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
 			_, err := ctl.tca.DeleteExtension(ctx, args[0])
@@ -171,9 +171,9 @@ Command delete extension from TCA.`),
 func (ctl *TcaCtl) CmdUpdateExtension() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//	_defaultPrinter = ctl.Printer
+		//		_defaultStyler  = ctl.DefaultStyle
+		_outputFilter string
 	)
 
 	var _cmd = &cobra.Command{
@@ -190,13 +190,13 @@ Harbor repository to selected workload cluster.`),
 			ctx := context.Background()
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup("output").Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
-				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
-				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+				//outputFields := strings.Split(_outputFilter, ",")
+				//_defaultPrinter = FilteredOutFilter
+				//_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
 			_spec, err := specs.SpecExtension{}.SpecsFromFile(args[0])

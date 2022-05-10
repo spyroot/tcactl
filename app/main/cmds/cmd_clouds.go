@@ -49,10 +49,8 @@ func (ctl *TcaCtl) CmdGetClouds() *cobra.Command {
 		Aliases: []string{"cloud"},
 		Short:   "Command retrieves a list of cloud providers. (tenants)",
 		Long: templates.LongDesc(`
-
-Command retrieve a list of cloud providers currently attached to Telco Cloud Automation.
-Workload and Tenant cluster must be attached to target provider.
-
+Command retrieve a list of cloud providers currently attached to Telco Cloud Automation. 
+Workload and Tenant Kubernetes clusters must be active in the target cloud provider.
 `),
 		Example: "\t- tcactl get clouds \n" +
 			"\t- tcactl get clouds edge",

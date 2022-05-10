@@ -77,27 +77,27 @@ func init() {
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultCloudName,
 		cmds.ConfigDefaultCloud, "p", "",
-		"overwrites default cloud provider used by tcactl.")
+		"Overwrites default cloud provider used by tcactl.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultClusterName,
 		cmds.ConfigDefaultCluster, "m", "",
-		"overwrites default Tenant SpecCluster Name.")
+		"Overwrites default Tenant SpecCluster Name.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.DefaultRepoName,
 		cmds.ConfigRepoName, "z", "",
-		"overwrites default Cloud Provider used by tcactl.")
+		"Overwrites default Cloud Provider used by tcactl.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.DefaultNodePoolName,
 		cmds.ConfigNodePool, "",
-		"overwrites default node pool to use.")
+		"Overwrites default node pool to use.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVarP(&tcaCtl.Harbor,
 		cmds.ConfigHarborEndpoint, "r", "",
-		"overwrites harbor API end-point url.")
+		"Overwrites harbor API end-point url.")
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborUsername,
 		cmds.ConfigHarborUsername, "",
-		"overwrites harbor username.")
+		"Overwrites harbor username.")
 
 	// TODO enable for all command
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsTrace,
@@ -106,11 +106,11 @@ func init() {
 
 	tcaCtl.RootCmd.PersistentFlags().StringVar(&tcaCtl.HarborPassword,
 		cmds.ConfigHarborPassword, "",
-		"Flag Overwrites Harbor password.")
+		"Flag overwrites Harbor password.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsColorTerm,
-		cmds.FlagCliTerm, "t", true,
-		"Flag Disables color output.")
+		cmds.FlagCliTerm, "t", false,
+		"Flag disables color output.")
 
 	tcaCtl.RootCmd.PersistentFlags().BoolVarP(&tcaCtl.IsWideTerm,
 		cmds.FlagCliWide, "w", false,
@@ -128,6 +128,10 @@ func init() {
 
 	err = viper.BindPFlag(cmds.FlagOutput,
 		tcaCtl.RootCmd.PersistentFlags().Lookup(cmds.FlagOutput))
+	io.CheckErr(err)
+
+	err = viper.BindPFlag(cmds.FlagCliTerm,
+		tcaCtl.RootCmd.PersistentFlags().Lookup(cmds.FlagCliTerm))
 	io.CheckErr(err)
 
 	err = viper.BindPFlag(cmds.ConfigDefaultCloud,

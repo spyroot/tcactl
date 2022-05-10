@@ -206,7 +206,10 @@ Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entiti
 		Use:   "get [cnfi, cnfc, clusters, pools]",
 		Short: "Command retrieves tca entity (cnf, catalog, cluster) etc",
 		Long: templates.LongDesc(`
-Command retrieves tca entities. Cnfs, Cluster Catalog etc.`),
+
+Command retrieves tca entities. Tenant, Cluster, Cnfs, Cluster Catalog etc.
+
+`),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			// get authentication token
 			err := ctl.Authorize()
@@ -228,7 +231,9 @@ Command retrieves tca entities. Cnfs, Cluster Catalog etc.`),
 		Use:   "update [cnfi or cnfc]",
 		Short: "Command updates or apply changes tca entity cnf, cnf catalog , cluster or node pool.",
 		Long: templates.LongDesc(`
-Command updates, apply changes to tca entity (cnf, cnf catalog , cluster or node pool.)
+
+Command updates or apply changes to tca entity (cnf, cnf catalog , cluster or node pool.)
+
 `),
 		Aliases: []string{"apply"},
 
@@ -369,4 +374,57 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdDeleteInstances(),
 		ctl.CmdDeletePoolNodes(),
 		ctl.CmdDeleteExtension())
+
+	var completionCmd = &cobra.Command{
+		Use:   "completion [bash|zsh|fish|powershell]",
+		Short: "Generate tcactl completion script",
+		Long: `To load completions:
+
+Bash:
+
+$ source <(tcactl completion bash)
+
+# To load completions for each session, execute once:
+Linux:
+  $ tcactl completion bash > /etc/bash_completion.d/tcactl
+MacOS:
+  $ tcactl completion bash > /usr/local/etc/bash_completion.d/tcactl
+
+Zsh:
+
+# If shell completion is not already enabled in your environment you will need
+# to enable it.  You can execute the following once:
+
+$ echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+# To load completions for each session, execute once:
+$ tcactl completion zsh > "${fpath[1]}/_tcactl"
+
+# You will need to start a new shell for this setup to take effect.
+
+Fish:
+
+$ tcactl completion fish | source
+
+# To load completions for each session, execute once:
+$ tcactl completion fish > ~/.config/fish/completions/tcactl.fish
+`,
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.ExactValidArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			switch args[0] {
+			case "bash":
+				cmd.Root().GenBashCompletion(os.Stdout)
+			case "zsh":
+				cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				cmd.Root().GenFishCompletion(os.Stdout, true)
+			case "powershell":
+				cmd.Root().GenPowerShellCompletion(os.Stdout)
+			}
+		},
+	}
+
+	ctl.RootCmd.AddCommand(completionCmd)
 }

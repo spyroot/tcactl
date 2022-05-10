@@ -131,7 +131,10 @@ func (ctl *TcaCtl) CmdGetVmwareInfra() *cobra.Command {
 		Aliases: []string{"compute"},
 		Short:   "Command retrieves a vim information.",
 		Long: templates.LongDesc(`
-									Command retrieves a vim information.`),
+
+Command retrieves a vim information.
+
+`),
 		Example: " - tcactl get vim my_cloud",
 		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -338,9 +341,9 @@ By default it search for template v1.20.4+vmware.1.`),
 func (ctl *TcaCtl) CmdGetVmFolders() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
+		_outputFilter  string
 	)
 
 	// cloud - tenants
@@ -362,12 +365,12 @@ it is a mandatory requirement for correct placement.`),
 			ctx := context.Background()
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//	_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
 				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
+				//	_defaultPrinter = FilteredOutFilter
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 

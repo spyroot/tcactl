@@ -1,4 +1,5 @@
 ---
+kind: cluster
 name: edge-mgmt-test01
 clusterPassword: VMware1!
 clusterTemplateId: "55e69a3c-d92b-40ca-be51-9c6585b89ad7"

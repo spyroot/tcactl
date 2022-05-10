@@ -29,9 +29,9 @@ import (
 func (ctl *TcaCtl) CmdGetVdu() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//	_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
+		_outputFilter  string
 	)
 
 	var cmdCreate = &cobra.Command{
@@ -53,12 +53,12 @@ The default output format tabular for detail output -o json`),
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
 				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
+				//_defaultPrinter = FilteredOutFilter
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 

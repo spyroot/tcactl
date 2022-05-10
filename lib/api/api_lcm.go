@@ -28,9 +28,18 @@ import (
 	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"strings"
 )
+
+type HelmNodeSelector struct {
+	Label string `yaml:"telco.vmware.com/nodepool"`
+}
+
+type CnfMoveReq struct {
+	NodeSelector HelmNodeSelector `yaml:"nodeSelector"`
+}
 
 func (a *TcaApi) GetInstance(ctx context.Context, NameOrId string) (*response.LcmInfo, error) {
 
@@ -145,7 +154,7 @@ func (a *TcaApi) CreateCnfInstance(ctx context.Context, req *CreateInstanceApiRe
 			username  = entry.Username
 			password  = entry.Password
 			//b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
-			//	req.Spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
+			//req.Spec.ClusterPassword = b64.StdEncoding.EncodeToString([]byte(req.Spec.ClusterPassword))
 		)
 		namespace = entry.Namespace
 		if len(req.Namespace) > 0 {
@@ -311,14 +320,16 @@ func (a *TcaApi) CnfReconfigure(ctx context.Context, instanceName string, valueF
 
 	vduId := instance.CID
 	chartName := ""
+	var vduNames []string
 	for _, vdu := range instance.InstantiatedVnfInfo {
+		vduNames = append(vduNames, vdu.ChartName)
 		if vdu.ChartName == vduName {
 			chartName = vdu.ChartName
 		}
 	}
 
 	if len(chartName) == 0 {
-		return fmt.Errorf("chart name %s not found", vduName)
+		return fmt.Errorf("chart name %s not found, avaliable names %v", vduName, vduNames)
 	}
 
 	b, err := ioutil.ReadFile(valueFile)
@@ -347,6 +358,75 @@ func (a *TcaApi) CnfReconfigure(ctx context.Context, instanceName string, valueF
 	}
 
 	return a.rest.InstanceReconfigure(ctx, &req, vduId)
+}
+
+// CnfMove - reconfigure existing instance
+func (a *TcaApi) CnfMove(ctx context.Context, instanceName string, moveReq *CnfMoveReq, isDry bool) error {
+
+	if a.rest == nil {
+		return fmt.Errorf("rest interface is nil")
+	}
+
+	if len(instanceName) == 0 {
+		return fmt.Errorf("instance name empty string")
+	}
+
+	_instances, err := a.rest.GetVnflcm()
+	if err != nil {
+		return err
+	}
+
+	// for extension request we route to correct printer
+	instances, ok := _instances.(*response.CnfsExtended)
+	if !ok {
+		return errors.New("wrong instance type")
+	}
+
+	instance, err := instances.ResolveFromName(instanceName)
+	if err != nil {
+		return err
+	}
+
+	//vduId := instance.CID
+	//chartName := ""
+	//var vduNames []string
+	//for _, vdu := range instance.InstantiatedVnfInfo {
+	//	vduNames = append(vduNames, vdu.ChartName)
+	//	if vdu.ChartName == vduName {
+	//		chartName = vdu.ChartName
+	//	}
+	//}
+	//
+	//if len(chartName) == 0 {
+	//	return fmt.Errorf("chart name %s not found, avaliable names %v", vduName, vduNames)
+	//}
+
+	b, err := yaml.Marshal(&moveReq)
+	if err != nil {
+		return err
+	}
+
+	var newVduParams []specs.VduParams
+	override := b64.StdEncoding.EncodeToString(b)
+	for _, vdu := range instance.InstantiatedVnfInfo {
+		newVduParams = append(newVduParams, specs.VduParams{
+			Overrides: override,
+			ChartName: vdu.ChartName,
+		})
+
+	}
+
+	req := specs.LcmReconfigureRequest{}
+	req.AdditionalParams.VduParams = newVduParams
+	req.AspectId = specs.AspectId
+	req.NumberOfSteps = 2
+	req.Type = specs.LcmTypeScaleOut
+
+	if isDry {
+		return nil
+	}
+
+	return a.rest.InstanceReconfigure(ctx, &req, instance.CID)
 }
 
 // TerminateCnfInstance method terminate cnf instance

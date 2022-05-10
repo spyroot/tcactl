@@ -21,17 +21,15 @@ import (
 	"context"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"github.com/spyroot/tcactl/app/main/cmds/ui"
-	"strings"
 )
 
 //CmdGetExtensions command get extensions from TCA
 func (ctl *TcaCtl) CmdGetExtensions() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+	//_defaultPrinter = ctl.Printer
+	//_defaultStyler  = ctl.DefaultStyle
+	//_outputFilter   string
 	)
 
 	var cmdCreate = &cobra.Command{
@@ -42,23 +40,29 @@ func (ctl *TcaCtl) CmdGetExtensions() *cobra.Command {
 
 			ctx := context.Background()
 
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
-
-			// swap filter if output filter required
-			if len(_outputFilter) > 0 {
-				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
-				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
-			}
-
-			_defaultStyler.SetColor(ctl.IsColorTerm)
-			_defaultStyler.SetWide(ctl.IsWideTerm)
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//
+			//// swap filter if output filter required
+			//if len(_outputFilter) > 0 {
+			//	outputFields := strings.Split(_outputFilter, ",")
+			//	_defaultPrinter = FilteredOutFilter
+			//	_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
+			//}
+			//
+			//_defaultStyler.SetColor(ctl.IsColorTerm)
+			//_defaultStyler.SetWide(ctl.IsWideTerm)
 
 			ext, err := ctl.tca.ExtensionQuery(ctx)
 			if err != nil || ext == nil {
 				glog.Errorf("Failed retrieve extension information. %v", err)
 				return
 			}
+			//if ext != nil {
+			//	if printer, ok := ctl.TenantQueryPrinter[_defaultPrinter]; ok {
+			//		printer(t, _defaultStyler)
+			//	}
+			//}
+			//_defaultPrinter
 		},
 	}
 

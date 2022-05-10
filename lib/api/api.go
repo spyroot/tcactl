@@ -842,6 +842,7 @@ func (a *TcaApi) CreateSpecExample(
 	return &spec
 }
 
+// GetClusters get cluster
 func (a *TcaApi) GetClusters(ctx context.Context) (*response.Clusters, error) {
 
 	if a.rest == nil {
@@ -852,6 +853,7 @@ func (a *TcaApi) GetClusters(ctx context.Context) (*response.Clusters, error) {
 	return a.rest.GetClusters(ctx)
 }
 
+// GetClusterNodePools - return node pool for a given id.
 func (a *TcaApi) GetClusterNodePools(Id string) (*response.NodePool, error) {
 
 	if a.rest == nil {
@@ -859,7 +861,6 @@ func (a *TcaApi) GetClusterNodePools(Id string) (*response.NodePool, error) {
 	}
 
 	glog.Infof("Retrieving cluster list.")
-
 	return a.rest.GetClusterNodePools(Id)
 }
 

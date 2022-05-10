@@ -104,8 +104,8 @@ func (ctl *TcaCtl) CmdGetClusterTemplates() *cobra.Command {
 func (ctl *TcaCtl) CmdCreateClusterTemplates() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		isDry           = false
+		//_defaultPrinter = ctl.Printer
+		isDry = false
 	)
 	// cloud - tenants
 	var _cmd = &cobra.Command{
@@ -120,7 +120,7 @@ Command creates a cluster template from input spec.
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			_spec, err := specs.SpecClusterTemplate{}.SpecsFromFile(args[0])
 			CheckErrLogError(err)

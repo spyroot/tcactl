@@ -147,9 +147,9 @@ func (ctl *TcaCtl) CmdGetPoolNodes() *cobra.Command {
 func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
+		//_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
+		_outputFilter  string
 	)
 
 	var _cmd = &cobra.Command{
@@ -164,12 +164,12 @@ func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
 			ctx := context.Background()
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
 				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
+				//_defaultPrinter = FilteredOutFilter
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
@@ -178,7 +178,6 @@ func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
 
 			task, err := ctl.tca.DeleteNodePool(ctx, args[0], args[1])
 			CheckErrLogError(err)
-
 			fmt.Printf("Node pool deleted, task id %v\n", task.OperationId)
 		},
 	}
@@ -191,12 +190,12 @@ func (ctl *TcaCtl) CmdDeletePoolNodes() *cobra.Command {
 func (ctl *TcaCtl) CmdCreatePoolNodes() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
-		isDry           bool
-		doBlock         bool
-		showProgress    bool
+		//_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
+		_outputFilter  string
+		isDry          bool
+		doBlock        bool
+		showProgress   bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -213,12 +212,12 @@ Command create additional node pool on target kubernetes cluster.
 			ctx := context.Background()
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
 				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
+				//	_defaultPrinter = FilteredOutFilter
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
@@ -272,12 +271,12 @@ Command create additional node pool on target kubernetes cluster.
 func (ctl *TcaCtl) CmdUpdatePoolNodes() *cobra.Command {
 
 	var (
-		_defaultPrinter = ctl.Printer
-		_defaultStyler  = ctl.DefaultStyle
-		_outputFilter   string
-		isDry           bool
-		doBlock         bool
-		showProgress    bool
+		//_defaultPrinter = ctl.Printer
+		_defaultStyler = ctl.DefaultStyle
+		_outputFilter  string
+		isDry          bool
+		doBlock        bool
+		showProgress   bool
 	)
 
 	var _cmd = &cobra.Command{
@@ -293,12 +292,12 @@ Command update node pool for target kubernetes cluster.`),
 			ctx := context.Background()
 
 			// global output type
-			_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
+			//	_defaultPrinter = ctl.RootCmd.PersistentFlags().Lookup(FlagOutput).Value.String()
 
 			// swap filter if output filter required
 			if len(_outputFilter) > 0 {
 				outputFields := strings.Split(_outputFilter, ",")
-				_defaultPrinter = FilteredOutFilter
+				//_defaultPrinter = FilteredOutFilter
 				_defaultStyler = ui.NewFilteredOutputStyler(outputFields)
 			}
 
@@ -340,7 +339,7 @@ Command update node pool for target kubernetes cluster.`),
 		"Blocks and wait task to finish.")
 
 	//
-	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "p", true,
+	_cmd.Flags().BoolVarP(&showProgress, CliProgress, "u", true,
 		"Show task progress.")
 
 	return _cmd

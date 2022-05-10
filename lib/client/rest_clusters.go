@@ -130,6 +130,7 @@ func (c *RestClient) GetClusterNodePools(clusterId string) (*response.NodePool, 
 
 	var pools response.NodePool
 	if err := json.Unmarshal(resp.Body(), &pools); err != nil {
+		fmt.Println(resp.Body())
 		glog.Errorf("Failed parse servers respond. %v", err)
 		return nil, err
 	}

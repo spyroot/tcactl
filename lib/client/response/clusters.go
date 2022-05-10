@@ -24,6 +24,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/netutils"
+	"github.com/spyroot/tcactl/pkg/str"
+	_ "github.com/spyroot/tcactl/pkg/str"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
@@ -179,6 +181,35 @@ func (c *Clusters) GetClusterIds() ([]string, error) {
 		}
 	}
 	return ids, nil
+}
+
+func (c *Clusters) FuzzyGetClusterSpec(cluster string) (*ClusterSpec, map[float32]string, error) {
+
+	candidate := make(map[float32]string)
+
+	if c == nil {
+		return nil, candidate, fmt.Errorf("uninitialized clusters object")
+	}
+
+	NameOrId := strings.ToLower(cluster)
+
+	for _, it := range c.Clusters {
+		if it.ClusterName == NameOrId || it.Id == NameOrId {
+			glog.Infof("Found cluster %v cluster id %v", NameOrId, it.Id)
+			return &it, candidate, nil
+		} else {
+			dist := str.JaroWinklerDistance(it.ClusterName, cluster)
+			if dist > 0.8 {
+				candidate[float32(dist)] = it.ClusterName
+			}
+			dist = str.JaroWinklerDistance(it.Id, cluster)
+			if dist > 0.8 {
+				candidate[float32(dist)] = it.Id
+			}
+		}
+	}
+
+	return nil, candidate, nil
 }
 
 // ClustersSpecsFromString take string that hold entire spec
