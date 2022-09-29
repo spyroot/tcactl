@@ -17,6 +17,7 @@
 package printer
 
 import (
+	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spyroot/tcactl/app/main/cmds/ui"
 	"github.com/spyroot/tcactl/lib/client/response"
@@ -125,8 +126,7 @@ func ConsumptionTablePrinter(specs *models.ConsumptionResp, style ui.PrinterStyl
 		specs.RawUsageUnit},
 	})
 	t.AppendSeparator()
-
-	//for _, c := range specs {
+	fmt.Println("")
 
 	tableStyle, ok := style.GetTableStyle().(table.Style)
 	if ok {
