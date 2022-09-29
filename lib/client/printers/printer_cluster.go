@@ -109,30 +109,12 @@ func ConsumptionJsonPrinter(spec *models.ConsumptionResp, style ui.PrinterStyle)
 	DefaultJsonPrinter(spec, style)
 }
 
-type ConsumptionResp struct {
-	LicenseQuantity      int    `json:"licenseQuantity"`
-	ConsumedQuantity     int    `json:"consumedQuantity"`
-	TransformationFactor int    `json:"transformationFactor"`
-	LicenseUnit          string `json:"licenseUnit"`
-	LicenseDisplayUnit   string `json:"licenseDisplayUnit"`
-	RawUsageUnit         string `json:"rawUsageUnit"`
-	LastSyncTimestamp    int64  `json:"lastSyncTimestamp"`
-	Details              []struct {
-		VimID            string `json:"vimId"`
-		VimName          string `json:"vimName"`
-		VimURL           string `json:"vimUrl"`
-		VimType          string `json:"vimType"`
-		TenantName       string `json:"tenantName"`
-		ConsumedQuantity int    `json:"consumedQuantity"`
-	} `json:"details"`
-}
-
 // ConsumptionTablePrinter - tabular format printer for lic consumption
 func ConsumptionTablePrinter(specs *models.ConsumptionResp, style ui.PrinterStyle) {
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"LicenseQt", "ConsumedQt", "LicenseUt", "DisplayUt", "RawUsageUt"})
+	t.AppendHeader(table.Row{"License Qt", "Consumed Qt", "License Ut", "Display Ut", "RawUsage Ut"})
 
 	t.AppendRows([]table.Row{{
 		specs.LicenseQuantity,
@@ -145,17 +127,32 @@ func ConsumptionTablePrinter(specs *models.ConsumptionResp, style ui.PrinterStyl
 	t.AppendSeparator()
 
 	//for _, c := range specs {
-	//	for j, s := range c.Datastore {
-	//		t.AppendRows([]table.Row{{j,
-	//			c.Name, s.Name, s.Summary.Type, s.Summary.Capacity, s.Summary.FreeSpace, s.Summary.Accessible},
-	//		})
-	//		t.AppendSeparator()
-	//	}
-	//}
 
 	tableStyle, ok := style.GetTableStyle().(table.Style)
 	if ok {
 		t.SetStyle(tableStyle)
 	}
 	t.Render()
+
+	detailTab := table.NewWriter()
+	detailTab.SetOutputMirror(os.Stdout)
+	detailTab.AppendHeader(table.Row{"vim", "vim name", "vim url", "vim type", "tenant", "consumed qt"})
+
+	for _, c := range specs.Details {
+		detailTab.AppendRows([]table.Row{{
+			c.VimID,
+			c.VimName,
+			c.VimURL,
+			c.VimType,
+			c.TenantName,
+			c.ConsumedQuantity},
+		})
+		t.AppendSeparator()
+	}
+
+	detailTabStyle, ok := style.GetTableStyle().(table.Style)
+	if ok {
+		detailTab.SetStyle(detailTabStyle)
+	}
+	detailTab.Render()
 }
