@@ -108,3 +108,54 @@ func ConsumptionSpecYamlPrinter(spec *models.ConsumptionResp, style ui.PrinterSt
 func ConsumptionJsonPrinter(spec *models.ConsumptionResp, style ui.PrinterStyle) {
 	DefaultJsonPrinter(spec, style)
 }
+
+type ConsumptionResp struct {
+	LicenseQuantity      int    `json:"licenseQuantity"`
+	ConsumedQuantity     int    `json:"consumedQuantity"`
+	TransformationFactor int    `json:"transformationFactor"`
+	LicenseUnit          string `json:"licenseUnit"`
+	LicenseDisplayUnit   string `json:"licenseDisplayUnit"`
+	RawUsageUnit         string `json:"rawUsageUnit"`
+	LastSyncTimestamp    int64  `json:"lastSyncTimestamp"`
+	Details              []struct {
+		VimID            string `json:"vimId"`
+		VimName          string `json:"vimName"`
+		VimURL           string `json:"vimUrl"`
+		VimType          string `json:"vimType"`
+		TenantName       string `json:"tenantName"`
+		ConsumedQuantity int    `json:"consumedQuantity"`
+	} `json:"details"`
+}
+
+// ConsumptionTablePrinter - tabular format printer for lic consumption
+func ConsumptionTablePrinter(specs *models.ConsumptionResp, style ui.PrinterStyle) {
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"#", "LicenseQt", "ConsumedQt", "LicenseUt", "DisplayUt", "RawUsageUt"})
+
+	t.AppendRows([]table.Row{{
+		specs.LicenseQuantity,
+		specs.ConsumedQuantity,
+		specs.LicenseUnit,
+		specs.LicenseUnit,
+		specs.LicenseDisplayUnit,
+		specs.RawUsageUnit},
+	})
+	t.AppendSeparator()
+
+	//for _, c := range specs {
+	//	for j, s := range c.Datastore {
+	//		t.AppendRows([]table.Row{{j,
+	//			c.Name, s.Name, s.Summary.Type, s.Summary.Capacity, s.Summary.FreeSpace, s.Summary.Accessible},
+	//		})
+	//		t.AppendSeparator()
+	//	}
+	//}
+
+	tableStyle, ok := style.GetTableStyle().(table.Style)
+	if ok {
+		t.SetStyle(tableStyle)
+	}
+	t.Render()
+}

@@ -173,7 +173,7 @@ type TcaCtl struct {
 	VmwareVmTemplatePrinter map[string]func(*models.VcInventory, ui.PrinterStyle)
 	VmwareResourcePrinter   map[string]func(*models.ResourcePool, ui.PrinterStyle)
 
-	// Tca specific printers
+	// Tca consumption specific printers
 	TcaConsumptionPrinter map[string]func(*models.ConsumptionResp, ui.PrinterStyle)
 
 	// cluster task list printer.  cluster task is take current executing or
@@ -327,7 +327,7 @@ func NewTcaCtl() *TcaCtl {
 		},
 
 		TcaConsumptionPrinter: map[string]func(*models.ConsumptionResp, ui.PrinterStyle){
-			ConfigDefaultPinter: printer.ConsumptionJsonPrinter,
+			ConfigDefaultPinter: printer.ConsumptionTablePrinter,
 			ConfigJsonPinter:    printer.ConsumptionJsonPrinter,
 			ConfigYamlPinter:    printer.ConsumptionSpecYamlPrinter,
 		},
