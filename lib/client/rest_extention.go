@@ -5,14 +5,13 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 //
 // Mustafa mbayramo@vmware.com
 package client
@@ -61,7 +60,7 @@ func (c *RestClient) GetExtensions(ctx context.Context) (*response.Extensions, e
 
 	var e response.Extensions
 	if err := json.Unmarshal(resp.Body(), &e); err != nil {
-		glog.Error("Failed parse server respond %v.", err)
+		glog.Errorf("Failed parse server respond %v", err)
 		return nil, err
 	}
 
@@ -94,14 +93,14 @@ func (c *RestClient) GetExtension(ctx context.Context, eid string) (*response.Ex
 
 	var e response.Extensions
 	if err := json.Unmarshal(resp.Body(), &e); err != nil {
-		glog.Error("Failed parse server respond %v.", err)
+		glog.Errorf("Failed parse server respond %v.", err)
 		return nil, err
 	}
 
 	return &e, nil
 }
 
-//CreateExtension - method creates new extension
+// CreateExtension - method creates new extension
 // spec can contain optional VimInfo that indicates
 // cluster or cluster where extension will be attach.
 func (c *RestClient) CreateExtension(ctx context.Context, spec *specs.SpecExtension) (string, error) {
@@ -132,15 +131,15 @@ func (c *RestClient) CreateExtension(ctx context.Context, spec *specs.SpecExtens
 
 	var ext response.Extension
 	if err := json.Unmarshal(resp.Body(), &ext); err != nil {
-		glog.Error("Failed parse server respond. %v", err)
+		glog.Errorf("Failed parse server respond. %v", err)
 		return "", err
 	}
 
 	return ext.ExtensionId, nil
 }
 
-//DeleteExtension - api call delete extension
-//method return true if extension deleted.
+// DeleteExtension - api call deletes extension
+// Method returns true if extension deleted.
 func (c *RestClient) DeleteExtension(ctx context.Context, extensionId string) (bool, error) {
 
 	if c == nil {
@@ -148,7 +147,7 @@ func (c *RestClient) DeleteExtension(ctx context.Context, extensionId string) (b
 	}
 
 	req := fmt.Sprintf(TcaVmwareDeleteExtensions, extensionId)
-	glog.Infof("Deleting extension %v, req", extensionId, req)
+	glog.Infof("Deleting extension %v", extensionId)
 
 	c.GetClient()
 	resp, err := c.Client.R().SetContext(ctx).Delete(c.BaseURL + req)
@@ -168,15 +167,15 @@ func (c *RestClient) DeleteExtension(ctx context.Context, extensionId string) (b
 
 	var r ExtensionDeleteReplay
 	if err := json.Unmarshal(resp.Body(), &r); err != nil {
-		glog.Error("Failed parse server respond. %v", err)
+		glog.Errorf("Failed parse server respond. %v", err)
 		return false, err
 	}
 
 	return r.Deleted, nil
 }
 
-//UpdateExtension - update extension
-//Returns true if extension updated
+// UpdateExtension - update extension
+// Returns true if extension updated
 func (c *RestClient) UpdateExtension(ctx context.Context, spec *specs.SpecExtension, eid string) (bool, error) {
 
 	if c == nil {
@@ -202,7 +201,7 @@ func (c *RestClient) UpdateExtension(ctx context.Context, spec *specs.SpecExtens
 
 	var replay ExtensionUpdateReplay
 	if err := json.Unmarshal(resp.Body(), &replay); err != nil {
-		glog.Error("Failed parse server respond. %v", err)
+		glog.Errorf("Failed parse server respond. %v", err)
 		return false, err
 	}
 

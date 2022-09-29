@@ -5,14 +5,13 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 //
 // Mustafa mbayramo@vmware.com
 package client
@@ -49,7 +48,7 @@ func (c *RestClient) LinkedRepositories(tenantId string, repo string) (string, e
 	return repos.GetRepoId(repo)
 }
 
-//RepositoriesQuery - query repositories linked to vim
+// RepositoriesQuery - query repositories linked to vim
 func (c *RestClient) RepositoriesQuery(query *specs.RepoQuery) (*response.ReposList, error) {
 
 	if c == nil {
@@ -84,7 +83,7 @@ func (c *RestClient) RepositoriesQuery(query *specs.RepoQuery) (*response.ReposL
 	return &repos, nil
 }
 
-//GetRepositoriesQuery - query repositories linked to vim
+// GetRepositoriesQuery - query repositories linked to vim
 func (c *RestClient) GetRepositoriesQuery(query *specs.RepoQuery) (*response.ReposList, error) {
 
 	if c == nil {
@@ -112,7 +111,7 @@ func (c *RestClient) GetRepositoriesQuery(query *specs.RepoQuery) (*response.Rep
 
 	var repos response.ReposList
 	if err := json.Unmarshal(resp.Body(), &repos); err != nil {
-		glog.Error("Failed parse server respond. %v", err)
+		glog.Errorf("Failed parse server respond. %v", err)
 		return nil, err
 	}
 

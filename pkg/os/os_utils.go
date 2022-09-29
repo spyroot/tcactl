@@ -68,3 +68,12 @@ func HomeDir() string {
 	}
 	return os.Getenv("HOME")
 }
+
+func GetEnvString(v string, def string) string {
+	r := os.Getenv(v)
+	if r == "" {
+		return def
+	}
+
+	return r
+}

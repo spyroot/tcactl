@@ -61,6 +61,17 @@ func (a *TcaApi) GetVim(ctx context.Context, NameOrId string) (*response.TenantS
 	return a.rest.GetVim(ctx, providerId)
 }
 
+// GetConsumption - return lic consumption
+func (a *TcaApi) GetConsumption(ctx context.Context) (*models.ConsumptionResp, error) {
+
+	consumptionResp, err := a.rest.GetConsumption(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return consumptionResp, nil
+
+}
+
 // GetVimComputeClusters - return compute cluster attached to VIM
 // For example VMware VIM is vCenter.
 func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*models.VMwareClusters, error) {

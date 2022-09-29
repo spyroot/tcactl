@@ -5,14 +5,13 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 //
 // Mustafa mbayramo@vmware.com
 package cmds
@@ -85,6 +84,15 @@ const (
 
 	// ConfigHarborPassword default harbor password
 	ConfigHarborPassword = "harbor-password"
+
+	// ConfigVcUrl default vc url
+	ConfigVcUrl = "vc"
+
+	// ConfigVcUsername default repo name
+	ConfigVcUsername = "vc_username"
+
+	// ConfigVcPassword default repo name
+	ConfigVcPassword = "vc_password"
 
 	// ConfigTrace dump server respond
 	ConfigTrace = "trace"
@@ -165,6 +173,9 @@ type TcaCtl struct {
 	VmwareVmTemplatePrinter map[string]func(*models.VcInventory, ui.PrinterStyle)
 	VmwareResourcePrinter   map[string]func(*models.ResourcePool, ui.PrinterStyle)
 
+	// Tca specific printers
+	TcaConsumptionPrinter map[string]func(*models.ConsumptionResp, ui.PrinterStyle)
+
 	// cluster task list printer.  cluster task is take current executing or
 	// already executed.
 	TaskClusterPrinter map[string]func(*models.ClusterTask, ui.PrinterStyle)
@@ -211,7 +222,10 @@ type TcaCtl struct {
 	// HarborPassword harbor password
 	HarborPassword string
 
-	IsTrace bool
+	IsTrace    bool
+	VcUrl      string
+	VcUsername string
+	VcPassword string
 }
 
 // NewTcaCtl - main abstraction for a tool
@@ -312,6 +326,12 @@ func NewTcaCtl() *TcaCtl {
 			ConfigYamlPinter:    printer.ClusterTaskYamlPrinter,
 		},
 
+		TcaConsumptionPrinter: map[string]func(*models.ConsumptionResp, ui.PrinterStyle){
+			ConfigDefaultPinter: printer.ConsumptionJsonPrinter,
+			ConfigJsonPinter:    printer.ConsumptionJsonPrinter,
+			ConfigYamlPinter:    printer.ConsumptionSpecYamlPrinter,
+		},
+
 		VMwareClusterPrinter: map[string]func(*models.VMwareClusters, ui.PrinterStyle){
 			ConfigDefaultPinter: printer.VmwareInventoryTablePrinter,
 			ConfigJsonPinter:    printer.VmwareInventoryJsonPrinter,
@@ -335,6 +355,7 @@ func NewTcaCtl() *TcaCtl {
 			ConfigJsonPinter:    printer.VmwareTemplateJsonPrinter,
 			ConfigYamlPinter:    printer.VmwareTemplateYamlPrinter,
 		},
+
 		VmwareResourcePrinter: map[string]func(*models.ResourcePool, ui.PrinterStyle){
 			ConfigDefaultPinter: printer.VmwareResourcePoolTablePrinter,
 			ConfigJsonPinter:    printer.VmwareResourcePoolJsonPrinter,
@@ -394,7 +415,6 @@ func (ctl *TcaCtl) Authorize() error {
 	return nil
 }
 
-//
 // TODO this method will go away
 func (ctl *TcaCtl) BasicAuthentication() {
 	ok, err := ctl.tca.GetAuthorization()
@@ -423,7 +443,7 @@ func (ctl *TcaCtl) SetTcaBase(url string) {
 	}
 }
 
-//SetTcaUsername sets tca username
+// SetTcaUsername sets tca username
 func (ctl *TcaCtl) SetTcaUsername(username string) {
 	if ctl.tca != nil {
 		ctl.tca.SetUsername(username)

@@ -5,14 +5,13 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 //
 // Mustafa mbayramo@vmware.com
 package main
@@ -60,6 +59,10 @@ func init() {
 	viper.SetDefault(cmds.ConfigHarborUsername, "admin")
 	viper.SetDefault(cmds.ConfigHarborPassword, "VMware1!")
 	viper.SetDefault(cmds.ConfigRepoName, "repo.vmware.com")
+
+	viper.SetDefault(cmds.ConfigVcUrl, "https://default")
+	viper.SetDefault(cmds.ConfigVcUsername, "Administrator@vsphere.local")
+	viper.SetDefault(cmds.ConfigVcPassword, "default")
 
 	cobra.OnInitialize(initConfig)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -198,7 +201,7 @@ func initConfig() {
 	viper.GetString(cmds.ConfigTcaEndpoint)
 	ok := IsUrl(viper.GetString(cmds.ConfigTcaEndpoint))
 	if !ok {
-		io.CheckErr("Invalid tca url")
+		io.CheckErr("Invalid tca URL")
 	}
 
 	if !strings.HasPrefix(viper.GetString(cmds.ConfigTcaEndpoint), "https") {
@@ -229,6 +232,9 @@ func initConfig() {
 	tcaCtl.Harbor = viper.GetString(cmds.ConfigHarborEndpoint)
 	tcaCtl.HarborUsername = viper.GetString(cmds.ConfigHarborUsername)
 	tcaCtl.HarborPassword = viper.GetString(cmds.ConfigHarborPassword)
+	tcaCtl.VcUrl = viper.GetString(cmds.ConfigVcUrl)
+	tcaCtl.VcUsername = viper.GetString(cmds.ConfigVcUsername)
+	tcaCtl.VcPassword = viper.GetString(cmds.ConfigVcPassword)
 
 	tcaCtl.Printer = viper.GetString("output")
 	glog.Infof("TCA Base set to %v", viper.GetString(cmds.ConfigTcaEndpoint))

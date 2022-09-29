@@ -1,3 +1,5 @@
+# make sure you set export GO111MODULE="on"
+#
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -42,11 +44,23 @@ docker-run:
 stop:
 	docker stop $(APP_NAME); docker rm $(APP_NAME)
 
-## Build the release and development container. The development
+## Build the release and development container.
 docker-build:
-	docker-compose build --no-cache $(APP_NAME)
-	docker-compose run $(APP_NAME) grunt build
-	docker build -t $(APP_NAME)
-#
+#	docker-compose build --no-cache $(APP_NAME)
+#	docker-compose run $(APP_NAME) grunt build
+	docker build -t spyroot/$(APP_NAME):$(VERSION) .
+
+# Docker run
 docker-run:
-	docker run -i -t --rm --env-file=./config.env -p=$(PORT):$(PORT) --name="$(APP_NAME)" $(APP_NAME)
+#	docker run -v `pwd`:`pwd` -w `pwd` --name="$(APP_NAME)" -i -t --rm --env-file=./config.env $(APP_NAME) bash
+#	docker run -v `pwd`:`pwd` -w `pwd` --name photon_iso_builder --rm -i -t spyroot/photon_iso_builder:1.0 bash
+	docker run -v `pwd`:`pwd` -w `pwd` --name="tcactl" --env-file=./config.env --rm -i -t spyroot/$(APP_NAME):$(VERSION) /bin/sh
+
+dep:
+	go mod download
+
+update_list:
+	go list -u -m all
+
+lint:
+	golangci-lint run --enable-all

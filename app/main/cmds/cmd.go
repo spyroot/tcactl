@@ -180,7 +180,7 @@ func (ctl *TcaCtl) BuildCmd() {
 
 	var describe = &cobra.Command{
 		Use:   "describe [cloud or cluster or nodes or pool or template]",
-		Short: "Command describes describe TCA object in details.",
+		Short: "Command describes in details a TCA object.",
 		Long: templates.LongDesc(`
 
 Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entities.`),
@@ -204,7 +204,7 @@ Command describes TCA entity. CNFI is CNFI in the inventory, CNFC Catalog entiti
 	// root cmd for all get
 	var cmdGet = &cobra.Command{
 		Use:   "get [cnfi, cnfc, clusters, pools]",
-		Short: "Command retrieves tca entity (cnf, catalog, cluster) etc",
+		Short: "Command retrieves TCA entity (cnf, catalog, cluster) etc",
 		Long: templates.LongDesc(`
 
 Command retrieves tca entities. Tenant, Cluster, Cnfs, Cluster Catalog etc.
@@ -305,7 +305,7 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		},
 	}
 
-	// Set root command
+	// Set root command. ( set tca api endpoint , cluster etc)
 	cmdSet.AddCommand(
 		ctl.CmdSetTca(),
 		ctl.CmdSetCluster(),
@@ -313,7 +313,7 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdSetUsername(),
 		ctl.CmdSetPassword())
 
-	// Describe sub command
+	// List of all describe sub commands
 	describe.AddCommand(
 		ctl.CmdDescribeVim(),
 		ctl.CmdGetCluster(),
@@ -323,7 +323,7 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdDescribeTemplate(),
 		ctl.CmdDescribeTask())
 
-	// Update sub-commands
+	// List of all update sub-commands
 	cmdUpdate.AddCommand(
 		ctl.CmdUpdateExtension(),
 		ctl.CmdUpdatePoolNodes(),
@@ -331,8 +331,9 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdUpdateClusterTemplates(),
 		ctl.CmdUpdateInstance())
 
-	// root command
-	ctl.RootCmd.AddCommand(describe,
+	// TCA root command menu
+	ctl.RootCmd.AddCommand(
+		describe,
 		cmdGet,
 		cmdUpdate,
 		cmdCreate,
@@ -352,7 +353,8 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdGetVdu(),
 		ctl.CmdGetExtensions(),
 		ctl.CmdGetClusterTemplates(),
-		ctl.CmdGetVim())
+		ctl.CmdGetVim(),
+		ctl.CmdGetTcaManager())
 
 	// Create root command
 	cmdCreate.AddCommand(
