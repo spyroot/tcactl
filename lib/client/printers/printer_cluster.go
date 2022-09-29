@@ -132,7 +132,7 @@ func ConsumptionTablePrinter(specs *models.ConsumptionResp, style ui.PrinterStyl
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"#", "LicenseQt", "ConsumedQt", "LicenseUt", "DisplayUt", "RawUsageUt"})
+	t.AppendHeader(table.Row{"LicenseQt", "ConsumedQt", "LicenseUt", "DisplayUt", "RawUsageUt"})
 
 	t.AppendRows([]table.Row{{
 		specs.LicenseQuantity,
