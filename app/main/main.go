@@ -248,7 +248,11 @@ func main() {
 
 	glog.Infof("Using config file %v", tcaCtl.CfgFile)
 	if err := tcaCtl.RootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, err := fmt.Fprintln(os.Stderr, err)
+		if err != nil {
+			fmt.Printf("Failed to write %v", err)
+			return
+		}
 		glog.Error(err)
 		os.Exit(1)
 	}

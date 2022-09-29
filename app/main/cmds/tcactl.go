@@ -415,7 +415,7 @@ func (ctl *TcaCtl) Authorize() error {
 	return nil
 }
 
-// TODO this method will go away
+// BasicAuthentication TODO this method will go away
 func (ctl *TcaCtl) BasicAuthentication() {
 	ok, err := ctl.tca.GetAuthorization()
 	io.CheckErr(err)
@@ -466,14 +466,22 @@ func (ctl *TcaCtl) GetApi() *api.TcaApi {
 func CheckErrLogError(msg interface{}) {
 	if msg != nil {
 		glog.Error(msg)
-		fmt.Fprintln(os.Stderr, "Error:", msg)
+		_, err := fmt.Fprintln(os.Stderr, "Error:", msg)
+		if err != nil {
+			fmt.Printf("Failed to write %v", err)
+			return
+		}
 		os.Exit(1)
 	}
 }
 
 func CheckNotOkLogError(predicate bool, msg interface{}) {
 	if predicate != true {
-		fmt.Fprintln(os.Stderr, "Error:", msg)
+		_, err := fmt.Fprintln(os.Stderr, "Error:", msg)
+		if err != nil {
+			fmt.Printf("Failed to write %v", err)
+			return
+		}
 		os.Exit(1)
 	}
 }
@@ -481,14 +489,22 @@ func CheckNotOkLogError(predicate bool, msg interface{}) {
 func CheckNilLogError(predicate interface{}, msg interface{}) {
 	if predicate == nil {
 		glog.Error(msg)
-		fmt.Fprintln(os.Stderr, "Error:", msg)
+		_, err := fmt.Fprintln(os.Stderr, "Error:", msg)
+		if err != nil {
+			fmt.Printf("Failed to write %v", err)
+			return
+		}
 		os.Exit(1)
 	}
 }
 
 func CheckErrLogInfoMsg(msg interface{}) {
 	if msg != nil {
-		fmt.Fprintln(os.Stderr, "Error:", msg)
+		_, err := fmt.Fprintln(os.Stderr, "Error:", msg)
+		if err != nil {
+			fmt.Printf("Failed to write to stderr %v", err)
+			return
+		}
 		os.Exit(1)
 	}
 }

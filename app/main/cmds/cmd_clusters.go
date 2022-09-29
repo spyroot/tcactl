@@ -5,14 +5,13 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 //
 // Mustafa mbayramo@vmware.com
 package cmds
@@ -34,7 +33,6 @@ import (
 	osutil "github.com/spyroot/tcactl/pkg/os"
 	"github.com/spyroot/tcactl/pkg/str"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -506,7 +504,7 @@ func (ctl *TcaCtl) CmdGetClustersK8SConfig() *cobra.Command {
 						fmt.Println(string(kubeconfig))
 						return
 					}
-					err = ioutil.WriteFile(fileName, kubeconfig, 0644)
+					err = os.WriteFile(fileName, kubeconfig, 0644)
 					CheckErrLogError(err)
 					fmt.Println("Kubeconfig saved.", fileName)
 					return
@@ -571,7 +569,7 @@ that will wait for the task to finish.'
 			// spec read from file
 			var spec specs.SpecCluster
 			if ioutils.FileExists(args[0]) {
-				buffer, err := ioutil.ReadFile(args[0])
+				buffer, err := os.ReadFile(args[0])
 				CheckErrLogError(err)
 				// first we try yaml if failed try json
 				err = yaml.Unmarshal(buffer, &spec)

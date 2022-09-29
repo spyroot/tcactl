@@ -25,7 +25,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/spyroot/tcactl/app/main/cmds/templates"
 	"github.com/spyroot/tcactl/pkg/io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -113,7 +112,7 @@ func (ctl *TcaCtl) CmdInitConfig() *cobra.Command {
 			configHome := filepath.Join(home, "/", configPrefix)
 			configPath := filepath.Join(configHome, configName+"."+configType)
 
-			_, err = ioutil.ReadDir(home)
+			_, err = os.ReadDir(home)
 			io.CheckErr(err)
 			err = os.MkdirAll(configHome, 0755)
 			io.CheckErr(err)
@@ -417,13 +416,13 @@ $ tcactl completion fish > ~/.config/fish/completions/tcactl.fish
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "bash":
-				cmd.Root().GenBashCompletion(os.Stdout)
+				_ = cmd.Root().GenBashCompletion(os.Stdout)
 			case "zsh":
-				cmd.Root().GenZshCompletion(os.Stdout)
+				_ = cmd.Root().GenZshCompletion(os.Stdout)
 			case "fish":
-				cmd.Root().GenFishCompletion(os.Stdout, true)
+				_ = cmd.Root().GenFishCompletion(os.Stdout, true)
 			case "powershell":
-				cmd.Root().GenPowerShellCompletion(os.Stdout)
+				_ = cmd.Root().GenPowerShellCompletion(os.Stdout)
 			}
 		},
 	}

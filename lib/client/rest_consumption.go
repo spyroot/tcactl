@@ -20,7 +20,6 @@ func (c *RestClient) GetConsumption(ctx context.Context) (*models.ConsumptionRes
 	c.GetClient()
 	resp, err = c.Client.R().SetContext(ctx).Get(c.BaseURL + TcaConsumption)
 
-	fmt.Println("##### Sending Request to", c.BaseURL+TcaConsumption)
 	if err != nil {
 		glog.Error(err)
 		return nil, err

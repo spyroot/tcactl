@@ -105,7 +105,7 @@ func (a *TcaApi) GetVimComputeClusters(ctx context.Context, cloudName string) (*
 }
 
 // GetVimNetworks - method return network attached
-// to vim, cloud provider, for a VMware it full path to object
+// to vim, cloud provider, for a VMware vim it is a full path to object.
 func (a *TcaApi) GetVimNetworks(ctx context.Context, cloudName string) (*models.CloudNetworks, error) {
 
 	if a.rest == nil {
