@@ -1,3 +1,19 @@
+// Package printer
+// Copyright 2020-2021 Author.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Mustafa mbayramo@vmware.com
 package printer
 
 import (
@@ -12,15 +28,11 @@ func VsphereDatastoresTablePrinters(specs *vc.VsphereDatastores, style ui.Printe
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"#", "Name", "Owner", "Parent type", "VC ID"})
+	t.AppendHeader(table.Row{"Name", "Inventory Path", "DC Path", "Type"})
 
-	//for i, d := range specs.Data.Items {
-	//	if d.EntityType == models.EntityTypeResourcePool {
-	//		t.AppendRows([]table.Row{{i, d.Name, d.Owner.Value, d.Parent.Type, d.EntityId}})
-	//
-	//	}
-	//	t.AppendSeparator()
-	//}
+	for s := range specs.Datastores {
+		t.AppendRows([]table.Row{{specs.Datastores[s].Name, specs.Datastores[s].InventoryPath, specs.Datastores[s].DatacenterPath, specs.Datastores[s].Type}})
+	}
 
 	tableStyle, ok := style.GetTableStyle().(table.Style)
 	if ok {
