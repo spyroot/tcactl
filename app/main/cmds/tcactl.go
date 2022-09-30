@@ -30,6 +30,7 @@ import (
 	"github.com/spyroot/tcactl/lib/client/specs"
 	"github.com/spyroot/tcactl/lib/models"
 	"github.com/spyroot/tcactl/pkg/io"
+	"github.com/spyroot/tcactl/pkg/vmware/vc"
 	"os"
 )
 
@@ -110,6 +111,25 @@ const (
 	FlagCliTerm = "term"
 )
 
+// VSphereAuthSpec credential and endpoint
+type VSphereAuthSpec struct {
+	// VcUrl vsphere url
+	Url string `json:"url" yaml:"url"`
+	// Username vsphere username
+	Username string `json:"username" yaml:"username"`
+	// Password vsphere password
+	Password string `json:"password" yaml:"password"`
+	// Default used in case caller didn't provide actual vc
+	// config contains a list of vc not just single entry
+	Default bool `json:"default" yaml:"default"`
+}
+
+// VMwareVcSpecs map hold all VCs
+type VMwareVcSpecs struct {
+	// Hold authentication credentials.
+	Vmware map[string]VSphereAuthSpec `mapstructure:"vmware"`
+}
+
 type TcaCtl struct {
 
 	//
@@ -117,6 +137,9 @@ type TcaCtl struct {
 
 	// API interface
 	tca *api.TcaApi
+
+	//
+	vcRest *vc.VSphereRest
 
 	// CnfInstancePrinters cnf instance printer
 	CnfInstancePrinters map[string]func(*response.Cnfs, ui.PrinterStyle)
@@ -173,6 +196,9 @@ type TcaCtl struct {
 	VmwareVmTemplatePrinter map[string]func(*models.VcInventory, ui.PrinterStyle)
 	VmwareResourcePrinter   map[string]func(*models.ResourcePool, ui.PrinterStyle)
 
+	// VMware Vsphere Datastore printers
+	VsphereDatastores map[string]func(*vc.VsphereDatastores, ui.PrinterStyle)
+
 	// Tca consumption specific printers
 	TcaConsumptionPrinter map[string]func(*models.ConsumptionResp, ui.PrinterStyle)
 
@@ -222,10 +248,11 @@ type TcaCtl struct {
 	// HarborPassword harbor password
 	HarborPassword string
 
-	IsTrace    bool
-	VcUrl      string
-	VcUsername string
-	VcPassword string
+	// IsTrace set rest api trace
+	IsTrace bool
+
+	// VsphereAuthSpecs VMware VC Authentication specs
+	VsphereAuthSpecs VMwareVcSpecs
 }
 
 // NewTcaCtl - main abstraction for a tool
@@ -362,6 +389,12 @@ func NewTcaCtl() *TcaCtl {
 			ConfigYamlPinter:    printer.VmwareResourcePoolYamlPrinter,
 		},
 
+		VsphereDatastores: map[string]func(*vc.VsphereDatastores, ui.PrinterStyle){
+			ConfigDefaultPinter: printer.VsphereDatastoresTablePrinters,
+			ConfigJsonPinter:    printer.VsphereDatastoresJsonPrinters,
+			ConfigYamlPinter:    printer.VsphereDatastoresYamlPrinters,
+		},
+
 		Printer:      ConfigDefaultPinter,
 		IsDebug:      false,
 		CfgFile:      "",
@@ -412,6 +445,45 @@ func (ctl *TcaCtl) Authorize() error {
 	if ok {
 		glog.Infof("Received TCA Authorization Key %v", ctl.tca.GetApiKey())
 	}
+	return nil
+}
+
+// vcClient returns instance of VsphereRest API.
+func vcClient(ctx context.Context, url string, username string, password string) (*vc.VSphereRest, error) {
+	c, err := vc.Connect(ctx, url, username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vc.VSphereRest{Ctl: c.Client}, nil
+}
+
+// VcConnect Connects to vsphere and update vSphere client.
+func (ctl *TcaCtl) VcConnect(ctx context.Context, alias string) error {
+
+	if len(ctl.VsphereAuthSpecs.Vmware) == 0 {
+		return fmt.Errorf("vsphere vc configuraiton is empty. Check ~/.tcactl/config.yaml")
+	}
+
+	activeSpec, ok := ctl.VsphereAuthSpecs.Vmware[alias]
+	if alias == "default" {
+		for s := range ctl.VsphereAuthSpecs.Vmware {
+			if ctl.VsphereAuthSpecs.Vmware[s].Default {
+				activeSpec = ctl.VsphereAuthSpecs.Vmware[s]
+			}
+		}
+	} else {
+		if !ok {
+			return fmt.Errorf("unknown vsphere %s spec", alias)
+		}
+	}
+
+	c, err := vcClient(ctx, activeSpec.Url, activeSpec.Username, activeSpec.Password)
+	if err != nil {
+		return err
+	}
+	ctl.vcRest = c
+
 	return nil
 }
 

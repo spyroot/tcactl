@@ -14,7 +14,10 @@ func main() {
 	datastoreName := "vsanDatastore"
 
 	ctx := context.TODO()
-	c, err := vc.Connect(ctx, os.Getenv("VC_HOSTNAME"), os.Getenv("VC_USERNAME"), os.Getenv("VC_PASSWORD"))
+	c, err := vc.Connect(ctx,
+		os.Getenv("VC_HOSTNAME"),
+		os.Getenv("VC_USERNAME"),
+		os.Getenv("VC_PASSWORD"))
 	if err != nil {
 		fmt.Println("error", err)
 		return

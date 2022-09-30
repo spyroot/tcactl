@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spyroot/tcactl/app/main/cmds"
+
 	"github.com/spyroot/tcactl/pkg/io"
 	_ "github.com/spyroot/tcactl/pkg/io"
 	"net/url"
@@ -232,9 +233,13 @@ func initConfig() {
 	tcaCtl.Harbor = viper.GetString(cmds.ConfigHarborEndpoint)
 	tcaCtl.HarborUsername = viper.GetString(cmds.ConfigHarborUsername)
 	tcaCtl.HarborPassword = viper.GetString(cmds.ConfigHarborPassword)
-	tcaCtl.VcUrl = viper.GetString(cmds.ConfigVcUrl)
-	tcaCtl.VcUsername = viper.GetString(cmds.ConfigVcUsername)
-	tcaCtl.VcPassword = viper.GetString(cmds.ConfigVcPassword)
+
+	var vmwareAuthSPecs cmds.VMwareVcSpecs
+	if err := viper.Unmarshal(&vmwareAuthSPecs); err != nil {
+		fmt.Println(err)
+		return
+	}
+	tcaCtl.VsphereAuthSpecs = vmwareAuthSPecs
 
 	tcaCtl.Printer = viper.GetString("output")
 	glog.Infof("TCA Base set to %v", viper.GetString(cmds.ConfigTcaEndpoint))

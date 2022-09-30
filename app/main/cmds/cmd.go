@@ -353,7 +353,8 @@ Command sets config variables (Username, Password etc) for tcactl.`),
 		ctl.CmdGetExtensions(),
 		ctl.CmdGetClusterTemplates(),
 		ctl.CmdGetVim(),
-		ctl.CmdGetTcaManager())
+		ctl.CmdGetTcaManager(),
+		ctl.CmdGetVc())
 
 	// Create root command
 	cmdCreate.AddCommand(
